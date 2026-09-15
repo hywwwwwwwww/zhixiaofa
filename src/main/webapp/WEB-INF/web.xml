@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+  <display-name>zhixiaofa</display-name>
+  <description>职小法 · 职场新人智能法律助手 —— Web应用开发实践课程设计</description>
+
+  <!-- ======================================================================
+       过滤器：注册顺序即执行顺序
+       1) JSON 请求体包装   2) 编码   3) 鉴权   4) 操作日志
+       ====================================================================== -->
+  <filter>
+    <filter-name>jsonBodyFilter</filter-name>
+    <filter-class>com.zhixiaofa.filter.JsonBodyFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>jsonBodyFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>characterEncodingFilter</filter-name>
+    <filter-class>com.zhixiaofa.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>characterEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>authFilter</filter-name>
+    <filter-class>com.zhixiaofa.filter.AuthFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>authFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>operationLogFilter</filter-name>
+    <filter-class>com.zhixiaofa.filter.OperationLogFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>operationLogFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
+  <!-- ======================================================================
+       说明：所有 Servlet 均使用 @WebServlet 注解声明映射，此处不再重复注册。
+       API 一览（详见 docs/API接口文档.md）：
+         /api/auth/*            登录 / 注册 / 退出 / 当前用户 / 资料 / 改密
+         /api/users/*           用户管理（管理员）
+         /api/law-articles/*    法条检索与维护
+         /api/qa/*              智能法律问答
+         /api/court-cases/*     AI 小法庭推演
+         /api/contracts/*       合同智能审查
+         /api/doc-templates/*   文书模板
+         /api/doc-records/*     用户文书
+         /api/knowledge/*       普法文章
+         /api/quiz/*            知识自测
+         /api/favorites/*       收藏
+         /api/admin/stats/*     后台统计看板（管理员）
+         /api/admin/logs/*      操作日志（管理员）
+       ====================================================================== -->
+
+  <!-- 会话超时：60 分钟 -->
+  <session-config>
+    <session-timeout>60</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+    </cookie-config>
+  </session-config>
+
+  <!-- 首页 -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+
+  <!-- 静态资源 404 友好页；
+       注意：这里**不能**给 500 配 error-page ——
+       API 出错时 BaseServlet 会返回 JSON（HTTP 500 + Result 结构），
+       一旦配置了 500 错误页，容器会转而转发到 HTML 页面，把 JSON 响应体吞掉，
+       前端就拿不到错误码了。 -->
+  <error-page>
+    <error-code>404</error-code>
+    <location>/error/404.html</location>
+  </error-page>
+
+</web-app>

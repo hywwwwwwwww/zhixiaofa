@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 / 注册 - 职小法</title>
+  <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="zf-auth">
+  <!-- 左侧品牌区 -->
+  <section class="zf-auth__brand">
+    <div>
+      <h1 class="zf-auth__brand-title">职小法</h1>
+      <p class="zf-auth__brand-sub">职场新人的智能法律伙伴</p>
+      <p class="zf-auth__brand-desc">
+        面向初入职场的年轻人，把复杂的劳动法规变成听得懂、用得上的建议：
+        问一句就能拿到带法条依据的回答，上传合同自动体检，选个模板就能生成规范文书。
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-top:10px">
+      <div class="zf-auth__feature">
+        <div class="zf-auth__feature-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div>
+          <strong style="font-size:13.5px">智能法律问答</strong>
+          <div style="font-size:12.5px;color:var(--zf-ink-3);margin-top:2px">
+            基于法规库全文检索（ngram 索引），回答自动附上引用法条原文
+          </div>
+        </div>
+      </div>
+      <div class="zf-auth__feature">
+        <div class="zf-auth__feature-icon"><i class="bi bi-file-earmark-check"></i></div>
+        <div>
+          <strong style="font-size:13.5px">合同智能审查</strong>
+          <div style="font-size:12.5px;color:var(--zf-ink-3);margin-top:2px">
+            逐条扫描风险条款，标注风险等级、法条依据与修改建议
+          </div>
+        </div>
+      </div>
+      <div class="zf-auth__feature">
+        <div class="zf-auth__feature-icon"><i class="bi bi-bank"></i></div>
+        <div>
+          <strong style="font-size:13.5px">AI 小法庭</strong>
+          <div style="font-size:12.5px;color:var(--zf-ink-3);margin-top:2px">
+            依据类案统计推演胜诉概率与赔偿区间，维权前先心里有底
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 右侧表单区 -->
+  <section class="zf-auth__form">
+    <div class="zf-auth__box">
+      <div class="zf-auth__tabs">
+        <button class="zf-auth__tab zf-auth__tab--active" data-panel="login">登录</button>
+        <button class="zf-auth__tab" data-panel="register">注册</button>
+      </div>
+
+      <!-- 登录表单 -->
+      <form class="zf-auth__panel zf-auth__panel--active" id="panel-login" autocomplete="off">
+        <div class="zf-field">
+          <label class="zf-form-label" for="login-username">用户名</label>
+          <input class="zf-form-control" id="login-username" name="username" placeholder="请输入用户名">
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-field">
+          <label class="zf-form-label" for="login-password">密码</label>
+          <input class="zf-form-control" id="login-password" name="password" type="password" placeholder="请输入密码">
+          <div class="zf-form-error"></div>
+        </div>
+        <button class="zf-btn zf-btn--primary zf-btn--block" type="submit" id="btn-login">
+          <i class="bi bi-box-arrow-in-right"></i>登录
+        </button>
+        <div class="zf-auth__switch">
+          体验账号：<code>zhangsan / 123456</code>　管理员：<code>admin / admin123</code>
+        </div>
+      </form>
+
+      <!-- 注册表单 -->
+      <form class="zf-auth__panel" id="panel-register" autocomplete="off">
+        <div class="zf-field">
+          <label class="zf-form-label" for="reg-username">用户名</label>
+          <input class="zf-form-control" id="reg-username" name="username" placeholder="4~20 位，字母开头">
+          <div class="zf-form-hint">只能用字母开头，可含字母、数字、下划线</div>
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-field">
+          <label class="zf-form-label" for="reg-password">密码</label>
+          <input class="zf-form-control" id="reg-password" name="password" type="password" placeholder="6~32 位，需含字母和数字">
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-field">
+          <label class="zf-form-label" for="reg-nickname">昵称</label>
+          <input class="zf-form-control" id="reg-nickname" name="nickname" placeholder="显示在个人中心">
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-grid zf-grid--2" style="gap:12px">
+          <div class="zf-field">
+            <label class="zf-form-label" for="reg-email">邮箱</label>
+            <input class="zf-form-control" id="reg-email" name="email" placeholder="选填">
+            <div class="zf-form-error"></div>
+          </div>
+          <div class="zf-field">
+            <label class="zf-form-label" for="reg-phone">手机号</label>
+            <input class="zf-form-control" id="reg-phone" name="phone" placeholder="选填">
+            <div class="zf-form-error"></div>
+          </div>
+        </div>
+        <div class="zf-grid zf-grid--2" style="gap:12px">
+          <div class="zf-field">
+            <label class="zf-form-label" for="reg-city">城市</label>
+            <input class="zf-form-control" id="reg-city" name="city" placeholder="选填">
+          </div>
+          <div class="zf-field">
+            <label class="zf-form-label" for="reg-jobTitle">岗位</label>
+            <input class="zf-form-control" id="reg-jobTitle" name="jobTitle" placeholder="选填">
+          </div>
+        </div>
+        <button class="zf-btn zf-btn--primary zf-btn--block" type="submit" id="btn-register">
+          <i class="bi bi-person-plus"></i>注册并登录
+        </button>
+      </form>
+
+      <div class="zf-auth__switch" style="margin-top:24px">
+        <a href="pages/home.html">先逛逛首页 <i class="bi bi-chevron-right"></i></a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="js/common.js"></script>
+<script>
+/**
+ * @file 登录 / 注册页交互
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 切换登录 / 注册面板 */
+  $('.zf-auth__tab').on('click', function () {
+    var panel = $(this).data('panel');
+    $('.zf-auth__tab').removeClass('zf-auth__tab--active');
+    $(this).addClass('zf-auth__tab--active');
+    $('.zf-auth__panel').removeClass('zf-auth__panel--active');
+    $('#panel-' + panel).addClass('zf-auth__panel--active');
+    ZF.clearValidate($('form'));
+  });
+
+  /** 登录提交 */
+  $('#panel-login').on('submit', function (e) {
+    e.preventDefault();
+    var $form = $(this);
+    var ok = ZF.validate($form, {
+      username: { required: true, message: '请输入用户名' },
+      password: { required: true, message: '请输入密码' }
+    });
+    if (!ok) {
+      return;
+    }
+    var $btn = $('#btn-login');
+    ZF.btnLoading($btn, true, '登录中…');
+    ZF.post('/auth/login', {
+      username: $.trim($form.find('[name=username]').val()),
+      password: $form.find('[name=password]').val()
+    }).then(function () {
+      ZF.toast('登录成功', 'success');
+      setTimeout(function () { ZF.redirectLogin(); }, 500);
+    }).catch(function () {
+      ZF.btnLoading($btn, false);
+    });
+  });
+
+  /** 注册提交，成功后自动登录 */
+  $('#panel-register').on('submit', function (e) {
+    e.preventDefault();
+    var $form = $(this);
+    var ok = ZF.validate($form, {
+      username: {
+        required: true, min: 4, max: 20,
+        pattern: /^[A-Za-z][A-Za-z0-9_]{3,19}$/,
+        message: '需 4~20 位字母开头的字母、数字或下划线'
+      },
+      password: {
+        required: true, min: 6, max: 32,
+        pattern: /^(?=.*[A-Za-z])(?=.*\d).{6,32}$/,
+        message: '需 6~32 位且同时含字母和数字'
+      },
+      email: { pattern: /^[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}$/, message: '邮箱格式不正确' },
+      phone: { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }
+    });
+    if (!ok) {
+      return;
+    }
+    var payload = {
+      username: $.trim($form.find('[name=username]').val()),
+      password: $form.find('[name=password]').val(),
+      nickname: $.trim($form.find('[name=nickname]').val()),
+      email: $.trim($form.find('[name=email]').val()),
+      phone: $.trim($form.find('[name=phone]').val()),
+      city: $.trim($form.find('[name=city]').val()),
+      jobTitle: $.trim($form.find('[name=jobTitle]').val())
+    };
+    var $btn = $('#btn-register');
+    ZF.btnLoading($btn, true, '注册中…');
+    ZF.post('/auth/register', payload).then(function () {
+      return ZF.post('/auth/login', { username: payload.username, password: payload.password });
+    }).then(function () {
+      ZF.toast('注册成功，正在进入系统', 'success');
+      setTimeout(function () { ZF.redirectLogin(); }, 600);
+    }).catch(function () {
+      ZF.btnLoading($btn, false);
+    });
+  });
+
+  // 已登录则直接进首页
+  ZF.currentUser().then(function (user) {
+    if (user) {
+      window.location.href = ZF.CTX + '/pages/home.html';
+    }
+  });
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

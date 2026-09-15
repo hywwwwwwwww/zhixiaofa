@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首页 - 职小法</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 欢迎区 -->
+      <div class="zf-card" style="margin-bottom:14px">
+        <div class="zf-card__head" style="margin-bottom:0">
+          <div>
+            <h3 class="zf-card__title" id="welcome-title">你好</h3>
+            <p class="zf-card__desc">今天也要保护好自己的合法权益</p>
+          </div>
+          <a class="zf-btn zf-btn--primary" href="qa.html">
+            <i class="bi bi-send"></i>开始法律咨询
+          </a>
+        </div>
+      </div>
+
+      <!-- 使用概览 -->
+      <div class="zf-grid zf-grid--4" id="stat-grid" style="margin-bottom:18px">
+        <div class="zf-card zf-stat">
+          <div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
+          <div><p class="zf-stat__label">我的问答</p><p class="zf-stat__value" data-stat="qa">-</p></div>
+        </div>
+        <div class="zf-card zf-stat">
+          <div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
+          <div><p class="zf-stat__label">审查合同</p><p class="zf-stat__value" data-stat="contract">-</p></div>
+        </div>
+        <div class="zf-card zf-stat">
+          <div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
+          <div><p class="zf-stat__label">生成文书</p><p class="zf-stat__value" data-stat="doc">-</p></div>
+        </div>
+        <div class="zf-card zf-stat">
+          <div class="zf-stat__icon"><i class="bi bi-star"></i></div>
+          <div><p class="zf-stat__label">我的收藏</p><p class="zf-stat__value" data-stat="favorite">-</p></div>
+        </div>
+      </div>
+
+      <!-- 功能模块 -->
+      <div style="margin-bottom:18px">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">功能模块</h3>
+            <p class="zf-card__desc">五大智能能力，覆盖职场法律全场景</p>
+          </div>
+        </div>
+        <div class="zf-grid zf-grid--cards">
+          <a class="zf-feature" href="qa.html">
+            <i class="bi bi-chat-square-text zf-feature__icon"></i>
+            <h4 class="zf-feature__title">智能法律问答</h4>
+            <p class="zf-feature__desc">用自然语言描述问题，系统检索法规库给出结构化建议，并附上引用法条原文</p>
+            <span class="zf-feature__more">进入 <i class="bi bi-chevron-right"></i></span>
+          </a>
+          <a class="zf-feature" href="court.html">
+            <i class="bi bi-bank zf-feature__icon"></i>
+            <h4 class="zf-feature__title">AI 小法庭</h4>
+            <p class="zf-feature__desc">提交案情经过，依据类案统计推演胜诉概率与赔偿金额区间</p>
+            <span class="zf-feature__more">进入 <i class="bi bi-chevron-right"></i></span>
+          </a>
+          <a class="zf-feature" href="contract-review.html">
+            <i class="bi bi-file-earmark-check zf-feature__icon"></i>
+            <h4 class="zf-feature__title">合同智能审查</h4>
+            <p class="zf-feature__desc">粘贴劳动合同全文，逐条扫描风险条款并生成风险体检报告</p>
+            <span class="zf-feature__more">进入 <i class="bi bi-chevron-right"></i></span>
+          </a>
+          <a class="zf-feature" href="doc-drafting.html">
+            <i class="bi bi-pencil-square zf-feature__icon"></i>
+            <h4 class="zf-feature__title">法律文书起草</h4>
+            <p class="zf-feature__desc">选择文书模板，填写关键信息，一键生成格式规范的文书</p>
+            <span class="zf-feature__more">进入 <i class="bi bi-chevron-right"></i></span>
+          </a>
+          <a class="zf-feature" href="knowledge.html">
+            <i class="bi bi-journal-text zf-feature__icon"></i>
+            <h4 class="zf-feature__title">普法知识广场</h4>
+            <p class="zf-feature__desc">体系化了解劳动法常识，支持全文检索与知识自测</p>
+            <span class="zf-feature__more">进入 <i class="bi bi-chevron-right"></i></span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 最近问答 + 新人必看 -->
+      <div class="zf-grid zf-grid--2">
+        <div class="zf-card">
+          <div class="zf-card__head">
+            <div>
+              <h3 class="zf-card__title">最近问答</h3>
+              <p class="zf-card__desc">你最近的咨询记录</p>
+            </div>
+            <a class="zf-btn zf-btn--ghost zf-btn--sm" href="qa.html">全部记录</a>
+          </div>
+          <div id="qa-list"><div class="zf-loading">加载中…</div></div>
+        </div>
+
+        <div class="zf-card">
+          <div class="zf-card__head">
+            <div>
+              <h3 class="zf-card__title">新人必看</h3>
+              <p class="zf-card__desc">职场高频法律问题速览</p>
+            </div>
+            <a class="zf-btn zf-btn--ghost zf-btn--sm" href="knowledge.html">更多文章</a>
+          </div>
+          <div id="tip-list"><div class="zf-loading">加载中…</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../js/common.js"></script>
+<script>
+/**
+ * @file 首页：拉取个人使用概览、最近问答与推荐文章
+ */
+(function ($, ZF) {
+  'use strict';
+
+  ZF.initPage({ active: 'home', title: '首页', sub: '今天也要保护好自己的合法权益' })
+    .then(function (user) {
+      $('#welcome-title').text('你好，' + (user.nickname || user.username));
+      loadStats();
+      loadRecentQa();
+      loadTips();
+    });
+
+  /** 个人使用概览：用各模块分页的 total 聚合，避免额外接口 */
+  function loadStats() {
+    var tasks = [
+      ZF.get('/qa/mine', { pageNum: 1, pageSize: 1 }, { silent: true }),
+      ZF.get('/contracts/mine', { pageNum: 1, pageSize: 1 }, { silent: true }),
+      ZF.get('/doc-records/mine', { pageNum: 1, pageSize: 1 }, { silent: true })
+    ];
+    Promise.all(tasks).then(function (res) {
+      $('[data-stat=qa]').text(res[0].total);
+      $('[data-stat=contract]').text(res[1].total);
+      $('[data-stat=doc]').text(res[2].total);
+      var favTotal = 0;
+      ['QA', 'ARTICLE', 'LAW', 'DOC'].forEach(function (t) {
+        ZF.get('/favorites', { targetType: t, pageNum: 1, pageSize: 1 }, { silent: true })
+          .then(function (r) {
+            favTotal += r.total;
+            $('[data-stat=favorite]').text(favTotal);
+          }).catch(function () { /* 忽略单项失败 */ });
+      });
+    }).catch(function () {
+      $('.zf-stat__value').text('0');
+    });
+  }
+
+  /** 最近问答 */
+  function loadRecentQa() {
+    ZF.get('/qa/mine', { pageNum: 1, pageSize: 4 }).then(function (page) {
+      if (!page.list || !page.list.length) {
+        ZF.renderEmpty('#qa-list', '还没有咨询记录，去问一个问题试试');
+        return;
+      }
+      var html = ['<div class="zf-list">'];
+      page.list.forEach(function (item) {
+        html.push('<div class="zf-list__item">');
+        html.push('<div class="zf-list__main">');
+        html.push('<p class="zf-list__title">' + ZF.escape(ZF.truncate(item.question, 30)) + '</p>');
+        html.push('<p class="zf-list__text">' + ZF.escape(ZF.truncate(item.answer, 52)) + '</p>');
+        html.push('</div><div class="zf-list__meta">' + ZF.escape(item.createdAtText || '') +
+          '<br><span class="zf-badge zf-badge--primary">引用' + ((item.references || []).length) + '条法规</span></div>');
+        html.push('</div>');
+      });
+      html.push('</div>');
+      $('#qa-list').html(html.join(''));
+    }).catch(function () {
+      ZF.renderEmpty('#qa-list', '加载失败');
+    });
+  }
+
+  /** 新人必看：取阅读量最高的几篇普法文章 */
+  function loadTips() {
+    ZF.get('/knowledge', { pageNum: 1, pageSize: 5 }).then(function (page) {
+      if (!page.list || !page.list.length) {
+        ZF.renderEmpty('#tip-list', '暂无文章');
+        return;
+      }
+      var html = ['<div class="zf-list">'];
+      page.list.forEach(function (a) {
+        html.push('<div class="zf-list__item">');
+        html.push('<div class="zf-list__main">');
+        html.push('<p class="zf-list__title">' + ZF.escape(a.title) + '</p>');
+        html.push('<p class="zf-list__text">' + ZF.escape(a.summary || '') + '</p>');
+        html.push('</div><div class="zf-list__meta"><i class="bi bi-eye"></i> ' + (a.viewCount || 0) + '</div>');
+        html.push('</div>');
+      });
+      html.push('</div>');
+      $('#tip-list').html(html.join(''));
+    }).catch(function () {
+      ZF.renderEmpty('#tip-list', '加载失败');
+    });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

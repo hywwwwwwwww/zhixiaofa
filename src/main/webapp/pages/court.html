@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 小法庭 - 职小法</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <div class="zf-grid zf-grid--2">
+        <!-- 左侧：提交案情 -->
+        <div class="zf-card">
+          <div class="zf-card__head">
+            <div>
+              <h3 class="zf-card__title">提交案情，开始推演</h3>
+              <p class="zf-card__desc">写清时间、金额、经过，系统依据类案统计给出胜诉概率与赔偿区间</p>
+            </div>
+          </div>
+          <form id="court-form" novalidate>
+            <div class="zf-field">
+              <label class="zf-form-label" for="court-title">案件标题（选填）</label>
+              <input class="zf-form-control" type="text" name="title" id="court-title"
+                placeholder="如：被无故辞退索赔案" maxlength="50">
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="court-type">案件类型 <span style="color:var(--zf-danger)">*</span></label>
+              <select class="zf-form-control" name="caseType" id="court-type">
+                <option value="">请选择案件类型</option>
+                <option value="拖欠工资">拖欠工资</option>
+                <option value="违法辞退">违法辞退</option>
+                <option value="加班费">加班费</option>
+                <option value="社保">社保</option>
+                <option value="其他">其他</option>
+              </select>
+              <div class="zf-form-error"></div>
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="court-desc">案情描述 <span style="color:var(--zf-danger)">*</span></label>
+              <textarea class="zf-form-control" name="description" id="court-desc" rows="7"
+                placeholder="请描述：什么时候发生、涉及金额多少、公司怎么说的、你手头有什么证据……（至少 10 字）"></textarea>
+              <div class="zf-form-error"></div>
+              <div class="zf-form-hint">描述越具体，推演越准确</div>
+            </div>
+            <div style="text-align:right">
+              <button type="submit" class="zf-btn zf-btn--primary" id="court-submit">
+                <i class="bi bi-bank"></i>开始推演
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 右侧：推演结果 -->
+        <div class="zf-card" id="result-card" style="display:none">
+          <div class="zf-card__head">
+            <div><h3 class="zf-card__title">推演结果</h3>
+              <p class="zf-card__desc">基于类案大数据的模拟分析，仅供参考</p></div>
+            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close">
+              <i class="bi bi-x-lg"></i>收起
+            </button>
+          </div>
+          <div id="result-body"></div>
+        </div>
+      </div>
+
+      <!-- 历史推演 -->
+      <div class="zf-card" style="margin-top:16px">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">我的推演记录</h3>
+            <p class="zf-card__desc">点击任意一条可查看完整推演结论</p>
+          </div>
+          <button class="zf-btn zf-btn--ghost zf-btn--sm" id="history-refresh">
+            <i class="bi bi-arrow-clockwise"></i>刷新
+          </button>
+        </div>
+        <div id="history-list"></div>
+        <div id="history-pager"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../js/common.js"></script>
+<script>
+/**
+ * @file court.html —— AI 小法庭
+ * @description 提交案情做胜诉概率与赔偿区间推演；下方分页展示历史推演，支持查看与删除。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 当前历史分页页码 */
+  var currentPage = 1;
+
+  ZF.initPage({ active: 'court', title: 'AI 小法庭', sub: '用类案大数据帮你预判胜算' })
+    .then(function () {
+      bindForm();
+      $('#result-close').on('click', function () { $('#result-card').hide(); });
+      bindHistoryEvents();
+      loadHistory(1);
+    });
+
+  /** 绑定案情提交表单 */
+  function bindForm() {
+    $('#court-form').on('submit', function (e) {
+      e.preventDefault();
+      var $form = $(this);
+      ZF.clearValidate($form);
+      if (!ZF.validate($form, {
+        caseType: { required: true, message: '请选择案件类型' },
+        description: { required: true, min: 10, message: '案情描述至少 10 字' }
+      })) {
+        return;
+      }
+      var $btn = $('#court-submit');
+      ZF.btnLoading($btn, true, '推演中…');
+      var payload = {
+        title: $.trim($form.find('[name=title]').val()),
+        caseType: $form.find('[name=caseType]').val(),
+        description: $.trim($form.find('[name=description]').val())
+      };
+      ZF.post('/court-cases', payload).then(function (c) {
+        showResult(c);
+        $form[0].reset();
+        loadHistory(1);
+        ZF.toast('推演完成', 'success');
+      }).catch(function () { /* 统一提示 */ }).then(function () {
+        ZF.btnLoading($btn, false);
+      });
+    });
+  }
+
+  /**
+   * 渲染推演结果卡。
+   * @param {Object} c 推演结果（含 winProbability / compensationMin / compensationMax / similarCount / resultSummary）
+   * @returns {string} HTML 片段
+   */
+  function renderResultHtml(c) {
+    var prob = Math.max(0, Math.min(100, Number(c.winProbability) || 0));
+    var hasComp = (c.compensationMin || c.compensationMax);
+    var compText = hasComp
+      ? (ZF.money(c.compensationMin) + ' ~ ' + ZF.money(c.compensationMax) + ' 元')
+      : '暂无明确赔偿区间';
+    var html = [];
+    html.push('<div style="margin-bottom:14px">');
+    html.push('<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">');
+    html.push('<span class="zf-subtitle" style="margin:0">胜诉概率</span>');
+    html.push('<strong style="color:var(--zf-primary);font-size:18px">' + prob + '%</strong>');
+    html.push('</div>');
+    // 用 Bootstrap 进度条可视化胜诉概率
+    html.push('<div class="progress" style="height:10px">');
+    html.push('<div class="progress-bar" role="progressbar" style="width:' + prob + '%" ' +
+      'aria-valuenow="' + prob + '" aria-valuemin="0" aria-valuemax="100"></div></div>');
+    html.push('</div>');
+
+    html.push('<div class="zf-grid zf-grid--2" style="margin-bottom:12px">');
+    html.push('<div><p class="zf-form-label" style="margin-bottom:2px">预估赔偿区间</p>' +
+      '<p style="margin:0;font-weight:600">' + compText + '</p></div>');
+    html.push('<div><p class="zf-form-label" style="margin-bottom:2px">参考类案数量</p>' +
+      '<p style="margin:0;font-weight:600">' + (c.similarCount || 0) + ' 例</p></div>');
+    html.push('</div>');
+
+    if (c.resultSummary) {
+      html.push('<p class="zf-subtitle">结论</p>');
+      html.push('<div class="zf-doc" style="max-height:none;white-space:normal">' + ZF.nl2br(c.resultSummary) + '</div>');
+    }
+    return html.join('');
+  }
+
+  /** 展示推演结果并滚动可见 */
+  function showResult(c) {
+    $('#result-body').html(renderResultHtml(c));
+    $('#result-card').show();
+    $('#result-card')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** 历史相关事件委托 */
+  function bindHistoryEvents() {
+    $('#history-list').on('click', '.zf-list__title', function () {
+      var $item = $(this).closest('.zf-list__item');
+      var $detail = $item.find('.zf-court-detail');
+      if ($detail.length) { $detail.toggle(); return; }
+      // 首次展开时拉取详情
+      var id = $item.data('id');
+      ZF.renderLoading($item.find('.zf-list__main'), '加载详情…');
+      ZF.get('/court-cases/' + id).then(function (c) {
+        $item.find('.zf-list__main').append(
+          '<div class="zf-court-detail zf-qa-detail">' + renderResultHtml(c) + '</div>');
+      }).catch(function () {
+        $item.find('.zf-list__main').append('<div class="zf-court-detail zf-qa-detail">加载失败</div>');
+      });
+    });
+    $('#history-list').on('click', '.js-del', function () {
+      var id = $(this).data('id');
+      ZF.confirm('确定删除这条推演记录吗？').then(function (ok) {
+        if (!ok) { return; }
+        ZF.del('/court-cases/' + id).then(function () {
+          ZF.toast('已删除', 'success');
+          loadHistory(currentPage);
+        }).catch(function () { /* 忽略 */ });
+      });
+    });
+    $('#history-refresh').on('click', function () { loadHistory(1); });
+  }
+
+  /**
+   * 加载历史推演分页列表。
+   * @param {number} pageNum 页码
+   */
+  function loadHistory(pageNum) {
+    currentPage = pageNum || 1;
+    var $box = $('#history-list');
+    ZF.renderLoading($box, '加载推演记录…');
+    ZF.get('/court-cases/mine', { pageNum: currentPage, pageSize: 8 }).then(function (page) {
+      if (!page.list || !page.list.length) {
+        ZF.renderEmpty($box, '还没有推演记录，去试试胜算如何');
+        $('#history-pager').empty();
+        return;
+      }
+      var html = ['<div class="zf-list">'];
+      page.list.forEach(function (item) {
+        var prob = Number(item.winProbability) || 0;
+        html.push('<div class="zf-list__item" data-id="' + item.id + '">');
+        html.push('<div class="zf-list__main">');
+        html.push('<p class="zf-list__title" style="cursor:pointer">' +
+          ZF.escape(item.title || (item.caseType + '推演')) +
+          ' <i class="bi bi-chevron-down" style="font-size:11px;color:var(--zf-ink-3)"></i></p>');
+        html.push('<p class="zf-list__text">类型：' + ZF.escape(item.caseType || '其他') +
+          ' ｜ 胜诉概率 ' + prob + '%</p>');
+        html.push('</div>');
+        html.push('<div class="zf-list__meta" style="text-align:right">');
+        html.push('<span class="zf-badge zf-badge--primary">胜诉 ' + prob + '%</span><br>');
+        html.push(ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) + '<br>');
+        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id + '">' +
+          '<i class="bi bi-trash"></i>删除</button>');
+        html.push('</div></div>');
+      });
+      html.push('</div>');
+      $box.html(html.join(''));
+      ZF.renderPager('#history-pager', page, function (p) { loadHistory(p); });
+    }).catch(function () {
+      ZF.renderEmpty($box, '加载失败，请刷新重试');
+    });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

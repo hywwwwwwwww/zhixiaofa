@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>法律文书起草 - 职小法</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 模板库 -->
+      <div class="zf-card" style="margin-bottom:16px">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">文书模板库</h3>
+            <p class="zf-card__desc">选一个模板，填写关键信息，一键生成规范文书</p>
+          </div>
+        </div>
+        <div id="tpl-filter" class="zf-form-hint" style="margin-bottom:12px"></div>
+        <div id="template-grid" class="zf-grid zf-grid--cards"></div>
+      </div>
+
+      <!-- 填写区 -->
+      <div class="zf-card" id="fill-area" style="margin-bottom:16px; display:none">
+        <div class="zf-card__head">
+          <div><h3 class="zf-card__title" id="fill-title">填写信息</h3>
+            <p class="zf-card__desc">按模板中的占位符逐项填写，带 * 为必填</p></div>
+          <button class="zf-btn zf-btn--ghost zf-btn--sm" id="fill-back">
+            <i class="bi bi-arrow-left"></i>返回模板
+          </button>
+        </div>
+        <form id="doc-fill-form" novalidate></form>
+        <div style="text-align:right; margin-top:6px">
+          <button class="zf-btn zf-btn--primary" id="doc-generate">
+            <i class="bi bi-stars"></i>生成文书
+          </button>
+        </div>
+      </div>
+
+      <!-- 生成结果 -->
+      <div class="zf-card" id="doc-result" style="margin-bottom:16px; display:none">
+        <div class="zf-card__head">
+          <div><h3 class="zf-card__title">生成结果</h3>
+            <p class="zf-card__desc" id="result-name"></p></div>
+          <div style="display:flex;gap:8px">
+            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="doc-copy">
+              <i class="bi bi-clipboard"></i>复制全文
+            </button>
+            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="doc-save">
+              <i class="bi bi-save"></i>保存到我的文书
+            </button>
+          </div>
+        </div>
+        <div id="result-body"></div>
+      </div>
+
+      <!-- 我的文书 -->
+      <div class="zf-card">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">我的文书</h3>
+            <p class="zf-card__desc">查看、编辑或删除你生成的文书</p>
+          </div>
+          <button class="zf-btn zf-btn--ghost zf-btn--sm" id="doc-refresh">
+            <i class="bi bi-arrow-clockwise"></i>刷新
+          </button>
+        </div>
+        <div id="doc-list"></div>
+        <div id="doc-pager"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 查看/编辑文书弹窗 -->
+<div class="modal fade" id="doc-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="doc-modal-title">文书详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body" id="doc-modal-body"></div>
+      <div class="modal-footer" id="doc-modal-foot"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../js/common.js"></script>
+<script>
+/**
+ * @file doc-drafting.html —— 法律文书起草
+ * @description 模板卡片网格 → 按占位符动态生成填写表单 → 生成文书并支持复制/保存；下方管理我的文书（查看/编辑/删除）。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 全部模板（含分类，用于前端筛选） */
+  var allTemplates = [];
+  /** 当前选中的模板 */
+  var currentTpl = null;
+  /** 当前生成文书的 id（生成即保存，便于「保存到我的文书」去重） */
+  var currentDocId = null;
+  /** 我的文书当前页码 */
+  var docPage = 1;
+
+  ZF.initPage({ active: 'doc', title: '法律文书起草', sub: '选模板、填信息，规范文书一键生成' })
+    .then(function () {
+      bindFillArea();
+      bindResult();
+      bindDocList();
+      loadTemplates();
+      loadDocList(1);
+    });
+
+  /** 加载模板列表并按分类渲染筛选按钮 */
+  function loadTemplates() {
+    var $grid = $('#template-grid');
+    ZF.renderLoading($grid, '加载模板…');
+    ZF.get('/doc-templates').then(function (list) {
+      allTemplates = list || [];
+      if (!allTemplates.length) {
+        ZF.renderEmpty($grid, '暂无可用的文书模板');
+        return;
+      }
+      renderFilter();
+      renderGrid(allTemplates);
+    }).catch(function () {
+      ZF.renderEmpty($grid, '模板加载失败');
+    });
+  }
+
+  /** 渲染分类筛选按钮（全部 + 各分类） */
+  function renderFilter() {
+    var cats = [];
+    allTemplates.forEach(function (t) {
+      if (t.category && cats.indexOf(t.category) < 0) { cats.push(t.category); }
+    });
+    var html = ['<button class="zf-btn zf-btn--sm zf-btn--primary js-cat" data-cat="">全部</button>'];
+    cats.forEach(function (c) {
+      html.push('<button class="zf-btn zf-btn--sm zf-btn--ghost js-cat" data-cat="' + ZF.escape(c) + '">' + ZF.escape(c) + '</button>');
+    });
+    $('#tpl-filter').html(html.join(' '));
+    $('#tpl-filter').off('click.zfcat').on('click.zfcat', '.js-cat', function () {
+      var cat = $(this).data('cat');
+      $('#tpl-filter .js-cat').removeClass('zf-btn--primary').addClass('zf-btn--ghost');
+      $(this).removeClass('zf-btn--ghost').addClass('zf-btn--primary');
+      renderGrid(cat ? allTemplates.filter(function (t) { return t.category === cat; }) : allTemplates);
+    });
+  }
+
+  /**
+   * 渲染模板卡片网格。
+   * @param {Array} list 模板数组
+   */
+  function renderGrid(list) {
+    var html = list.map(function (t) {
+      return '<div class="zf-tpl">' +
+        '<span class="zf-tpl__cat">' + ZF.escape(t.category || '通用') + '</span>' +
+        '<h4 class="zf-tpl__name">' + ZF.escape(t.name) + '</h4>' +
+        '<p class="zf-tpl__desc">' + ZF.escape(t.description || '') + '</p>' +
+        '<button class="zf-btn zf-btn--primary zf-btn--sm js-use" data-id="' + t.id + '">' +
+        '<i class="bi bi-pencil-square"></i>使用此模板</button>' +
+        '</div>';
+    }).join('');
+    $('#template-grid').html(html);
+  }
+
+  /** 绑定模板使用、返回等交互 */
+  function bindFillArea() {
+    // 点击「使用此模板」→ 拉取占位符并展示填写表单
+    $('#template-grid').on('click', '.js-use', function () {
+      var id = $(this).data('id');
+      currentTpl = allTemplates.filter(function (t) { return t.id === id; })[0] || null;
+      ZF.get('/doc-templates/' + id).then(function (tpl) {
+        currentTpl = tpl;
+        renderFillForm(tpl);
+        $('#fill-area').show();
+        $('#doc-result').hide();
+        $('#fill-area')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }).catch(function () { /* 统一提示 */ });
+    });
+    $('#fill-back').on('click', function () {
+      $('#fill-area').hide();
+    });
+  }
+
+  /**
+   * 根据占位符数组动态生成填写表单。
+   * @param {Object} tpl 模板详情（含 name / placeholders[]）
+   */
+  function renderFillForm(tpl) {
+    $('#fill-title').text('填写：' + (tpl.name || '文书'));
+    var phs = tpl.placeholders || [];
+    if (!phs.length) {
+      $('#doc-fill-form').html('<div class="zf-empty">该模板无需填写信息，可直接生成</div>');
+      return;
+    }
+    var html = phs.map(function (name) {
+      return '<div class="zf-field">' +
+        '<label class="zf-form-label" for="ph-' + ZF.escape(name) + '">' + ZF.escape(name) + ' <span style="color:var(--zf-danger)">*</span></label>' +
+        '<input class="zf-form-control" type="text" data-ph="' + ZF.escape(name) + '" id="ph-' + ZF.escape(name) + '">' +
+        '<div class="zf-form-error">请填写' + ZF.escape(name) + '</div>' +
+        '</div>';
+    }).join('');
+    $('#doc-fill-form').html(html);
+  }
+
+  /** 绑定生成、复制、保存按钮 */
+  function bindResult() {
+    // 生成文书：收集占位符 → 调接口（生成即保存）
+    $('#doc-generate').on('click', function () {
+      if (!currentTpl) { return; }
+      var $form = $('#doc-fill-form');
+      // 校验所有占位符均已填写
+      var ok = true, firstEmpty = null;
+      $form.find('.zf-field').removeClass('zf-field--invalid');
+      $form.find('[data-ph]').each(function () {
+        if (!$.trim($(this).val())) {
+          $(this).closest('.zf-field').addClass('zf-field--invalid');
+          if (!firstEmpty) { firstEmpty = this; }
+          ok = false;
+        }
+      });
+      if (!ok) {
+        ZF.toast('请把带 * 的信息填写完整', 'warn');
+        if (firstEmpty) { firstEmpty.focus(); }
+        return;
+      }
+      var params = {};
+      $form.find('[data-ph]').each(function () {
+        params[$(this).data('ph')] = $.trim($(this).val());
+      });
+      var $btn = $('#doc-generate');
+      ZF.btnLoading($btn, true, '生成中…');
+      ZF.post('/doc-records', { templateId: currentTpl.id, params: params }).then(function (doc) {
+        currentDocId = doc.id;
+        showDoc(doc);
+        loadDocList(1);
+        ZF.toast('文书已生成并保存', 'success');
+      }).catch(function () { /* 统一提示 */ }).then(function () {
+        ZF.btnLoading($btn, false);
+      });
+    });
+
+    // 复制全文
+    $('#doc-copy').on('click', function () {
+      var text = $('#result-body').text();
+      copyText(text);
+    });
+
+    // 保存到我的文书（生成时已保存，再次点击仅提示）
+    $('#doc-save').on('click', function () {
+      if (currentDocId) {
+        ZF.toast('该文书已保存在「我的文书」中', 'info');
+        return;
+      }
+      ZF.toast('请先点击「生成文书」', 'warn');
+    });
+  }
+
+  /**
+   * 展示生成的文书正文（保留换行）。
+   * @param {Object} doc 文书对象（含 title / content / templateName）
+   */
+  function showDoc(doc) {
+    $('#result-name').text((doc.templateName || '') + ' ｜ ' + ZF.escape(doc.title || ''));
+    $('#result-body').html('<div class="zf-doc">' + ZF.escape(doc.content) + '</div>');
+    $('#doc-result').show();
+    $('#doc-result')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** 复制文本到剪贴板（带降级方案） */
+  function copyText(text) {
+    function fallback(str) {
+      var ta = document.createElement('textarea');
+      ta.value = str; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); ZF.toast('已复制全文', 'success'); }
+      catch (e) { ZF.toast('复制失败，请手动选择', 'error'); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        ZF.toast('已复制全文', 'success');
+      }).catch(function () { fallback(text); });
+    } else {
+      fallback(text);
+    }
+  }
+
+  /** 我的文书相关交互 */
+  function bindDocList() {
+    $('#doc-list').on('click', '.js-view', function () {
+      openDocModal($(this).data('id'), false);
+    });
+    $('#doc-list').on('click', '.js-edit', function () {
+      openDocModal($(this).data('id'), true);
+    });
+    $('#doc-list').on('click', '.js-del', function () {
+      var id = $(this).data('id');
+      ZF.confirm('确定删除这份文书吗？').then(function (ok) {
+        if (!ok) { return; }
+        ZF.del('/doc-records/' + id).then(function () {
+          ZF.toast('已删除', 'success');
+          loadDocList(docPage);
+        }).catch(function () { /* 忽略 */ });
+      });
+    });
+    $('#doc-refresh').on('click', function () { loadDocList(1); });
+  }
+
+  /**
+   * 打开文书弹窗（查看或编辑模式）。
+   * @param {number} id 文书 id
+   * @param {boolean} editable 是否可编辑
+   */
+  function openDocModal(id, editable) {
+    ZF.get('/doc-records/' + id).then(function (doc) {
+      if (editable) {
+        $('#doc-modal-title').text('编辑文书');
+        $('#doc-modal-body').html(
+          '<div class="zf-field"><label class="zf-form-label">标题</label>' +
+          '<input class="zf-form-control" id="m-title" value="' + ZF.escape(doc.title || '') + '"></div>' +
+          '<div class="zf-field"><label class="zf-form-label">正文</label>' +
+          '<textarea class="zf-form-control" id="m-content" rows="12">' + ZF.escape(doc.content || '') + '</textarea></div>'
+        );
+        $('#doc-modal-foot').html(
+          '<button class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">取消</button>' +
+          '<button class="zf-btn zf-btn--primary" id="m-save">保存修改</button>'
+        );
+        $('#m-save').off('click').on('click', function () {
+          var $btn = $(this);
+          var payload = { title: $.trim($('#m-title').val()), content: $('#m-content').val() };
+          if (!payload.title) { ZF.toast('标题不能为空', 'warn'); return; }
+          ZF.btnLoading($btn, true, '保存中…');
+          ZF.put('/doc-records/' + id, payload).then(function () {
+            bootstrap.Modal.getInstance($('#doc-modal')[0]).hide();
+            ZF.toast('已保存', 'success');
+            loadDocList(docPage);
+          }).catch(function () { /* 统一提示 */ }).then(function () {
+            ZF.btnLoading($btn, false);
+          });
+        });
+      } else {
+        $('#doc-modal-title').text(doc.title || '文书详情');
+        $('#doc-modal-body').html('<div class="zf-doc">' + ZF.escape(doc.content || '') + '</div>');
+        $('#doc-modal-foot').html('<button class="zf-btn zf-btn--primary" data-bs-dismiss="modal">关闭</button>');
+      }
+      var modal = new bootstrap.Modal($('#doc-modal')[0]);
+      modal.show();
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 加载我的文书分页列表。
+   * @param {number} pageNum 页码
+   */
+  function loadDocList(pageNum) {
+    docPage = pageNum || 1;
+    var $box = $('#doc-list');
+    ZF.renderLoading($box, '加载我的文书…');
+    ZF.get('/doc-records/mine', { pageNum: docPage, pageSize: 8 }).then(function (page) {
+      if (!page.list || !page.list.length) {
+        ZF.renderEmpty($box, '还没有生成文书，先选个模板试试');
+        $('#doc-pager').empty();
+        return;
+      }
+      var html = ['<div class="zf-list">'];
+      page.list.forEach(function (item) {
+        html.push('<div class="zf-list__item" data-id="' + item.id + '">');
+        html.push('<div class="zf-list__main">');
+        html.push('<p class="zf-list__title">' + ZF.escape(item.title || '未命名文书') + '</p>');
+        html.push('<p class="zf-list__text">' + ZF.escape(item.templateName || '') + '</p>');
+        html.push('</div>');
+        html.push('<div class="zf-list__meta" style="text-align:right">');
+        html.push(ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) + '<br>');
+        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-view" data-id="' + item.id + '">查看</button> ');
+        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-edit" data-id="' + item.id + '">编辑</button> ');
+        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id + '"><i class="bi bi-trash"></i></button>');
+        html.push('</div></div>');
+      });
+      html.push('</div>');
+      $box.html(html.join(''));
+      ZF.renderPager('#doc-pager', page, function (p) { loadDocList(p); });
+    }).catch(function () {
+      ZF.renderEmpty($box, '加载失败，请刷新重试');
+    });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

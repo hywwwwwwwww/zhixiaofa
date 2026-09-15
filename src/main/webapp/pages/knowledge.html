@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>普法知识广场 - 职小法</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 文章区 -->
+      <div class="zf-card" style="margin-bottom:16px">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">普法文章</h3>
+            <p class="zf-card__desc">体系化了解劳动法常识，支持分类筛选与全文检索</p>
+          </div>
+          <div style="display:flex;gap:8px;width:320px;max-width:46%">
+            <input class="zf-form-control" type="text" id="kw" placeholder="搜索关键词…">
+            <button class="zf-btn zf-btn--primary" id="kw-search"><i class="bi bi-search"></i></button>
+          </div>
+        </div>
+        <div id="cat-filter" class="zf-form-hint" style="margin-bottom:12px"></div>
+        <div id="article-list"></div>
+        <div id="article-pager"></div>
+      </div>
+
+      <!-- 知识自测 -->
+      <div class="zf-card">
+        <div class="zf-card__head">
+          <div>
+            <h3 class="zf-card__title">知识自测</h3>
+            <p class="zf-card__desc">随机抽 10 题，检验你的劳动法掌握程度</p>
+          </div>
+        </div>
+        <div id="quiz-card">
+          <button class="zf-btn zf-btn--primary" id="quiz-start">
+            <i class="bi bi-patch-question"></i>开始自测
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 文章详情弹窗 -->
+<div class="modal fade" id="article-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="article-modal-title">文章详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body" id="article-modal-body"></div>
+      <div class="modal-footer">
+        <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-like">
+          <i class="bi bi-hand-thumbs-up"></i>点赞 <span id="article-like-count">0</span>
+        </button>
+        <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-fav">
+          <i class="bi bi-star"></i><span id="article-fav-text">收藏</span>
+        </button>
+        <button class="zf-btn zf-btn--primary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../js/common.js"></script>
+<script>
+/**
+ * @file knowledge.html —— 普法知识广场
+ * @description 文章分类筛选 + 关键词检索 + 详情弹窗（点赞/收藏）；独立的「知识自测」模块（抽题→作答→解析）。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 当前筛选分类（空=全部） */
+  var currentCat = '';
+  /** 当前关键词 */
+  var keyword = '';
+  /** 文章页码 */
+  var artPage = 1;
+  /** 已出现过的文章分类集合（用于筛选按钮） */
+  var catSet = {};
+  /** 当前打开的文章（用于点赞/收藏） */
+  var currentArticle = null;
+  /** 本次自测抽到的题目（用于交卷后回查选项文本） */
+  var quizQuestions = [];
+
+  ZF.initPage({ active: 'knowledge', title: '普法知识广场', sub: '读懂劳动法，少走弯路' })
+    .then(function () {
+      bindSearch();
+      bindArticleModal();
+      bindQuiz();
+      loadArticles(1);
+    });
+
+  /** 搜索框交互 */
+  function bindSearch() {
+    $('#kw-search').on('click', function () {
+      keyword = $.trim($('#kw').val());
+      loadArticles(1);
+    });
+    $('#kw').on('keydown', function (e) {
+      if (e.key === 'Enter') { $('#kw-search').click(); }
+    });
+  }
+
+  /** 渲染分类筛选按钮 */
+  function renderCatFilter() {
+    var cats = Object.keys(catSet);
+    var html = ['<button class="zf-btn zf-btn--sm ' + (currentCat === '' ? 'zf-btn--primary' : 'zf-btn--ghost') +
+      ' js-cat" data-cat="">全部</button>'];
+    cats.forEach(function (c) {
+      html.push('<button class="zf-btn zf-btn--sm ' + (currentCat === c ? 'zf-btn--primary' : 'zf-btn--ghost') +
+        ' js-cat" data-cat="' + ZF.escape(c) + '">' + ZF.escape(c) + '</button>');
+    });
+    $('#cat-filter').html(html.join(' '));
+    $('#cat-filter').off('click.zfcat').on('click.zfcat', '.js-cat', function () {
+      currentCat = $(this).data('cat');
+      renderCatFilter();
+      loadArticles(1);
+    });
+  }
+
+  /**
+   * 加载文章分页列表。
+   * @param {number} pageNum 页码
+   */
+  function loadArticles(pageNum) {
+    artPage = pageNum || 1;
+    var $box = $('#article-list');
+    ZF.renderLoading($box, '加载文章…');
+    ZF.get('/knowledge', {
+      category: currentCat, keyword: keyword, pageNum: artPage, pageSize: 8
+    }).then(function (page) {
+      // 收集分类用于筛选
+      (page.list || []).forEach(function (a) { if (a.category) { catSet[a.category] = true; } });
+      renderCatFilter();
+      if (!page.list || !page.list.length) {
+        ZF.renderEmpty($box, keyword ? '没有匹配的文章' : '暂无文章');
+        $('#article-pager').empty();
+        return;
+      }
+      var html = ['<div class="zf-list">'];
+      page.list.forEach(function (a) {
+        var tags = (a.tags || []).map(function (t) {
+          return '<span class="zf-badge zf-badge--primary">' + ZF.escape(t) + '</span>';
+        }).join(' ');
+        html.push('<div class="zf-list__item" data-id="' + a.id + '">');
+        html.push('<div class="zf-list__main">');
+        html.push('<p class="zf-list__title js-open" style="cursor:pointer">' + ZF.escape(a.title) + '</p>');
+        html.push('<p class="zf-list__text">' + ZF.escape(a.summary || '') + '</p>');
+        if (tags) { html.push('<div style="margin-top:6px">' + tags + '</div>'); }
+        html.push('</div>');
+        html.push('<div class="zf-list__meta" style="text-align:right">');
+        html.push('<i class="bi bi-person"></i> ' + ZF.escape(a.author || '职小法') + '<br>');
+        html.push('<i class="bi bi-eye"></i> ' + (a.viewCount || 0) + ' 阅读<br>');
+        html.push('<i class="bi bi-hand-thumbs-up"></i> ' + (a.likeCount || 0) + ' 赞');
+        html.push('</div></div>');
+      });
+      html.push('</div>');
+      $box.html(html.join(''));
+      ZF.renderPager('#article-pager', page, function (p) { loadArticles(p); });
+    }).catch(function () {
+      ZF.renderEmpty($box, '加载失败，请刷新重试');
+    });
+  }
+
+  /** 文章弹窗：打开、点赞、收藏 */
+  function bindArticleModal() {
+    // 点击标题打开详情（同时后端累计阅读量）
+    $('#article-list').on('click', '.js-open', function () {
+      var id = $(this).closest('.zf-list__item').data('id');
+      ZF.get('/knowledge/' + id).then(function (a) {
+        currentArticle = a;
+        showArticle(a);
+      }).catch(function () { /* 统一提示 */ });
+    });
+
+    // 点赞
+    $('#article-like').on('click', function () {
+      if (!currentArticle) { return; }
+      ZF.post('/knowledge/' + currentArticle.id + '/like', {}, { silent: true }).then(function () {
+        var n = (currentArticle.likeCount || 0) + 1;
+        currentArticle.likeCount = n;
+        $('#article-like-count').text(n);
+        $('#article-like').prop('disabled', true);
+        ZF.toast('已点赞', 'success');
+      }).catch(function () { /* 忽略 */ });
+    });
+
+    // 收藏（toggle，targetType=ARTICLE）
+    $('#article-fav').on('click', function () {
+      if (!currentArticle) { return; }
+      ZF.post('/favorites/toggle', {
+        targetType: 'ARTICLE', targetId: currentArticle.id
+      }).then(function (faved) {
+        setFavState(faved);
+        ZF.toast(faved ? '已收藏' : '已取消收藏', faved ? 'success' : 'info');
+      }).catch(function () { /* 统一提示 */ });
+    });
+  }
+
+  /**
+   * 渲染文章详情到弹窗，并初始化收藏状态。
+   * @param {Object} a 文章详情
+   */
+  function showArticle(a) {
+    $('#article-modal-title').text(a.title || '文章详情');
+    var tags = (a.tags || []).map(function (t) {
+      return '<span class="zf-badge zf-badge--primary">' + ZF.escape(t) + '</span>';
+    }).join(' ');
+    var body = '<div class="zf-doc" style="max-height:none">' + ZF.escape(a.content || '') + '</div>';
+    if (tags) { body = '<div style="margin-bottom:10px">' + tags + '</div>' + body; }
+    $('#article-modal-body').html(body);
+    $('#article-like-count').text(a.likeCount || 0);
+    $('#article-like').prop('disabled', false);
+    // 查询是否已收藏
+    ZF.get('/favorites/exists', { targetType: 'ARTICLE', targetId: a.id }, { silent: true })
+      .then(function (exists) { setFavState(!!exists); })
+      .catch(function () { setFavState(false); });
+    new bootstrap.Modal($('#article-modal')[0]).show();
+  }
+
+  /**
+   * 切换收藏按钮的展示状态。
+   * @param {boolean} faved 是否已收藏
+   */
+  function setFavState(faved) {
+    if (faved) {
+      $('#article-fav').html('<i class="bi bi-star-fill"></i><span id="article-fav-text">已收藏</span>');
+    } else {
+      $('#article-fav').html('<i class="bi bi-star"></i><span id="article-fav-text">收藏</span>');
+    }
+  }
+
+  /** 知识自测交互 */
+  function bindQuiz() {
+    $('#quiz-card').on('click', '#quiz-start', startQuiz);
+    $('#quiz-card').on('click', '#quiz-submit', submitQuiz);
+    $('#quiz-card').on('click', '#quiz-retry', startQuiz);
+  }
+
+  /** 开始自测：抽题并渲染作答界面 */
+  function startQuiz() {
+    ZF.btnLoading($('#quiz-start'), true, '抽题中…');
+    ZF.get('/quiz', { limit: 10 }).then(function (qs) {
+      if (!qs || !qs.length) {
+        ZF.renderEmpty('#quiz-card', '暂无可用的题目');
+        return;
+      }
+      quizQuestions = qs;
+      renderQuiz(qs);
+    }).catch(function () {
+      ZF.renderEmpty('#quiz-card', '抽题失败，请重试');
+    }).then(function () {
+      ZF.btnLoading($('#quiz-start'), false);
+    });
+  }
+
+  /**
+   * 渲染自测题目（单选）。
+   * @param {Array} qs 题目数组
+   */
+  function renderQuiz(qs) {
+    var opts = ['A', 'B', 'C', 'D'];
+    var html = ['<p class="zf-subtitle">共 ' + qs.length + ' 题，请逐题选择答案</p>'];
+    qs.forEach(function (q, i) {
+      html.push('<div class="zf-quiz-q" data-id="' + q.id + '">');
+      html.push('<p class="zf-quiz-q__title">' + (i + 1) + '. ' + ZF.escape(q.question) +
+        ' <span class="zf-badge zf-badge--primary">' + ZF.escape(q.category || '') + '</span></p>');
+      opts.forEach(function (op) {
+        var text = q['option' + op];
+        if (text === undefined || text === null || text === '') { return; }
+        html.push('<label class="zf-quiz-opt">');
+        html.push('<input type="radio" name="quiz-' + q.id + '" value="' + op + '">');
+        html.push('<span>' + op + '. ' + ZF.escape(text) + '</span>');
+        html.push('</label>');
+      });
+      html.push('</div>');
+    });
+    html.push('<div style="text-align:right;margin-top:10px">');
+    html.push('<button class="zf-btn zf-btn--primary" id="quiz-submit"><i class="bi bi-check2-circle"></i>交卷</button>');
+    html.push('</div>');
+    $('#quiz-card').html(html.join(''));
+  }
+
+  /** 交卷：收集答案 → 提交 → 展示得分与解析 */
+  function submitQuiz() {
+    // 收集每题所选答案
+    var answers = {};
+    var unanswered = 0;
+    $('#quiz-card .zf-quiz-q').each(function () {
+      var id = $(this).data('id');
+      var val = $(this).find('input[type=radio]:checked').val();
+      if (!val) { unanswered++; }
+      answers[id] = val || '';
+    });
+    if (unanswered > 0) {
+      ZF.toast('还有 ' + unanswered + ' 题未作答', 'warn');
+      return;
+    }
+    var $btn = $('#quiz-submit');
+    ZF.btnLoading($btn, true, '阅卷中…');
+    ZF.post('/quiz/submit', { answers: answers }).then(function (res) {
+      renderQuizResult(res);
+      ZF.toast('得分 ' + res.score + ' 分（' + (res.level || '') + '）', 'success');
+    }).catch(function () { /* 统一提示 */ }).then(function () {
+      ZF.btnLoading($btn, false);
+    });
+  }
+
+  /**
+   * 渲染自测结果与逐题解析。
+   * @param {Object} res 提交返回 { total, rightCount, wrongCount, score, level, details[] }
+   */
+  function renderQuizResult(res) {
+    var html = ['<div class="zf-card" style="background:var(--zf-primary-light);border:none;margin-bottom:14px">'];
+    html.push('<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">');
+    html.push('<div><span class="zf-form-label" style="margin:0">得分</span><strong style="font-size:24px;color:var(--zf-primary-ink)">' + (res.score || 0) + '</strong></div>');
+    html.push('<div><span class="zf-form-label" style="margin:0">等级</span><br>' + ZF.escape(res.level || '-') + '</div>');
+    html.push('<div><span class="zf-form-label" style="margin:0">正确 / 错误</span><br>' + (res.rightCount || 0) + ' / ' + (res.wrongCount || 0) + '</div>');
+    html.push('<div><span class="zf-form-label" style="margin:0">总题数</span><br>' + (res.total || 0) + '</div>');
+    html.push('</div></div>');
+    html.push('<p class="zf-subtitle">逐题解析</p>');
+
+    // 用抽题时的题目映射出选项文本（提交返回不含选项原文）
+    var qMap = {};
+    quizQuestions.forEach(function (q) { qMap[q.id] = q; });
+    (res.details || []).forEach(function (d, i) {
+      var q = qMap[d.questionId] || {};
+      var correct = d.correctOption;   // 正确选项字母
+      var your = d.yourAnswer;         // 用户所选字母
+      html.push('<div class="zf-quiz-q">');
+      html.push('<p class="zf-quiz-q__title">' + (i + 1) + '. ' + ZF.escape(d.question) + '</p>');
+      ['A', 'B', 'C', 'D'].forEach(function (op) {
+        var text = q['option' + op];
+        if (text === undefined || text === null || text === '') { return; }
+        var cls = 'zf-quiz-opt';
+        if (op === correct) { cls += ' zf-quiz-opt--correct'; }
+        else if (op === your && your !== correct) { cls += ' zf-quiz-opt--wrong'; }
+        html.push('<div class="' + cls + '"><span>' + op + '. ' + ZF.escape(text) + '</span></div>');
+      });
+      var mark = (correct === your) ? '回答正确' : '回答错误（正确答案 ' + ZF.escape(correct) + '）';
+      html.push('<p class="zf-quiz-explain"><strong>' + mark + '</strong><br>' + ZF.nl2br(d.explanation || '') + '</p>');
+      html.push('</div>');
+    });
+    html.push('<div style="text-align:right;margin-top:10px">');
+    html.push('<button class="zf-btn zf-btn--primary" id="quiz-retry"><i class="bi bi-arrow-repeat"></i>再来一次</button>');
+    html.push('</div>');
+    $('#quiz-card').html(html.join(''));
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

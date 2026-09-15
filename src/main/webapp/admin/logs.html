@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日志监控 - 职小法后台</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <div id="admin-nav"></div>
+
+      <!-- 接口监控图表 -->
+      <div class="zf-grid zf-grid--2" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">接口调用量 Top</h3></div>
+          <div id="chart-uri" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">接口平均耗时 Top（ms）</h3></div>
+          <div id="chart-slow" class="zf-chart zf-chart--sm"></div></div>
+      </div>
+
+      <div class="zf-card">
+        <div class="zf-card__head">
+          <div><h3 class="zf-card__title">操作日志</h3>
+            <p class="zf-card__desc">查看用户操作与接口调用记录</p></div>
+          <button class="zf-btn zf-btn--danger" id="clean-btn"><i class="bi bi-trash3"></i>清理 30 天前日志</button>
+        </div>
+
+        <div class="zf-filter">
+          <input class="zf-form-control" type="text" id="f-keyword" placeholder="用户名 / 动作 / URI / IP">
+          <select class="zf-form-control" id="f-method">
+            <option value="">全部方法</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+          <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
+          <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+        </div>
+
+        <table id="log-table" class="zf-table"></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
+<script src="../vendor/echarts/echarts.min.js"></script>
+<script src="../js/common.js"></script>
+<script src="admin-common.js"></script>
+<script>
+/**
+ * @file logs.html —— 操作日志与接口监控
+ * @description 分页展示操作日志，支持关键词/HTTP 方法筛选；
+ *              用 ECharts 渲染接口调用量与平均耗时柱状图；
+ *              清理 30 天前日志需二次确认。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 图表配色 */
+  var COLORS = ['#4285f4', '#ef4444', '#34a853', '#fbbc05', '#9334e6', '#00bcd4', '#ff7043', '#607d8b'];
+
+  ZF.initPage({ active: 'logs', title: '日志监控', sub: '操作日志与接口性能', needAdmin: true })
+    .then(function () {
+      ZF.renderAdminNav('logs');
+      loadStats();
+      initTable();
+      bindFilters();
+      bindClean();
+    });
+
+  /** 转义或占位 */
+  function escOrDash(v) { return v ? ZF.escape(v) : '<span style="color:var(--zf-ink-3)">-</span>'; }
+
+  /** 渲染接口统计柱状图 */
+  function loadStats() {
+    ZF.get('/admin/logs/stats', { days: 14 }).then(function (res) {
+      res = res || {};
+      renderBar('#chart-uri', res.uri, '4285f4', '暂无调用数据');
+      renderBar('#chart-slow', res.slow, 'ef4444', '暂无耗时数据');
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染横向柱状图。
+   * @param {string} selector 容器
+   * @param {Array} arr [{label,value}]
+   * @param {string} color 主题色
+   * @param {string} emptyText 空态文案
+   */
+  function renderBar(selector, arr, color, emptyText) {
+    var $box = $(selector);
+    arr = (arr || []).slice(0, 10);
+    if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
+    var cats = arr.map(function (d) { return ZF.truncate(d.label, 22); }).reverse();
+    var vals = arr.map(function (d) { return d.value; }).reverse();
+    var chart = ZF.registerChart(echarts.init($box[0]));
+    chart.setOption({
+      color: ['#' + color],
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 30, top: 10, bottom: 10, containLabel: true },
+      xAxis: { type: 'value' },
+      yAxis: { type: 'category', data: cats, axisLabel: { fontSize: 11 } },
+      series: [{ type: 'bar', data: vals, barWidth: '58%', itemStyle: { borderRadius: [0, 4, 4, 0] } }]
+    });
+  }
+
+  /** 操作列（仅查看详情，无删除单条需求） */
+  function operateFormatter(value, row) {
+    return '<button class="zf-btn zf-btn--ghost zf-btn--sm js-detail"><i class="bi bi-eye"></i>详情</button>';
+  }
+
+  /** 初始化日志表格 */
+  function initTable() {
+    ZF.initAdminTable('#log-table', '/admin/logs', {
+      pageSize: 10,
+      queryParams: function () {
+        return {
+          keyword: $.trim($('#f-keyword').val()),
+          method: $('#f-method').val()
+        };
+      },
+      columns: [
+        { field: 'id', title: 'ID', width: 64 },
+        { field: 'username', title: '用户', formatter: function (v) { return ZF.escape(v || '匿名'); } },
+        { field: 'action', title: '动作', formatter: function (v) { return ZF.escape(ZF.truncate(v, 20)); } },
+        { field: 'method', title: '方法', formatter: function (v) { return ZF.methodBadge(v); } },
+        { field: 'uri', title: 'URI', formatter: function (v) { return ZF.escape(ZF.truncate(v, 36)); } },
+        { field: 'ip', title: 'IP', formatter: escOrDash },
+        { field: 'costMs', title: '耗时', formatter: function (v) { return ZF.escape(String(v || 0)) + ' ms'; } },
+        { field: 'status', title: '状态码', formatter: function (v) { return ZF.statusCodeBadge(v); } },
+        { field: 'createdAt', title: '时间', formatter: function (v) { return ZF.dt(v); } },
+        { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
+      ]
+    });
+  }
+
+  /** 操作事件 */
+  var operateEvents = {
+    'click .js-detail': function (e, v, row) { showDetail(row); }
+  };
+
+  /** 绑定筛选 */
+  function bindFilters() {
+    $('#search-btn').on('click', function () { ZF.refreshTable('#log-table'); });
+    $('#reset-btn').on('click', function () {
+      $('#f-keyword').val(''); $('#f-method').val('');
+      ZF.refreshTable('#log-table');
+    });
+    $('#f-keyword').on('keydown', function (e) {
+      if (e.key === 'Enter') { ZF.refreshTable('#log-table'); }
+    });
+  }
+
+  /** 查看单条日志详情 */
+  function showDetail(row) {
+    var rows = [
+      ['用户', ZF.escape(row.username || '匿名')],
+      ['动作', ZF.escape(row.action || '-')],
+      ['方法', ZF.escape(row.method || '-')],
+      ['URI', ZF.escape(row.uri || '-')],
+      ['IP', ZF.escape(row.ip || '-')],
+      ['耗时', ZF.escape(String(row.costMs || 0)) + ' ms'],
+      ['状态码', ZF.escape(String(row.status))],
+      ['时间', ZF.escape(ZF.formatDate(row.createdAt, true) || '-')],
+      ['请求参数', ZF.escape(row.params || '无')]
+    ];
+    openDetailModal(rows);
+  }
+
+  /** 用模态框展示日志详情 */
+  function openDetailModal(rows) {
+    // 复用一次性模态框
+    if (!$('#logDetailModal').length) {
+      $('body').append(
+        '<div class="modal fade" id="logDetailModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered">' +
+        '<div class="modal-content"><div class="modal-header"><h5 class="modal-title">日志详情</h5>' +
+        '<button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+        '<div class="modal-body" id="log-detail-body"></div>' +
+        '<div class="modal-footer"><button type="button" class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">关闭</button></div>' +
+        '</div></div></div>'
+      );
+    }
+    var body = rows.map(function (r) {
+      return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--zf-border)">' +
+        '<span style="width:72px;flex:0 0 72px;color:var(--zf-ink-3);font-size:12.5px">' + r[0] + '</span>' +
+        '<span style="flex:1;word-break:break-all;font-size:13px">' + r[1] + '</span></div>';
+    }).join('');
+    $('#log-detail-body').html(body);
+    new bootstrap.Modal($('#logDetailModal')[0]).show();
+  }
+
+  /** 清理 30 天前日志 */
+  function bindClean() {
+    $('#clean-btn').on('click', function () {
+      ZF.confirm('确定清理 30 天前的操作日志吗？该操作不可恢复。').then(function (ok) {
+        if (!ok) { return; }
+        var $btn = $('#clean-btn');
+        ZF.btnLoading($btn, true, '清理中…');
+        // days 走查询串（与契约 DELETE /admin/logs/clean?days=30 一致）
+        ZF.del('/admin/logs/clean?days=30').then(function () {
+          ZF.toast('已清理历史日志', 'success');
+          $('#log-table').bootstrapTable('refresh');
+        }).catch(function () { /* 统一提示 */ }).then(function () {
+          ZF.btnLoading($btn, false);
+        });
+      });
+    });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

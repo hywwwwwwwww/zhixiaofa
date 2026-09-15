@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据看板 - 职小法后台</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
+  <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 后台导航 -->
+      <div id="admin-nav"></div>
+
+      <!-- 指标卡 -->
+      <div class="zf-grid zf-grid--4" id="metric-grid" style="margin-bottom:18px">
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-people"></i></div>
+          <div><p class="zf-stat__label">用户数</p><p class="zf-stat__value" data-stat="userCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
+          <div><p class="zf-stat__label">问答数</p><p class="zf-stat__value" data-stat="qaCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
+          <div><p class="zf-stat__label">合同数</p><p class="zf-stat__value" data-stat="contractCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-bank"></i></div>
+          <div><p class="zf-stat__label">推演数</p><p class="zf-stat__value" data-stat="courtCaseCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
+          <div><p class="zf-stat__label">文书数</p><p class="zf-stat__value" data-stat="docCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-journal-text"></i></div>
+          <div><p class="zf-stat__label">文章数</p><p class="zf-stat__value" data-stat="articleCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-exclamation-triangle"></i></div>
+          <div><p class="zf-stat__label">风险点数</p><p class="zf-stat__value" data-stat="riskCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-activity"></i></div>
+          <div><p class="zf-stat__label">日志数</p><p class="zf-stat__value" data-stat="logCount">-</p></div></div>
+      </div>
+
+      <!-- 趋势折线 -->
+      <div class="zf-card" style="margin-bottom:18px">
+        <div class="zf-card__head"><div><h3 class="zf-card__title">近 14 天业务趋势</h3>
+          <p class="zf-card__desc">用户 / 问答 / 合同 / 文书 / 请求量 每日变化</p></div></div>
+        <div id="trend-chart" class="zf-chart"></div>
+      </div>
+
+      <!-- 三个饼图 -->
+      <div class="zf-grid zf-grid--3" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">问答分类分布</h3></div>
+          <div id="pie-qa" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">合同风险等级分布</h3></div>
+          <div id="pie-risk" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">案件类型分布</h3></div>
+          <div id="pie-case" class="zf-chart zf-chart--sm"></div></div>
+      </div>
+
+      <!-- 两个柱状图 -->
+      <div class="zf-grid zf-grid--2" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">文章阅读量 Top10</h3></div>
+          <div id="bar-articles" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">被引用法条 Top10</h3></div>
+          <div id="bar-laws" class="zf-chart zf-chart--sm"></div></div>
+      </div>
+
+      <!-- 排行榜列表 -->
+      <div class="zf-grid zf-grid--3" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">热门问题</h3></div>
+          <div id="rank-hot" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">高频风险条款</h3></div>
+          <div id="rank-risk" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">模板使用排行</h3></div>
+          <div id="rank-template" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+      </div>
+
+      <!-- 连接池 + 慢接口 -->
+      <div class="zf-grid zf-grid--2">
+        <div class="zf-card">
+          <div class="zf-card__head"><div><h3 class="zf-card__title">自研连接池监控</h3>
+            <p class="zf-card__desc">数据源连接池实时状态</p></div></div>
+          <div id="pool-card"><div class="zf-loading">加载中…</div></div>
+        </div>
+        <div class="zf-card">
+          <div class="zf-card__head"><h3 class="zf-card__title">慢接口 Top（平均耗时 ms）</h3></div>
+          <div id="bar-slow" class="zf-chart zf-chart--sm"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
+<script src="../vendor/echarts/echarts.min.js"></script>
+<script src="../js/common.js"></script>
+<script src="admin-common.js"></script>
+<script>
+/**
+ * @file index.html —— 后台数据看板
+ * @description 拉取运营总览、趋势、分布、排行、连接池与慢接口数据，
+ *              用 ECharts 渲染折线/饼图/柱状图，并在窗口变化时自适应 resize。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 图表统一配色 */
+  var COLORS = ['#4285f4', '#34a853', '#fbbc05', '#ef4444', '#9334e6', '#00bcd4', '#ff7043', '#607d8b'];
+
+  ZF.initPage({ active: 'dashboard', title: '数据看板', sub: '平台运营总览', needAdmin: true })
+    .then(function () {
+      ZF.renderAdminNav('dashboard');
+      loadOverview();
+      loadTrend();
+      loadDistributions();
+      loadRankings();
+      loadPool();
+      loadSlowApis();
+    });
+
+  /** 填充指标卡 */
+  function loadOverview() {
+    ZF.get('/admin/stats/overview').then(function (d) {
+      d = d || {};
+      ['userCount', 'qaCount', 'contractCount', 'courtCaseCount', 'docCount', 'articleCount', 'riskCount', 'logCount']
+        .forEach(function (k) {
+          var $el = $('[data-stat=' + k + ']');
+          if ($el.length) { $el.text(ZF.money(d[k] || 0)); }
+        });
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /** 渲染趋势折线图 */
+  function loadTrend() {
+    var $box = $('#trend-chart');
+    ZF.renderLoading($box, '加载趋势…');
+    ZF.get('/admin/stats/trend', { days: 14 }).then(function (res) {
+      res = res || {};
+      var labels = (res.series && res.series.labels) || [];
+      var x = labels.map(function (d) { return d.label; });
+      if (!x.length) { ZF.renderEmpty($box, '暂无趋势数据'); return; }
+      var defs = [
+        { name: '用户', key: 'users' }, { name: '问答', key: 'qa' },
+        { name: '合同', key: 'contracts' }, { name: '文书', key: 'docs' },
+        { name: '请求量', key: 'requests' }
+      ];
+      var series = defs.map(function (def, i) {
+        var arr = (res.series[def.key]) || [];
+        return {
+          name: def.name, type: 'line', smooth: true, showSymbol: false,
+          itemStyle: { color: COLORS[i] },
+          data: arr.map(function (d) { return d.value; })
+        };
+      });
+      var chart = ZF.registerChart(echarts.init($box[0]));
+      chart.setOption({
+        color: COLORS,
+        tooltip: { trigger: 'axis' },
+        legend: { data: defs.map(function (d) { return d.name; }), bottom: 0 },
+        grid: { left: 40, right: 20, top: 20, bottom: 50 },
+        xAxis: { type: 'category', data: x, boundaryGap: false },
+        yAxis: { type: 'value' },
+        series: series
+      });
+    }).catch(function () { ZF.renderEmpty($box, '趋势加载失败'); });
+  }
+
+  /** 渲染分布饼图（qa / 合同风险 / 案件类型） */
+  function loadDistributions() {
+    ZF.get('/admin/stats/distributions').then(function (res) {
+      res = res || {};
+      renderPie('#pie-qa', res.qaCategory, '暂无问答分类数据');
+      renderPie('#pie-risk', res.contractRisk, '暂无风险等级数据');
+      renderPie('#pie-case', res.caseType, '暂无案件类型数据');
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染单个饼图。
+   * @param {string} selector 容器选择器
+   * @param {Array} arr [{label,value}]
+   * @param {string} emptyText 空态文案
+   */
+  function renderPie(selector, arr, emptyText) {
+    var $box = $(selector);
+    arr = arr || [];
+    if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
+    var data = arr.map(function (d) { return { name: d.label, value: d.value }; });
+    var chart = ZF.registerChart(echarts.init($box[0]));
+    chart.setOption({
+      color: COLORS,
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { type: 'scroll', orient: 'horizontal', bottom: 0, textStyle: { fontSize: 11 } },
+      series: [{
+        type: 'pie', radius: ['38%', '64%'], center: ['50%', '44%'],
+        avoidLabelOverlap: true, label: { fontSize: 11 },
+        data: data
+      }]
+    });
+  }
+
+  /** 渲染排行柱状图与排行榜列表 */
+  function loadRankings() {
+    ZF.get('/admin/stats/rankings').then(function (res) {
+      res = res || {};
+      renderBar('#bar-articles', res.articleViews, '暂无文章阅读数据');
+      renderBar('#bar-laws', res.topLaws, '暂无法条引用数据');
+      renderRankList('#rank-hot', res.hotQuestions);
+      renderRankList('#rank-risk', res.riskClauses);
+      renderRankList('#rank-template', res.templateUsage);
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染横向柱状图（TopN）。
+   * @param {string} selector 容器
+   * @param {Array} arr [{label,value}]
+   * @param {string} emptyText 空态文案
+   */
+  function renderBar(selector, arr, emptyText) {
+    var $box = $(selector);
+    arr = (arr || []).slice(0, 10);
+    if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
+    // 横向柱状：y 轴为类目（从下到上倒序，使最大值在最上）
+    var cats = arr.map(function (d) { return ZF.truncate(d.label, 12); }).reverse();
+    var vals = arr.map(function (d) { return d.value; }).reverse();
+    var chart = ZF.registerChart(echarts.init($box[0]));
+    chart.setOption({
+      color: [COLORS[0]],
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 24, top: 10, bottom: 10, containLabel: true },
+      xAxis: { type: 'value' },
+      yAxis: { type: 'category', data: cats, axisLabel: { fontSize: 11 } },
+      series: [{ type: 'bar', data: vals, barWidth: '58%', itemStyle: { borderRadius: [0, 4, 4, 0] } }]
+    });
+  }
+
+  /**
+   * 渲染排行榜列表（带名次与计数）。
+   * @param {string} selector 容器
+   * @param {Array} arr [{label,value}]
+   */
+  function renderRankList(selector, arr) {
+    var $box = $(selector);
+    arr = arr || [];
+    if (!arr.length) { ZF.renderEmpty($box, '暂无数据'); return; }
+    var html = ['<ol class="zf-rank">'];
+    arr.slice(0, 8).forEach(function (d, i) {
+      html.push('<li class="zf-rank__item">');
+      html.push('<span class="zf-rank__no zf-rank__no--' + (i < 3 ? 'top' : 'normal') + '">' + (i + 1) + '</span>');
+      html.push('<span class="zf-rank__label">' + ZF.escape(d.label) + '</span>');
+      html.push('<span class="zf-rank__value">' + ZF.escape(String(d.value)) + '</span>');
+      html.push('</li>');
+    });
+    html.push('</ol>');
+    $box.html(html.join(''));
+  }
+
+  /** 渲染连接池监控卡 */
+  function loadPool() {
+    var $box = $('#pool-card');
+    ZF.get('/admin/stats/pool').then(function (d) {
+      if (!d) { ZF.renderEmpty($box, '暂无数据'); return; }
+      var items = [
+        { label: '最小空闲', value: d.minIdle },
+        { label: '最大连接', value: d.maxTotal },
+        { label: '已创建', value: d.created },
+        { label: '空闲', value: d.idle },
+        { label: '借出', value: d.borrowed },
+        { label: '默认页大小', value: d.pageDefaultSize },
+        { label: '最大页大小', value: d.pageMaxSize }
+      ];
+      var html = ['<div class="zf-pool">'];
+      items.forEach(function (it) {
+        html.push('<div class="zf-pool__item"><p class="zf-pool__label">' + ZF.escape(it.label) +
+          '</p><p class="zf-pool__value">' + ZF.escape(String(it.value)) + '</p></div>');
+      });
+      html.push('</div>');
+      html.push('<div class="zf-pool__url"><i class="bi bi-link-45deg"></i>JDBC：' +
+        ZF.escape(d.jdbcUrl || '-') + '</div>');
+      $box.html(html.join(''));
+    }).catch(function () { ZF.renderEmpty($box, '连接池加载失败'); });
+  }
+
+  /** 渲染慢接口柱状图 */
+  function loadSlowApis() {
+    var $box = $('#bar-slow');
+    ZF.renderLoading($box, '加载…');
+    ZF.get('/admin/stats/slow-apis', { limit: 8 }).then(function (arr) {
+      arr = arr || [];
+      if (!arr.length) { ZF.renderEmpty($box, '暂无慢接口数据'); return; }
+      var cats = arr.map(function (d) { return ZF.truncate(d.label, 18); }).reverse();
+      var vals = arr.map(function (d) { return d.value; }).reverse();
+      var chart = ZF.registerChart(echarts.init($box[0]));
+      chart.setOption({
+        color: [COLORS[3]],
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return v + ' ms'; } },
+        grid: { left: 8, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: 'value', axisLabel: { formatter: '{value}ms' } },
+        yAxis: { type: 'category', data: cats, axisLabel: { fontSize: 11 } },
+        series: [{ type: 'bar', data: vals, barWidth: '58%', itemStyle: { borderRadius: [0, 4, 4, 0] } }]
+      });
+    }).catch(function () { ZF.renderEmpty($box, '慢接口加载失败'); });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>
