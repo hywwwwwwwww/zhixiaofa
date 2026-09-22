@@ -45,32 +45,51 @@ class LawArticleServiceImplTest {
     @Test
     @DisplayName("分页：无数据时返回空页且不查列表")
     void pageEmpty() {
-        when(lawDao.countByCondition(any(), any())).thenReturn(0L);
-        PageResult<LawArticle> page = service.page("试用期", null, 1, 10);
+        when(lawDao.countByCondition(any(), any(), any())).thenReturn(0L);
+        PageResult<LawArticle> page = service.page("试用期", null, null, 1, 10);
         assertEquals(0, page.getTotal());
-        verify(lawDao, never()).findByCondition(any(), any(), anyInt(), anyInt());
+        verify(lawDao, never()).findByCondition(any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test
     @DisplayName("分页：正常返回并计算 offset")
     void pageWithData() {
-        when(lawDao.countByCondition("试用期", null)).thenReturn(25L);
-        when(lawDao.findByCondition("试用期", null, 20, 10))
+        when(lawDao.countByCondition("试用期", null, null)).thenReturn(25L);
+        when(lawDao.findByCondition("试用期", null, null, 20, 10))
                 .thenReturn(Collections.singletonList(sample()));
-        PageResult<LawArticle> page = service.page("试用期", null, 3, 10);
+        PageResult<LawArticle> page = service.page("试用期", null, null, 3, 10);
         assertEquals(25, page.getTotal());
         assertEquals(3, page.getPages());
         assertEquals(1, page.getList().size());
     }
 
     @Test
+    @DisplayName("分页：支持按法规名称筛选（法律管理页选择法律）")
+    void pageByLawName() {
+        when(lawDao.countByCondition(null, null, "中华人民共和国劳动合同法")).thenReturn(98L);
+        when(lawDao.findByCondition(null, null, "中华人民共和国劳动合同法", 0, 10))
+                .thenReturn(Collections.singletonList(sample()));
+        PageResult<LawArticle> page = service.page(null, null, "中华人民共和国劳动合同法", 1, 10);
+        assertEquals(98, page.getTotal());
+        assertEquals(1, page.getList().size());
+    }
+
+    @Test
     @DisplayName("分页：页码与每页条数做边界修正")
     void pageClampsParams() {
-        when(lawDao.countByCondition(any(), any())).thenReturn(5L);
-        service.page(null, null, 0, 0);
-        verify(lawDao).findByCondition(isNull(), isNull(), eq(0), eq(10));
-        service.page(null, null, 1, 9999);
-        verify(lawDao).findByCondition(isNull(), isNull(), eq(0), eq(100));
+        when(lawDao.countByCondition(any(), any(), any())).thenReturn(5L);
+        service.page(null, null, null, 0, 0);
+        verify(lawDao).findByCondition(isNull(), isNull(), isNull(), eq(0), eq(10));
+        service.page(null, null, null, 1, 9999);
+        verify(lawDao).findByCondition(isNull(), isNull(), isNull(), eq(0), eq(100));
+    }
+
+    @Test
+    @DisplayName("法规名称列表：透传 DAO 结果")
+    void listLawNames() {
+        when(lawDao.listLawNames()).thenReturn(List.of("中华人民共和国劳动合同法", "中华人民共和国劳动法"));
+        List<String> names = service.listLawNames();
+        assertEquals(2, names.size());
     }
 
     @Test
@@ -138,9 +157,16 @@ class LawArticleServiceImplTest {
     }
 
     @Test
-    @DisplayName("分类列表非空；统计结果透传")
+    @DisplayName("分类列表：只返回库中有法条的分类，并保持预设业务顺序")
     void categoriesAndStats() {
-        assertFalse(service.listCategories().isEmpty());
+        // 库中实际只有 3 个分类，且 DAO 返回顺序被打乱
+        when(lawDao.listCategories()).thenReturn(List.of("社会保险", "工资报酬", "劳动合同"));
+        assertEquals(List.of("劳动合同", "工资报酬", "社会保险"), service.listCategories());
+
+        // 空分类不会出现在下拉里
+        when(lawDao.listCategories()).thenReturn(List.of());
+        assertTrue(service.listCategories().isEmpty());
+
         when(lawDao.countGroupByCategory()).thenReturn(Collections.emptyList());
         assertNotNull(service.categoryStats());
     }

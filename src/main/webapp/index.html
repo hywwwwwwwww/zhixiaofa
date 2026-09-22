@@ -6,7 +6,7 @@
   <title>职小法 · 职场新人智能法律伙伴</title>
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=20260922n">
   <style>
     /* 入口页：做一次轻量的登录态探测，再决定进首页还是登录页 */
     .zf-splash {
@@ -38,7 +38,7 @@
 </div>
 
 <script src="vendor/jquery/jquery.min.js"></script>
-<script src="js/common.js"></script>
+<script src="js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file 应用入口：探测登录态并跳转到首页或登录页。
@@ -53,7 +53,7 @@
 
   ZF.currentUser().then(function (user) {
     clearTimeout(fallbackTimer);
-    window.location.replace(user ? (ZF.CTX + '/pages/home.html') : (ZF.CTX + '/login.html'));
+    window.location.replace(user ? ZF.homeFor(user) : (ZF.CTX + '/login.html'));
   }).catch(function () {
     clearTimeout(fallbackTimer);
     $('#fallback').show();

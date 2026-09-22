@@ -53,6 +53,41 @@
   </filter-mapping>
 
   <!-- ======================================================================
+       静态资源缓存控制（Tomcat 内置 ExpiresFilter）
+       页面 / 样式 / 脚本一律要求浏览器回源校验（max-age=0）。
+       否则改动部署后，浏览器仍会拿旧版 HTML 与 JS，
+       出现「明明改过却还是老界面」的假象。
+       ====================================================================== -->
+  <filter>
+    <filter-name>expiresFilter</filter-name>
+    <filter-class>org.apache.catalina.filters.ExpiresFilter</filter-class>
+    <init-param>
+      <param-name>ExpiresByType text/html</param-name>
+      <param-value>access plus 0 seconds</param-value>
+    </init-param>
+    <init-param>
+      <param-name>ExpiresByType text/css</param-name>
+      <param-value>access plus 0 seconds</param-value>
+    </init-param>
+    <init-param>
+      <param-name>ExpiresByType text/javascript</param-name>
+      <param-value>access plus 0 seconds</param-value>
+    </init-param>
+    <init-param>
+      <param-name>ExpiresByType application/javascript</param-name>
+      <param-value>access plus 0 seconds</param-value>
+    </init-param>
+    <init-param>
+      <param-name>ExpiresDefault</param-name>
+      <param-value>access plus 1 hours</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>expiresFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- ======================================================================
        说明：所有 Servlet 均使用 @WebServlet 注解声明映射，此处不再重复注册。
        API 一览（详见 docs/API接口文档.md）：
          /api/auth/*            登录 / 注册 / 退出 / 当前用户 / 资料 / 改密

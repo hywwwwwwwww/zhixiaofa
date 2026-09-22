@@ -96,6 +96,21 @@ public interface SysUserDao {
     java.util.List<SysUser> findByCondition(String keyword, String role, Integer status, int offset, int limit);
 
     /**
+     * 后台用户列表分页（关键词 / 角色 / 状态 组合查询 + 可选列头排序）
+     *
+     * @param keyword 参数
+     * @param role 参数
+     * @param status 参数
+     * @param offset 参数
+     * @param limit 参数
+     * @param sortName 排序列名（白名单 key，详见实现），null 时回退默认排序
+     * @param sortOrder 排序方向（仅识别 desc），null 时按白名单/默认处理
+     * @return 查询结果
+     */
+    java.util.List<SysUser> findByCondition(String keyword, String role, Integer status,
+                                            int offset, int limit, String sortName, String sortOrder);
+
+    /**
      * 后台用户列表条件计数
      *
      * @param keyword 参数

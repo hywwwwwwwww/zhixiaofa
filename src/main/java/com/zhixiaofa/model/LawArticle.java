@@ -24,6 +24,8 @@ public class LawArticle implements Serializable {
     private String lawName;
     /** 条号 */
     private String articleNo;
+    /** 法律内序号（该法律的第几条，从 1 开始） */
+    private Integer seq;
     /** 分类 */
     private String category;
     /** 条文标题 */
@@ -34,6 +36,10 @@ public class LawArticle implements Serializable {
     private String keywords;
     /** 生效日期 */
     private LocalDate effectiveDate;
+    /** 数据来源：manual=手工录入；flk_npc=国家法律法规数据库自动同步 */
+    private String source;
+    /** 来源侧唯一标识（国家法律法规数据库的 bbbs，用于去重/增量更新） */
+    private String sourceId;
     /** 创建时间 */
     private LocalDateTime createdAt;
     /** 更新时间 */
@@ -61,6 +67,14 @@ public class LawArticle implements Serializable {
 
     public void setArticleNo(String articleNo) {
         this.articleNo = articleNo;
+    }
+
+    public Integer getSeq() {
+        return seq;
+    }
+
+    public void setSeq(Integer seq) {
+        this.seq = seq;
     }
 
     public String getCategory() {
@@ -93,6 +107,22 @@ public class LawArticle implements Serializable {
 
     public void setKeywords(String keywords) {
         this.keywords = keywords;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
     }
 
     public LocalDate getEffectiveDate() {

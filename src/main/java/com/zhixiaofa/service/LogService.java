@@ -19,6 +19,8 @@ public interface LogService {
 
     PageResult<OperationLog> page(String keyword, String method, int pageNum, int pageSize);
 
+    PageResult<OperationLog> page(String keyword, String method, int pageNum, int pageSize, String sortName, String sortOrder);
+
     List<Map<String, Object>> dailyStats(int days);
 
     List<Map<String, Object>> uriStats(int limit);

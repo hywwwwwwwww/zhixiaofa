@@ -6,7 +6,7 @@
   <title>个人中心 - 职小法</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -14,113 +14,207 @@
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
-    <section class="zf-content">
-      <!-- 个人信息卡 -->
-      <div class="zf-card" style="margin-bottom:16px">
-        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-          <div style="width:72px;height:72px;flex:0 0 72px;border-radius:50%;background:var(--zf-primary-light);
-            display:grid;place-items:center;font-size:44px;color:var(--zf-primary-ink)">
-            <i class="bi bi-person-circle"></i>
-          </div>
-          <div style="flex:1;min-width:200px">
-            <div style="display:flex;align-items:center;gap:10px">
-              <h3 class="zf-card__title" id="p-nickname" style="margin:0;font-size:18px"></h3>
-              <span class="zf-badge zf-badge--primary" id="p-role"></span>
-            </div>
-            <p class="zf-card__desc" style="margin-top:4px">
-              用户名：<span id="p-username"></span> ｜ 注册于 <span id="p-created"></span>
-            </p>
-          </div>
-        </div>
-        <!-- 数量统计 -->
-        <div class="zf-grid zf-grid--4" style="margin-top:16px" id="stat-grid">
-          <div class="zf-stat"><div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
-            <div><p class="zf-stat__label">我的问答</p><p class="zf-stat__value" data-stat="qa">-</p></div></div>
-          <div class="zf-stat"><div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
-            <div><p class="zf-stat__label">审查合同</p><p class="zf-stat__value" data-stat="contract">-</p></div></div>
-          <div class="zf-stat"><div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
-            <div><p class="zf-stat__label">生成文书</p><p class="zf-stat__value" data-stat="doc">-</p></div></div>
-          <div class="zf-stat"><div class="zf-stat__icon"><i class="bi bi-star"></i></div>
-            <div><p class="zf-stat__label">我的收藏</p><p class="zf-stat__value" data-stat="favorite">-</p></div></div>
-        </div>
-      </div>
+    <section class="zf-content zf-content--profile">
+      <div class="zf-desk">
 
-      <div class="zf-grid zf-grid--2" style="align-items:start">
-        <!-- 资料设置 -->
-        <div class="zf-card">
-          <div class="zf-card__head"><div><h3 class="zf-card__title">资料设置</h3>
-            <p class="zf-card__desc">修改你的基本资料</p></div></div>
-          <form id="profile-form" novalidate>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pf-nickname">昵称 <span style="color:var(--zf-danger)">*</span></label>
-              <input class="zf-form-control" type="text" name="nickname" id="pf-nickname" maxlength="30">
-              <div class="zf-form-error"></div>
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pf-email">邮箱</label>
-              <input class="zf-form-control" type="text" name="email" id="pf-email" maxlength="60">
-              <div class="zf-form-error"></div>
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pf-phone">手机号</label>
-              <input class="zf-form-control" type="text" name="phone" id="pf-phone" maxlength="20">
-              <div class="zf-form-error"></div>
-            </div>
-            <div class="zf-grid zf-grid--2">
-              <div class="zf-field">
-                <label class="zf-form-label" for="pf-city">城市</label>
-                <input class="zf-form-control" type="text" name="city" id="pf-city" maxlength="30">
+        <!-- 左列：账户概览（常驻，资料与统计一眼可见） -->
+        <aside class="zf-profile-rail">
+          <div class="zf-card">
+            <div class="zf-profile__head">
+              <div class="zf-profile__avatar" id="p-avatar">
+                <img id="p-avatar-img" alt="头像" hidden>
+                <i class="bi bi-person-circle"></i>
               </div>
-              <div class="zf-field">
-                <label class="zf-form-label" for="pf-job">岗位</label>
-                <input class="zf-form-control" type="text" name="jobTitle" id="pf-job" maxlength="30">
+              <div class="zf-profile__id">
+                <div class="zf-profile__nameline">
+                  <h3 class="zf-card__title zf-profile__nick" id="p-nickname"></h3>
+                  <span class="zf-badge zf-badge--primary" id="p-role"></span>
+                </div>
+                <p class="zf-card__desc zf-profile__uname">
+                  用户名：<span id="p-username"></span> ｜ 注册于 <span id="p-created"></span>
+                </p>
               </div>
             </div>
-            <div style="text-align:right">
-              <button type="submit" class="zf-btn zf-btn--primary" id="pf-save">
-                <i class="bi bi-check2"></i>保存资料
-              </button>
+
+            <!-- 数量统计：可点击跳转到对应模块；「我的收藏」跳到右栏收藏页签 -->
+            <div class="zf-grid zf-grid--2 zf-profile__stats" id="stat-grid">
+              <a class="zf-stat zf-stat--link" href="qa.html" title="继续和职小法对话">
+                <div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
+                <div><p class="zf-stat__label">我的问答</p><p class="zf-stat__value" data-stat="qa">-</p></div>
+              </a>
+              <a class="zf-stat zf-stat--link" href="contract-review.html#history" title="查看我的合同档案">
+                <div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
+                <div><p class="zf-stat__label">审查合同</p><p class="zf-stat__value" data-stat="contract">-</p></div>
+              </a>
+              <a class="zf-stat zf-stat--link" href="doc-drafting.html#my-docs" title="查看我的文书">
+                <div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
+                <div><p class="zf-stat__label">生成文书</p><p class="zf-stat__value" data-stat="doc">-</p></div>
+              </a>
+              <a class="zf-stat zf-stat--link" href="#favorites" title="查看我的收藏">
+                <div class="zf-stat__icon"><i class="bi bi-star"></i></div>
+                <div><p class="zf-stat__label">我的收藏</p><p class="zf-stat__value" data-stat="favorite">-</p></div>
+              </a>
             </div>
-          </form>
+
+            <!-- 最近动态：左栏在账户概览之下还有 500px 以上留白，
+                 用「各模块最新一条 + 时间」把这个高度用来做回流入口。
+                 数据来源就是 loadStats 的 3 个请求（pageSize 1→2 取最新一条），
+                 零新增接口；三条都为空时整块隐藏（见 renderRecent）。
+                 高度上设 max-height 内部滚动：任一模块 0 条时该块会短一截，
+                 列表滚动比两侧底边跟着塌更好看。 -->
+            <div class="zf-recent" id="recent-box" hidden>
+              <h4 class="zf-recent__title">最近动态</h4>
+              <ul class="zf-recent__list" id="recent-list"></ul>
+            </div>
+
+          </div>
+        </aside>
+
+        <!-- 右列：资料设置 / 修改密码 / 我的收藏（页签切换，各自锁定高度） -->
+        <div class="zf-work">
+          <div class="zf-tabs" id="profile-tabs" role="tablist" aria-label="个人中心设置">
+            <button type="button" class="zf-tabs__tab zf-tabs__tab--active" role="tab"
+                    id="tab-profile" data-name="profile" aria-controls="panel-profile"
+                    aria-selected="true" tabindex="0">
+              <i class="bi bi-person-lines-fill"></i>资料设置
+            </button>
+            <button type="button" class="zf-tabs__tab" role="tab"
+                    id="tab-pwd" data-name="pwd" aria-controls="panel-pwd"
+                    aria-selected="false" tabindex="-1">
+              <i class="bi bi-shield-lock"></i>修改密码
+            </button>
+            <button type="button" class="zf-tabs__tab" role="tab"
+                    id="tab-fav" data-name="fav" aria-controls="favorites"
+                    aria-selected="false" tabindex="-1">
+              <i class="bi bi-star"></i>我的收藏
+              <span class="zf-tabs__count" id="tab-fav-count" hidden></span>
+            </button>
+          </div>
+
+          <!-- 页签面板 1：资料设置 -->
+          <div class="zf-card" id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="-1">
+            <div class="zf-card__head"><div><h3 class="zf-card__title">资料设置</h3>
+              <p class="zf-card__desc">修改你的基本资料</p></div></div>
+            <form id="profile-form" novalidate>
+              <!-- 两列栅格：昵称|邮箱 / 手机号|城市 / 岗位(整行) / 按钮条(整行)
+                   原本「手机号」独占整行、按钮条又在 grid 之外，导致 5 个字段排成
+                   3 行半 + 孤立按钮，右列大量竖向留白。 -->
+              <div class="zf-fill-grid">
+                <div class="zf-field">
+                  <label class="zf-form-label" for="pf-nickname">昵称<span class="zf-required" aria-hidden="true">*</span></label>
+                  <input class="zf-form-control" type="text" name="nickname" id="pf-nickname" maxlength="30"
+                         aria-required="true" aria-describedby="pf-nickname-err">
+                  <div class="zf-form-error" id="pf-nickname-err"></div>
+                </div>
+                <div class="zf-field">
+                  <label class="zf-form-label" for="pf-email">邮箱</label>
+                  <input class="zf-form-control" type="text" name="email" id="pf-email" maxlength="60"
+                         aria-describedby="pf-email-err">
+                  <div class="zf-form-error" id="pf-email-err"></div>
+                </div>
+                <div class="zf-field">
+                  <label class="zf-form-label" for="pf-phone">手机号</label>
+                  <input class="zf-form-control" type="text" name="phone" id="pf-phone" maxlength="20"
+                         inputmode="tel" placeholder="可选，支持 +86 与空格、横线"
+                         aria-describedby="pf-phone-err">
+                  <div class="zf-form-error" id="pf-phone-err"></div>
+                </div>
+                <div class="zf-field">
+                  <label class="zf-form-label" for="pf-city">城市</label>
+                  <input class="zf-form-control" type="text" name="city" id="pf-city" maxlength="30">
+                </div>
+                <div class="zf-field zf-field--full">
+                  <label class="zf-form-label" for="pf-job">岗位</label>
+                  <input class="zf-form-control" type="text" name="jobTitle" id="pf-job" maxlength="30"
+                         placeholder="如：人力资源专员 / 法务助理">
+                </div>
+                <div class="zf-actions-end">
+                  <button type="submit" class="zf-btn zf-btn--primary" id="pf-save">
+                    <i class="bi bi-check2"></i>保存资料
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- 页签面板 2：修改密码（低频高危，收进页签而不是与资料设置平级） -->
+          <div class="zf-card" id="panel-pwd" role="tabpanel" aria-labelledby="tab-pwd" tabindex="-1" hidden>
+            <div class="zf-card__head"><div><h3 class="zf-card__title">修改密码</h3>
+              <p class="zf-card__desc">修改后需重新登录</p></div></div>
+            <form id="pwd-form" novalidate>
+              <div class="zf-field zf-field--pwd">
+                <label class="zf-form-label" for="pw-old">原密码<span class="zf-required" aria-hidden="true">*</span></label>
+                <input class="zf-form-control" type="password" name="oldPassword" id="pw-old" autocomplete="current-password">
+                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-old" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-form-error"></div>
+              </div>
+              <div class="zf-field zf-field--pwd">
+                <label class="zf-form-label" for="pw-new">新密码<span class="zf-required" aria-hidden="true">*</span></label>
+                <input class="zf-form-control" type="password" name="newPassword" id="pw-new" autocomplete="new-password">
+                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-new" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-form-error"></div>
+                <div class="zf-pwd-strength" id="pw-strength" aria-hidden="true">
+                  <span class="zf-pwd-strength__bar"></span>
+                  <span class="zf-pwd-strength__bar"></span>
+                  <span class="zf-pwd-strength__bar"></span>
+                </div>
+                <div class="zf-form-hint" id="pw-strength-text" role="status">至少 6 位</div>
+              </div>
+              <div class="zf-field zf-field--pwd">
+                <label class="zf-form-label" for="pw-confirm">确认新密码<span class="zf-required" aria-hidden="true">*</span></label>
+                <input class="zf-form-control" type="password" name="confirm" id="pw-confirm" autocomplete="new-password">
+                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-confirm" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-form-error"></div>
+              </div>
+              <div class="zf-actions-end">
+                <button type="submit" class="zf-btn zf-btn--primary" id="pw-save">
+                  <i class="bi bi-shield-lock"></i>更新密码
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 页签面板 3：我的收藏（id 保留 #favorites，供指标卡锚点定位） -->
+          <div class="zf-card" id="favorites" role="tabpanel" aria-labelledby="tab-fav" tabindex="-1" hidden>
+            <div class="zf-card__head"><div><h3 class="zf-card__title">我的收藏</h3>
+              <p class="zf-card__desc">按类型查看，可取消收藏</p></div></div>
+            <div id="fav-tabs" class="zf-chips zf-chips--filter" role="group" aria-label="收藏类型"></div>
+            <div id="fav-list"></div>
+            <div id="fav-pager"></div>
+          </div>
+
+          <!-- 账号信息（常驻块，不随页签切换）
+               数据全部取 /auth/me 返回的 SysUser 真实字段，没有任何推算值
+               （不编"安全评分""上次登录 IP"这类接口不存在的东西）。
+               lastLoginAt 是真实字段：DB 有列、种子数据有值、
+               UserServiceImpl.login 每次登录成功都会 updateLastLogin 回写。
+
+               【为什么必须是 .zf-work 的直接子元素、而不是放进某个 tabpanel】
+               实测：放进 #panel-profile 后，切到「收藏 / 修改密码」页签时该面板变
+               hidden，卡片高度 607 → 496、左栏（等高）跟着塌 111px，页面明显跳动。
+               放在这里则三个页签下高度恒定 496，左栏不动。 -->
+          <div class="zf-acct" id="acct-box">
+            <h4 class="zf-acct__title">账号信息</h4>
+            <dl class="zf-acct__list">
+              <div class="zf-acct__row">
+                <dt>账号</dt><dd id="a-username">-</dd>
+              </div>
+              <div class="zf-acct__row">
+                <dt>邮箱</dt><dd id="a-email">-</dd>
+              </div>
+              <div class="zf-acct__row">
+                <dt>手机号</dt><dd id="a-phone">-</dd>
+              </div>
+              <div class="zf-acct__row">
+                <dt>最近登录</dt><dd id="a-lastlogin">-</dd>
+              </div>
+              <div class="zf-acct__row">
+                <dt>注册时间</dt><dd id="a-created">-</dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
-        <!-- 修改密码 -->
-        <div class="zf-card">
-          <div class="zf-card__head"><div><h3 class="zf-card__title">修改密码</h3>
-            <p class="zf-card__desc">修改后需重新登录</p></div></div>
-          <form id="pwd-form" novalidate>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pw-old">原密码 <span style="color:var(--zf-danger)">*</span></label>
-              <input class="zf-form-control" type="password" name="oldPassword" id="pw-old">
-              <div class="zf-form-error"></div>
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pw-new">新密码 <span style="color:var(--zf-danger)">*</span></label>
-              <input class="zf-form-control" type="password" name="newPassword" id="pw-new">
-              <div class="zf-form-error"></div>
-              <div class="zf-form-hint">至少 6 位</div>
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="pw-confirm">确认新密码 <span style="color:var(--zf-danger)">*</span></label>
-              <input class="zf-form-control" type="password" name="confirm" id="pw-confirm">
-              <div class="zf-form-error"></div>
-            </div>
-            <div style="text-align:right">
-              <button type="submit" class="zf-btn zf-btn--primary" id="pw-save">
-                <i class="bi bi-shield-lock"></i>更新密码
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- 我的收藏 -->
-      <div class="zf-card" style="margin-top:16px">
-        <div class="zf-card__head"><div><h3 class="zf-card__title">我的收藏</h3>
-          <p class="zf-card__desc">按类型查看，可取消收藏</p></div></div>
-        <div id="fav-tabs" class="zf-form-hint" style="margin-bottom:12px"></div>
-        <div id="fav-list"></div>
-        <div id="fav-pager"></div>
       </div>
     </section>
   </main>
@@ -128,7 +222,7 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file profile.html —— 个人中心
@@ -143,16 +237,50 @@
   var favType = 'QA';
   /** 收藏类型 → 中文标签 */
   var FAV_LABEL = { QA: '问答', ARTICLE: '文章', LAW: '法条', DOC: '文书' };
+  /**
+   * 收藏类型 → 可跳转的模块入口。
+   * 注意：项目里四类收藏都**没有"按 id 深链"的用户端路由** ——
+   * qa.html 的 jumpToPair / knowledge 的 openArticle / doc-drafting 的 openDocModal
+   * 都是页内弹窗或滚动，不解析 URL 参数；法条更是没有用户端页面（只有 admin）。
+   * 所以这里只跳模块入口，LAW 留空表示不可跳。
+   */
+  var FAV_VIEW = { QA: 'qa.html', ARTICLE: 'knowledge.html', DOC: 'doc-drafting.html#my-docs', LAW: '' };
+  /** 右列页签实例 */
+  var profileTabs = null;
 
   ZF.initPage({ active: 'profile', title: '个人中心', sub: '管理你的资料与收藏' })
     .then(function (user) {
       renderProfile(user);
       prefillForm(user);
-      loadStats();
       bindProfileForm(user);
       bindPwdForm();
+      bindPwdToggle();
       renderFavTabs();
-      loadFavorites('QA', 1);
+
+      profileTabs = ZF.tabs('#profile-tabs', { value: 'profile' });
+
+      // 【重要】「我的收藏」现在是一个默认 hidden 的页签面板：
+      // 直接滚到 #favorites 会滚到一条 display:none 的节点上，看不到任何东西。
+      // 所以这里改成「切页签」，并用 stopImmediatePropagation 抢在
+      // ZF.bindAnchorLinks 的平滑滚动之前（本行必须写在它前面）。
+      $('#stat-grid').on('click.zffav', 'a[href="#favorites"]', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (profileTabs) { profileTabs.select('fav'); }
+        if (window.history && history.replaceState) {
+          history.replaceState(null, '', '#favorites');
+        }
+      });
+
+      // 指标卡内的站内锚点（合同档案 / 我的文书 → 其他页面）平滑滚动
+      ZF.bindAnchorLinks('#stat-grid');
+
+      // 等首屏数据渲染完再定位锚点，避免高度变化造成偏移
+      Promise.all([loadStats(), loadFavorites('QA', 1)]).then(function () {
+        // 带 #favorites 进入时先切到收藏页签，再让 handleHashAnchor 去定位
+        if (profileTabs && location.hash === '#favorites') { profileTabs.select('fav'); }
+        ZF.handleHashAnchor();
+      });
     });
 
   /** 渲染个人信息卡 */
@@ -161,6 +289,29 @@
     $('#p-username').text(user.username || '');
     $('#p-role').text(user.role === 'ADMIN' ? '管理员' : '普通用户');
     $('#p-created').text(ZF.formatDate(user.createdAt, false) || '-');
+    renderAccount(user);
+    // 接口返回了 avatar 就显示图片，否则保持图标兜底。
+    // 目前后端不返回该字段，这属于防御性渲染（将来支持了会自动生效）。
+    var $img = $('#p-avatar-img');
+    if (user.avatar) {
+      $img.attr('src', user.avatar).prop('hidden', false);
+    } else {
+      $img.removeAttr('src').prop('hidden', true);
+    }
+  }
+
+  /**
+   * 渲染左栏「账号信息」。
+   * 全部为 /auth/me（→ SysUser）里的真实字段，空值统一显示「未设置」，
+   * 不显示「-」以外的任何推断内容。
+   */
+  function renderAccount(user) {
+    var dash = function (v) { return $.trim(v || '') ? ZF.escape(v) : '<span class="zf-acct__empty">未设置</span>'; };
+    $('#a-username').text(user.username || '-');
+    $('#a-email').html(dash(user.email));
+    $('#a-phone').html(dash(user.phone));
+    $('#a-lastlogin').text(ZF.formatDate(user.lastLoginAt, true) || '尚无记录');
+    $('#a-created').text(ZF.formatDate(user.createdAt, true) || '-');
   }
 
   /** 把用户资料回填到表单 */
@@ -172,17 +323,21 @@
     $('#pf-job').val(user.jobTitle || '');
   }
 
-  /** 拉取各模块数量统计 */
+  /**
+   * 拉取各模块数量统计 + 左栏「最近动态」。
+   * pageSize 取 2：total 不受影响，同时能拿到各模块最新一条（四个 Dao 都是 ORDER BY id DESC）。
+   */
   function loadStats() {
     var tasks = [
-      ZF.get('/qa/mine', { pageNum: 1, pageSize: 1 }, { silent: true }),
-      ZF.get('/contracts/mine', { pageNum: 1, pageSize: 1 }, { silent: true }),
-      ZF.get('/doc-records/mine', { pageNum: 1, pageSize: 1 }, { silent: true })
+      ZF.get('/qa/mine', { pageNum: 1, pageSize: 2 }, { silent: true }),
+      ZF.get('/contracts/mine', { pageNum: 1, pageSize: 2 }, { silent: true }),
+      ZF.get('/doc-records/mine', { pageNum: 1, pageSize: 2 }, { silent: true })
     ];
-    Promise.all(tasks).then(function (res) {
+    return Promise.all(tasks).then(function (res) {
       $('[data-stat=qa]').text(res[0].total);
       $('[data-stat=contract]').text(res[1].total);
       $('[data-stat=doc]').text(res[2].total);
+      renderRecent(res);
       // 收藏总数：四类累加
       var favTotal = 0;
       ['QA', 'ARTICLE', 'LAW', 'DOC'].forEach(function (t) {
@@ -190,6 +345,8 @@
           .then(function (r) {
             favTotal += r.total;
             $('[data-stat=favorite]').text(favTotal);
+            // 「我的收藏」页签上的数量角标（复用公共库而非手写 hidden 切换）
+            ZF.tabCount($('#tab-fav'), favTotal);
           }).catch(function () { /* 忽略 */ });
       });
     }).catch(function () {
@@ -197,16 +354,98 @@
     });
   }
 
+  /**
+   * 渲染左栏「最近动态」——各模块最新一条。
+   * 【约束】这里只允许使用接口**真实存在**的字段，不构造任何推算值：
+   *   /qa/mine         → question / category / createdAt
+   *   /contracts/mine  → fileName / riskLevel（中文「高/中/低」，与 ZF.riskBadge 的键一致）/ createdAt
+   *   /doc-records/mine→ title / templateName / createdAt
+   * 三条都没有时不显示该区块（整块 hidden），避免出现空标题。
+   */
+  function renderRecent(res) {
+    var rows = [];
+    var qa = (res[0].list || [])[0];
+    var ct = (res[1].list || [])[0];
+    var dc = (res[2].list || [])[0];
+
+    if (qa) {
+      rows.push({
+        href: 'qa.html', icon: 'bi-chat-square-text', mod: '问答',
+        text: qa.question || '未命名提问',
+        tail: qa.category ? ZF.escape(qa.category) : '',
+        time: qa.createdAt
+      });
+    }
+    if (ct) {
+      rows.push({
+        href: 'contract-review.html#history', icon: 'bi-file-earmark-check', mod: '合同',
+        text: ct.fileName || '未命名合同',
+        tail: ZF.riskBadge(ct.riskLevel),
+        time: ct.createdAt
+      });
+    }
+    if (dc) {
+      rows.push({
+        href: 'doc-drafting.html#my-docs', icon: 'bi-pencil-square', mod: '文书',
+        text: dc.title || dc.templateName || '未命名文书',
+        tail: dc.templateName ? ZF.escape(dc.templateName) : '',
+        time: dc.createdAt
+      });
+    }
+
+    var $box = $('#recent-box');
+    if (!rows.length) {
+      $box.prop('hidden', true);
+      $('#recent-list').empty();
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function (r) {
+      // 【注意】先 escape 再 truncate —— ZF.truncate 是按字符切，
+      // 反序会把 '&amp;' 从中间切断，反向断出一个非法实体。
+      // 【注意】tail 为「空字符串」时不拼 ·，为「HTML 串」（风险徽标）时原样拼。
+      var tail = r.tail ? ' · ' + r.tail : '';
+      html += '<li class="zf-recent__item">' +
+        '<a class="zf-recent__link" href="' + r.href + '">' +
+          '<span class="zf-recent__ico"><i class="bi ' + r.icon + '"></i></span>' +
+          '<span class="zf-recent__body">' +
+            '<span class="zf-recent__text">' +
+              ZF.escape(ZF.truncate(r.text, 22)) +
+            '</span>' +
+            '<span class="zf-recent__meta">' + r.mod + tail + ' · ' +
+              ZF.escape(ZF.formatDate(r.time, false) || '-') +
+            '</span>' +
+          '</span>' +
+        '</a></li>';
+    });
+    $('#recent-list').html(html);
+    $box.prop('hidden', false);
+  }
+
   /** 绑定资料保存 */
   function bindProfileForm(user) {
-    $('#profile-form').on('submit', function (e) {
+    var $form = $('#profile-form');
+    // 开始输入即清除该字段的错误态（ZF.clearValidate 只去 class，不会清错误文本）
+    $form.on('input', '[name]', function () {
+      $(this).closest('.zf-field').removeClass('zf-field--invalid')
+        .find('.zf-form-error').text('');
+      $(this).removeAttr('aria-invalid');
+    });
+
+    $form.on('submit', function (e) {
       e.preventDefault();
-      var $form = $(this);
       ZF.clearValidate($form);
+      $form.find('[name]').removeAttr('aria-invalid');
       if (!ZF.validate($form, {
         nickname: { required: true, message: '昵称不能为空' },
-        email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' }
+        email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' },
+        // 宽松：允许 +86 前缀与空格、横线；空值直接放行（手机号是选填）
+        phone: { pattern: /^(?:\+?86[\s-]?)?1[3-9](?:[\s-]?\d){9}$/, message: '手机号格式不正确' }
       })) {
+        // ZF.validate 只加 .zf-field--invalid 这个视觉 class，
+        // 屏幕阅读器读不到 —— 这里补同步 aria-invalid。
+        $form.find('.zf-field--invalid [name]').attr('aria-invalid', 'true');
         return;
       }
       var $btn = $('#pf-save');
@@ -225,6 +464,7 @@
         // 刷新顶栏与信息卡
         ZF.currentUser().then(function (u) {
           if (u) {
+            user.avatar = u.avatar || user.avatar;   // 保持后续提交带上最新 avatar
             renderProfile(u);
             // 同步刷新顶部栏昵称
             $('.zf-topbar__user span').first().text(u.nickname || u.username);
@@ -236,52 +476,124 @@
     });
   }
 
+  /** 把某个字段标为出错（ZF.validate 不覆盖"跨字段"规则，这两处手动用） */
+  function markInvalid($form, name, msg) {
+    var $input = $form.find('[name="' + name + '"]');
+    $input.closest('.zf-field').addClass('zf-field--invalid').find('.zf-form-error').text(msg);
+    $input.attr('aria-invalid', 'true');
+  }
+
+  /** 清掉某个字段的出错态（注意 ZF.clearValidate 只去 class，不会清错误文本） */
+  function clearInvalid($form, name) {
+    var $input = $form.find('[name="' + name + '"]');
+    $input.closest('.zf-field').removeClass('zf-field--invalid').find('.zf-form-error').text('');
+    $input.removeAttr('aria-invalid');
+  }
+
+  /**
+   * 密码强度：0=太短 / 1=弱 / 2=中 / 3=强。
+   * 规则刻意简单（法律场景下弱密码风险高，给个大致引导即可，不做误报率高的复杂评分）。
+   */
+  function pwdStrength(v) {
+    v = String(v || '');
+    if (v.length < 6) { return 0; }
+    var s = 1;
+    if (v.length >= 10) { s++; }
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) { s++; }
+    if (/\d/.test(v)) { s++; }
+    if (/[^a-zA-Z0-9]/.test(v)) { s++; }
+    if (s <= 2) { return 1; }
+    if (s <= 4) { return 2; }
+    return 3;
+  }
+
   /** 绑定修改密码 */
   function bindPwdForm() {
-    $('#pwd-form').on('submit', function (e) {
+    var $form = $('#pwd-form');
+    var $new = $form.find('[name=newPassword]');
+    var $confirm = $form.find('[name=confirm]');
+    var $strength = $('#pw-strength');
+    var $strengthText = $('#pw-strength-text');
+    var LABELS = ['至少 6 位', '弱', '中', '强'];
+
+    function renderStrength(v) {
+      var lv = pwdStrength(v);
+      $strength.removeClass('zf-pwd-strength--1 zf-pwd-strength--2 zf-pwd-strength--3');
+      if (lv > 0) { $strength.addClass('zf-pwd-strength--' + lv); }
+      $strengthText.text(LABELS[lv]);
+    }
+
+    $new.on('input', function () { renderStrength($new.val()); clearInvalid($form, 'confirm'); });
+    $confirm.on('input', function () { clearInvalid($form, 'confirm'); });
+
+    $form.on('submit', function (e) {
       e.preventDefault();
-      var $form = $(this);
       ZF.clearValidate($form);
-      var pwd = $form.find('[name=newPassword]').val();
-      var confirm = $form.find('[name=confirm]').val();
+      clearInvalid($form, 'confirm');
       if (!ZF.validate($form, {
         oldPassword: { required: true, message: '请输入原密码' },
         newPassword: { required: true, min: 6, message: '新密码至少 6 位' }
       })) {
         return;
       }
-      if (pwd !== confirm) {
-        $form.find('[name=confirm]').closest('.zf-field').addClass('zf-field--invalid')
-          .find('.zf-form-error').text('两次输入的密码不一致');
+      // 跨字段相等校验：只有这一处用到，不值得为它去扩展公共库 ZF.validate
+      var newVal = $new.val();
+      var confirmVal = $confirm.val();   // 注意不要叫 confirm，会遮蔽 window.confirm
+      if (newVal !== confirmVal) {
+        markInvalid($form, 'confirm', '两次输入的密码不一致');
+        $confirm.focus();
         return;
       }
       var $btn = $('#pw-save');
       ZF.btnLoading($btn, true, '更新中…');
       ZF.put('/auth/password', {
         oldPassword: $form.find('[name=oldPassword]').val(),
-        newPassword: pwd
+        newPassword: newVal
       }).then(function () {
+        ZF.clearUserCache();   // 后端已强制登出，先把本地用户缓存清掉
         ZF.toast('密码修改成功，请重新登录', 'success');
-        // 后端会强制登出，延迟跳转到登录页
-        setTimeout(function () { window.location.href = ZF.CTX + '/login.html'; }, 1300);
+        // 延迟跳转，留出时间让用户看清提示
+        setTimeout(function () { window.location.href = ZF.CTX + '/login.html'; }, 1600);
       }).catch(function () { /* 统一提示 */ }).then(function () {
         ZF.btnLoading($btn, false);
       });
     });
   }
 
-  /** 渲染收藏类型标签页 */
+  /** 密码框的显示 / 隐藏切换 */
+  function bindPwdToggle() {
+    $(document).off('click.zfpw').on('click.zfpw', '.js-pwd-toggle', function () {
+      var $input = $('#' + $(this).attr('data-target'));
+      if (!$input.length) { return; }
+      var show = $input.attr('type') === 'password';
+      $input.attr('type', show ? 'text' : 'password');
+      $(this).find('i').toggleClass('bi-eye bi-eye-slash');
+      $(this).attr('aria-label', show ? '隐藏密码' : '显示密码');
+    });
+  }
+
+  /** 渲染收藏类型切换（.zf-chips 胶囊，与知识广场 / AI 小法庭同一套语言） */
   function renderFavTabs() {
     var html = Object.keys(FAV_LABEL).map(function (t) {
-      return '<button class="zf-btn zf-btn--sm ' + (t === favType ? 'zf-btn--primary' : 'zf-btn--ghost') +
-        ' js-fav-tab" data-type="' + t + '">' + FAV_LABEL[t] + '</button>';
-    }).join(' ');
-    $('#fav-tabs').html(html);
-    $('#fav-tabs').off('click.zffav').on('click.zffav', '.js-fav-tab', function () {
-      favType = $(this).data('type');
-      renderFavTabs();
-      loadFavorites(favType, 1);
-    });
+      var on = (t === favType);
+      return '<button type="button" class="zf-tag' + (on ? ' zf-tag--active' : '') +
+        '" data-type="' + t + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        FAV_LABEL[t] + '</button>';
+    }).join('');
+    var $tabs = $('#fav-tabs');
+    $tabs.html(html);
+    $tabs.off('click.zffav keydown.zffav')
+      .on('click.zffav', '.zf-tag', function () {
+        favType = $(this).attr('data-type');
+        renderFavTabs();
+        loadFavorites(favType, 1);
+      })
+      .on('keydown.zffav', '.zf-tag', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          $(this).trigger('click');
+        }
+      });
   }
 
   /**
@@ -292,50 +604,68 @@
   function loadFavorites(targetType, pageNum) {
     favPage = pageNum || 1;
     var $box = $('#fav-list');
+    $box.attr('aria-busy', 'true');
     ZF.renderLoading($box, '加载收藏…');
-    ZF.get('/favorites', { targetType: targetType, pageNum: favPage, pageSize: 8 }).then(function (page) {
+    $box.find('.zf-loading').attr('role', 'status');   // common.js 的 renderLoading 没带这个
+    return ZF.get('/favorites', { targetType: targetType, pageNum: favPage, pageSize: 8 }).then(function (page) {
+      $box.removeAttr('aria-busy');
       if (!page.list || !page.list.length) {
         ZF.renderEmpty($box, '还没有收藏' + FAV_LABEL[targetType] + '，去对应模块收藏吧');
         $('#fav-pager').empty();
         return;
       }
-      var html = ['<div class="zf-list">'];
+      var html = ['<div class="zf-list zf-fav-list" role="list">'];
       page.list.forEach(function (item) {
-        html.push('<div class="zf-list__item" data-id="' + item.id + '" data-tid="' + item.targetId + '">');
+        var title = ZF.escape(item.targetTitle || '未命名');
+        // 有用户端页面才做成链接；法条（LAW）目前没有用户端页面，保持纯文本
+        var href = FAV_VIEW[item.targetType] || '';
+        var titleHtml = href
+          ? '<a class="zf-fav-list__link" href="' + href + '" title="前往' +
+            FAV_LABEL[item.targetType] + '模块查看">' + title + '</a>'
+          : title;
+        var summary = item.targetSummary
+          ? '<p class="zf-list__text">' + ZF.escape(ZF.truncate(item.targetSummary, 60)) + '</p>'
+          : '';
+
+        html.push('<div class="zf-list__item" role="listitem" data-id="' + item.id + '" data-tid="' + item.targetId + '">');
         html.push('<div class="zf-list__main">');
-        html.push('<p class="zf-list__title">' + ZF.escape(item.targetTitle || '未命名') + '</p>');
-        if (item.targetSummary) {
-          html.push('<p class="zf-list__text">' + ZF.escape(ZF.truncate(item.targetSummary, 60)) + '</p>');
-        }
+        html.push('<p class="zf-list__title">' + titleHtml + '</p>');
+        html.push(summary);
         html.push('</div>');
-        html.push('<div class="zf-list__meta" style="text-align:right">');
-        html.push(ZF.escape(ZF.formatDate(item.createdAt, false)) + '<br>');
+        // 元信息并入一行横排（原先是内联 text-align + <br> 竖排）
+        html.push('<div class="zf-list__meta">');
+        html.push('<span class="zf-fav-list__date">' + ZF.escape(ZF.formatDate(item.createdAt, false)) + '</span>');
         html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-fav-cancel" data-type="' + item.targetType +
-          '" data-tid="' + item.targetId + '"><i class="bi bi-x-circle"></i>取消收藏</button>');
+          '" data-tid="' + item.targetId + '" aria-label="取消收藏：' + title +
+          '"><i class="bi bi-x-circle"></i>取消收藏</button>');
         html.push('</div></div>');
       });
       html.push('</div>');
       $box.html(html.join(''));
       ZF.renderPager('#fav-pager', page, function (p) { loadFavorites(targetType, p); });
     }).catch(function () {
+      $box.removeAttr('aria-busy');
       ZF.renderEmpty($box, '加载失败，请刷新重试');
     });
   }
 
-  /** 取消收藏事件委托 */
+  /**
+   * 取消收藏。这里刻意**不加二次确认** —— 取消收藏是可逆的轻操作
+   * （原文还在、随时可再收），与 doc/contract 里「删除内容」那种不可逆动作用同一套确认属于逻辑倒置。
+   */
   $(document).on('click', '.js-fav-cancel', function () {
     var $btn = $(this);
     var type = $btn.data('type');
     var tid = $btn.data('tid');
-    ZF.confirm('确定取消收藏吗？').then(function (ok) {
-      if (!ok) { return; }
-      ZF.post('/favorites/toggle', { targetType: type, targetId: tid }).then(function (faved) {
-        if (!faved) {
-          ZF.toast('已取消收藏', 'info');
-          loadFavorites(favType, favPage);
-          loadStats();
-        }
-      }).catch(function () { /* 统一提示 */ });
+    ZF.btnLoading($btn, true, '处理中…');
+    ZF.post('/favorites/toggle', { targetType: type, targetId: tid }).then(function (faved) {
+      if (!faved) {
+        ZF.toast('已取消收藏', 'info');
+        loadFavorites(favType, favPage);
+        loadStats();
+      }
+    }).catch(function () {
+      ZF.btnLoading($btn, false);
     });
   });
 })(jQuery, window.ZF);

@@ -48,7 +48,21 @@ public interface OperationLogDao {
      * @param limit 参数
      * @return 查询结果
      */
+    /** 后台日志分页（不带排序，委托带排序重载，默认 sortName/sortOrder 为 null） */
     java.util.List<OperationLog> findByCondition(String keyword, String method, int offset, int limit);
+
+    /**
+     * 后台日志分页（支持列头排序）
+     *
+     * @param keyword 参数
+     * @param method 参数
+     * @param offset 参数
+     * @param limit 参数
+     * @param sortName 排序列（前端字段名，白名单校验）
+     * @param sortOrder 排序方向（asc/desc）
+     * @return 查询结果
+     */
+    java.util.List<OperationLog> findByCondition(String keyword, String method, int offset, int limit, String sortName, String sortOrder);
 
     /**
      * 后台日志条件计数

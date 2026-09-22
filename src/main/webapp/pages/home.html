@@ -6,7 +6,7 @@
   <title>首页 - 职小法</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -14,7 +14,9 @@
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
-    <section class="zf-content">
+    <!-- .zf-content--home 是首页专属作用域，用于局部放大指标卡
+         （通用 .zf-stat 同时被 profile.html / admin/index.html 复用，不能直接改） -->
+    <section class="zf-content zf-content--home">
       <!-- 欢迎区 -->
       <div class="zf-card" style="margin-bottom:14px">
         <div class="zf-card__head" style="margin-bottom:0">
@@ -28,24 +30,31 @@
         </div>
       </div>
 
-      <!-- 使用概览 -->
+      <!-- 使用概览：整卡可点击，分别跳转到对应模块的记录区（带锚点定位） -->
       <div class="zf-grid zf-grid--4" id="stat-grid" style="margin-bottom:18px">
-        <div class="zf-card zf-stat">
+        <a class="zf-card zf-stat zf-stat--link" href="qa.html" title="继续和职小法对话">
           <div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
           <div><p class="zf-stat__label">我的问答</p><p class="zf-stat__value" data-stat="qa">-</p></div>
-        </div>
-        <div class="zf-card zf-stat">
-          <div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
+          <i class="bi bi-arrow-right zf-stat__go"></i>
+        </a>
+        <!-- 审查合同：用 bi-file-earmark-diff 而非 bi-file-earmark-check。
+             后者与「生成文书」的 bi-pencil-square 在 22px 下都是「方块套一个勾/笔」，
+             缩略看几乎分不出；diff 的「左右对照条」图形辨识度更高 -->
+        <a class="zf-card zf-stat zf-stat--link" href="contract-review.html#history" title="查看我的合同档案">
+          <div class="zf-stat__icon"><i class="bi bi-file-earmark-diff"></i></div>
           <div><p class="zf-stat__label">审查合同</p><p class="zf-stat__value" data-stat="contract">-</p></div>
-        </div>
-        <div class="zf-card zf-stat">
+          <i class="bi bi-arrow-right zf-stat__go"></i>
+        </a>
+        <a class="zf-card zf-stat zf-stat--link" href="doc-drafting.html#my-docs" title="查看我的文书">
           <div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
           <div><p class="zf-stat__label">生成文书</p><p class="zf-stat__value" data-stat="doc">-</p></div>
-        </div>
-        <div class="zf-card zf-stat">
+          <i class="bi bi-arrow-right zf-stat__go"></i>
+        </a>
+        <a class="zf-card zf-stat zf-stat--link" href="profile.html#favorites" title="查看我的收藏">
           <div class="zf-stat__icon"><i class="bi bi-star"></i></div>
           <div><p class="zf-stat__label">我的收藏</p><p class="zf-stat__value" data-stat="favorite">-</p></div>
-        </div>
+          <i class="bi bi-arrow-right zf-stat__go"></i>
+        </a>
       </div>
 
       <!-- 功能模块 -->
@@ -100,6 +109,7 @@
             </div>
             <a class="zf-btn zf-btn--ghost zf-btn--sm" href="qa.html">全部记录</a>
           </div>
+          <!-- 整项可点：点击原地展开「完整回答 + 引用法条」，不跳页 -->
           <div id="qa-list"><div class="zf-loading">加载中…</div></div>
         </div>
 
@@ -111,6 +121,7 @@
             </div>
             <a class="zf-btn zf-btn--ghost zf-btn--sm" href="knowledge.html">更多文章</a>
           </div>
+          <!-- 整项可点：点击在原地弹出文章详情（含正文 / 点赞 / 收藏），不跳页 -->
           <div id="tip-list"><div class="zf-loading">加载中…</div></div>
         </div>
       </div>
@@ -118,9 +129,33 @@
   </main>
 </div>
 
+<!-- 文章详情弹窗：从 knowledge.html 搬来，只保留首页用得到的「正文 + 点赞 + 收藏」。
+     跳过了知识广场里的标签展示与自测题，因为首页没有那两块上下文。 -->
+<div class="modal fade" id="article-modal" tabindex="-1" aria-hidden="true" aria-labelledby="article-modal-title">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="article-modal-title">文章详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body" id="article-modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="article-like">
+          <i class="bi bi-hand-thumbs-up"></i>点赞 <span id="article-like-count">0</span>
+        </button>
+        <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="article-fav"
+                aria-pressed="false" aria-label="收藏">
+          <i class="bi bi-star"></i><span id="article-fav-text">收藏</span>
+        </button>
+        <button type="button" class="zf-btn zf-btn--primary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file 首页：拉取个人使用概览、最近问答与推荐文章
@@ -131,6 +166,8 @@
   ZF.initPage({ active: 'home', title: '首页', sub: '今天也要保护好自己的合法权益' })
     .then(function (user) {
       $('#welcome-title').text('你好，' + (user.nickname || user.username));
+      bindHomeLists();
+      bindArticleModal();
       loadStats();
       loadRecentQa();
       loadTips();
@@ -167,18 +204,33 @@
         ZF.renderEmpty('#qa-list', '还没有咨询记录，去问一个问题试试');
         return;
       }
-      var html = ['<div class="zf-list">'];
+      var html = ['<div class="zf-list zf-home-list" role="list">'];
       page.list.forEach(function (item) {
-        html.push('<div class="zf-list__item">');
+        var refs = item.references || [];
+        html.push('<div class="zf-list__item zf-home-item" data-id="' + item.id + '" role="listitem"' +
+          ' tabindex="0" aria-expanded="false" title="点击展开完整回答">');
         html.push('<div class="zf-list__main">');
-        html.push('<p class="zf-list__title">' + ZF.escape(ZF.truncate(item.question, 30)) + '</p>');
+        html.push('<p class="zf-list__title">' + ZF.escape(ZF.truncate(item.question, 30)) +
+          '<i class="bi bi-chevron-down zf-home-item__caret" aria-hidden="true"></i></p>');
+        // 摘要态：仍走 line-clamp 截 2 行，展开后才显示完整回答
         html.push('<p class="zf-list__text">' + ZF.escape(ZF.truncate(item.answer, 52)) + '</p>');
-        html.push('</div><div class="zf-list__meta">' + ZF.escape(item.createdAtText || '') +
-          '<br><span class="zf-badge zf-badge--primary">引用' + ((item.references || []).length) + '条法规</span></div>');
+        html.push('</div>');
+        html.push('<div class="zf-list__meta">' + ZF.escape(item.createdAtText || ''));
+        if (refs.length) {
+          // 徽标本身也是一个独立开关：点它只展开法条清单，不展开整段回答
+          html.push('<br><button type="button" class="zf-badge zf-badge--primary zf-home-refs"' +
+            ' aria-expanded="false" title="点击查看引用法条"><i class="bi bi-book"></i>引用' +
+            refs.length + '条法规</button>');
+        }
+        html.push('</div>');
+        // 展开区默认 hidden，由 JS 填内容，避免首屏就把 4 段长回答渲染进 DOM
+        html.push('<div class="zf-home-detail" hidden></div>');
         html.push('</div>');
       });
       html.push('</div>');
       $('#qa-list').html(html.join(''));
+      // 渲染完再把原始数据挂上去，供展开时取用（避免把整段回答塞进 data-* 属性）
+      attachQaData(page);
     }).catch(function () {
       ZF.renderEmpty('#qa-list', '加载失败');
     });
@@ -191,19 +243,199 @@
         ZF.renderEmpty('#tip-list', '暂无文章');
         return;
       }
-      var html = ['<div class="zf-list">'];
+      var html = ['<div class="zf-list zf-home-list" role="list">'];
       page.list.forEach(function (a) {
-        html.push('<div class="zf-list__item">');
+        var id = a.id;
+        // 用真正的 <a href="#article-<id>">：既拿到原生键盘可达性，
+        // 又不触发跳页（下一行 preventDefault 掉）
+        html.push('<a class="zf-list__item zf-home-item" href="#article-' + id + '"' +
+          ' data-article-id="' + id + '" role="listitem" title="点击查看文章详情">');
         html.push('<div class="zf-list__main">');
         html.push('<p class="zf-list__title">' + ZF.escape(a.title) + '</p>');
         html.push('<p class="zf-list__text">' + ZF.escape(a.summary || '') + '</p>');
         html.push('</div><div class="zf-list__meta"><i class="bi bi-eye"></i> ' + (a.viewCount || 0) + '</div>');
-        html.push('</div>');
+        html.push('</a>');
       });
       html.push('</div>');
       $('#tip-list').html(html.join(''));
     }).catch(function () {
       ZF.renderEmpty('#tip-list', '加载失败');
+    });
+  }
+
+  /* ==================================================================
+   *  列表交互：问答原地展开 / 文章弹窗
+   * ================================================================== */
+
+  /** 当前已展开的问答项 id，0 表示没有 */
+  var openQaId = 0;
+  /** 当前弹窗里的文章详情 */
+  var currentArticle = null;
+
+  /**
+   * 回答正文渲染。
+   * 与 qa.html 的 answerHtml 保持一致：把【结论】这类小标题和「提示：」单独提色，
+   * 换行转 <br>。两处若只改一处，同一段回答在两个页面的观感会不一致。
+   * @param {string} text 原始回答
+   * @returns {string} HTML
+   */
+  function answerHtml(text) {
+    var html = ZF.escape(text || '')
+      .replace(/【([^】]+)】/g, '<span class="zf-ans__sec">$1</span>')
+      .replace(/(^|\n)(提示：[\s\S]*)$/, '$1<span class="zf-ans__note">$2</span>');
+    return html.replace(/\n/g, '<br>');
+  }
+
+  /**
+   * 引用法条清单。
+   * 与 qa.html 的 refsHtml 不同：那边是 <details> 折叠面板，这边由 .zf-home-refs
+   * 徽标统管开合，所以只输出裸清单，不再套一层 details（否则要连点两次）。
+   */
+  function refsHtml(refs) {
+    return refs.map(function (law) {
+      return '<div class="zf-law">' +
+        '<div class="zf-law__name">《' + ZF.escape(law.lawName) + '》' + ZF.escape(law.articleNo || '') + '</div>' +
+        (law.title ? '<div class="zf-law__text"><strong>' + ZF.escape(law.title) + '</strong></div>' : '') +
+        '<div class="zf-law__text">' + ZF.escape(law.content) + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  /**
+   * 展开/收起一条问答。
+   *
+   * 【为什么内容要懒渲染】这里若在初始渲染时就把 4 段完整回答写进 DOM，
+   * 首屏会白白多出十几 KB 文本（首页本来就有 5 张功能卡 + 4 条问答 + 5 篇文章，
+   * 已经要滚动）。所以 detail 区初始为空 + hidden，首次展开时才填充。
+   *
+   * @param {jQuery} $item 列表项
+   * @param {boolean} open 是否展开
+   */
+  function setQaOpen($item, open) {
+    var $detail = $item.find('.zf-home-detail').first();
+    if (open && !$detail.children().length) {
+      var qa = $item.data('qa');
+      if (!qa) { return; }
+      var refs = qa.references || [];
+      var body = '<div class="zf-home-detail__inner">' +
+        '<div class="zf-home-answer">' + answerHtml(qa.answer) + '</div>';
+      // 有引用才给容器，避免出现一个空的灰框
+      if (refs.length) {
+        body += '<div class="zf-home-refs-box" hidden>' + refsHtml(refs) + '</div>';
+      }
+      body += '</div>';
+      $detail.html(body);
+    }
+    $item.toggleClass('zf-home-item--open', !!open);
+    $item.attr('aria-expanded', open ? 'true' : 'false');
+    $item.find('.zf-home-detail').first().prop('hidden', !open);
+    openQaId = open ? ($item.data('id') || 0) : 0;
+  }
+
+  /**
+   * 展开/收起某条的「引用法条」清单。
+   * 与整项展开相互独立：点徽标只动法条框，不展开整段回答。
+   */
+  function setRefsOpen($btn, open) {
+    var $item = $btn.closest('.zf-home-item');
+    // 法条框在 detail 区里，若整项还没展开就先把它展开出来
+    if (open && !$item.hasClass('zf-home-item--open')) {
+      setQaOpen($item, true);
+    }
+    var $box = $item.find('.zf-home-refs-box').first();
+    $box.prop('hidden', !open);
+    $btn.attr('aria-expanded', open ? 'true' : 'false');
+  }
+
+  /** 列表交互绑定（事件委托，列表内容重渲染后依然有效） */
+  function bindHomeLists() {
+    $('#qa-list')
+      .on('click', '.zf-home-item', function (e) {
+        // 徽标是独立开关，别让它顺带触发整项开合
+        if ($(e.target).closest('.zf-home-refs').length) {
+          return;
+        }
+        var $item = $(this);
+        setQaOpen($item, !$item.hasClass('zf-home-item--open'));
+      })
+      .on('keydown', '.zf-home-item', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          // 空格默认会滚页面，必须拦掉
+          e.preventDefault();
+          var $item = $(this);
+          setQaOpen($item, !$item.hasClass('zf-home-item--open'));
+        }
+      })
+      .on('click', '.zf-home-refs', function (e) {
+        e.stopPropagation();
+        var $btn = $(this);
+        setRefsOpen($btn, $btn.attr('aria-expanded') !== 'true');
+      });
+
+    $('#tip-list').on('click', '.zf-home-item', function (e) {
+      e.preventDefault();
+      openArticle($(this).attr('data-article-id'));
+    });
+  }
+
+  /** 打开文章详情弹窗（并让后端累计阅读量） */
+  function openArticle(id) {
+    if (!id) { return; }
+    ZF.get('/knowledge/' + id).then(function (a) {
+      currentArticle = a;
+      $('#article-modal-title').text(a.title || '文章详情');
+      $('#article-modal-body').html('<div class="zf-doc zf-doc--plain zf-doc--prose">' + ZF.escape(a.content || '') + '</div>');
+      $('#article-like-count').text(a.likeCount || 0);
+      $('#article-like').prop('disabled', false);
+      setFavState(!!a.favorited);
+      new bootstrap.Modal($('#article-modal')[0]).show();
+    });
+  }
+
+  /** 切换收藏按钮状态 */
+  function setFavState(faved) {
+    var $fav = $('#article-fav');
+    $fav.attr('aria-pressed', faved ? 'true' : 'false');
+    $fav.attr('aria-label', faved ? '取消收藏' : '收藏');
+    $fav.find('i').attr('class', faved ? 'bi bi-star-fill' : 'bi bi-star');
+    $('#article-fav-text').text(faved ? '已收藏' : '收藏');
+  }
+
+  /** 弹窗内的点赞 / 收藏 */
+  function bindArticleModal() {
+    $('#article-like').on('click', function () {
+      if (!currentArticle) { return; }
+      ZF.post('/knowledge/' + currentArticle.id + '/like', {}, { silent: true }).then(function () {
+        var n = (currentArticle.likeCount || 0) + 1;
+        currentArticle.likeCount = n;
+        $('#article-like-count').text(n);
+        $('#article-like').prop('disabled', true);
+        ZF.toast('已点赞', 'success');
+      }).catch(function () { /* 已统一提示 */ });
+    });
+
+    $('#article-fav').on('click', function () {
+      if (!currentArticle) { return; }
+      ZF.post('/favorites/toggle', {
+        targetType: 'ARTICLE', targetId: currentArticle.id
+      }).then(function (faved) {
+        setFavState(faved);
+        ZF.toast(faved ? '已收藏' : '已取消收藏', faved ? 'success' : 'info');
+      }).catch(function () { /* 已统一提示 */ });
+    });
+  }
+
+  /** 把问答数据挂到对应列表项上，供展开时取用 */
+  function attachQaData(page) {
+    var list = page.list || [];
+    $('#qa-list .zf-home-item').each(function () {
+      var id = $(this).data('id');
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) {
+          $(this).data('qa', list[i]);
+          break;
+        }
+      }
     });
   }
 })(jQuery, window.ZF);

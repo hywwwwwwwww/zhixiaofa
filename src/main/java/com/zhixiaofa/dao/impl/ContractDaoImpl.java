@@ -121,9 +121,25 @@ public class ContractDaoImpl implements ContractDao {
         return JdbcExecutor.queryCount(null, "SELECT COUNT(*) FROM contract WHERE user_id = ?", userId);
     }
 
+    /** 合同列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "c.id",
+            "riskLevel", "c.risk_level",
+            "riskCount", "c.risk_count",
+            "createdAt", "c.created_at");
+
+    /** 默认排序：按 id 倒序（最新在前） */
+    private static final String DEFAULT_ORDER = "c.id DESC";
+
     @Override
     public java.util.List<Contract> findByCondition(String keyword, String riskLevel, Integer status, int offset, int limit) {
-        // 后台合同分页
+        return findByCondition(keyword, riskLevel, status, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<Contract> findByCondition(String keyword, String riskLevel, Integer status,
+                                                    int offset, int limit, String sortName, String sortOrder) {
+        // 后台合同分页（关键词 + 风险等级 + 状态 + 可选排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andLike("c.file_name, c.party_a, c.party_b", keyword)
                         .andEq("c.risk_level", riskLevel)
@@ -131,7 +147,8 @@ public class ContractDaoImpl implements ContractDao {
                 return JdbcExecutor.queryList(null,
                         "SELECT c.*, u.nickname AS user_nickname FROM contract c"
                                 + " LEFT JOIN sys_user u ON c.user_id = u.id WHERE 1=1" + sb.where()
-                                + " ORDER BY c.id DESC LIMIT ?, ?",
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER_WITH_USER, sb.with(offset, limit));
     }
 

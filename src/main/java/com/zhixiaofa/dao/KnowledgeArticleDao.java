@@ -52,6 +52,15 @@ public interface KnowledgeArticleDao {
     java.util.List<KnowledgeArticle> findByCondition(String keyword, String category, Integer status, int offset, int limit);
 
     /**
+     * 带排序的条件分页查询（供前端点击列头切换升降序）。
+     *
+     * @param sortName  前端列名，实现类内部走白名单映射，非法值自动回退默认排序
+     * @param sortOrder 排序方向（desc / asc）
+     */
+    java.util.List<KnowledgeArticle> findByCondition(String keyword, String category, Integer status,
+                                                     int offset, int limit, String sortName, String sortOrder);
+
+    /**
      * 文章条件计数
      *
      * @param keyword 参数

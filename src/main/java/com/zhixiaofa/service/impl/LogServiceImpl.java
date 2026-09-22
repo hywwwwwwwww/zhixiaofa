@@ -72,14 +72,20 @@ public class LogServiceImpl implements LogService {
 
     @Override
     public PageResult<OperationLog> page(String keyword, String method, int pageNum, int pageSize) {
+        return page(keyword, method, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<OperationLog> page(String keyword, String method, int pageNum, int pageSize,
+                                        String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = pageSize < 1 ? 10 : Math.min(pageSize, 100);
         long total = logDao.countByCondition(keyword, method);
         if (total == 0) {
             return PageResult.empty(pageNum, pageSize);
         }
-        return PageResult.of(logDao.findByCondition(keyword, method, (pageNum - 1) * pageSize, pageSize),
-                total, pageNum, pageSize);
+        return PageResult.of(logDao.findByCondition(keyword, method, (pageNum - 1) * pageSize, pageSize,
+                sortName, sortOrder), total, pageNum, pageSize);
     }
 
     @Override

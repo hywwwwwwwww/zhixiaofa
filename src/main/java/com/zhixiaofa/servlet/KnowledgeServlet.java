@@ -42,7 +42,9 @@ public class KnowledgeServlet extends BaseServlet {
                 }
                 return Result.success(service.articlePage(
                         RequestUtil.getString(req, "category"), RequestUtil.getString(req, "keyword"),
-                        status, RequestUtil.getPageNum(req), RequestUtil.getPageSize(req)));
+                        status, RequestUtil.getPageNum(req), RequestUtil.getPageSize(req),
+                        // 列头排序：仅作为白名单查表的 key，具体校验在 SqlBuilder.orderBy
+                        RequestUtil.getString(req, "sortName"), RequestUtil.getString(req, "sortOrder")));
             }
             if ("POST".equals(method)) {
                 requireAdmin(req);
@@ -89,12 +91,34 @@ public class KnowledgeServlet extends BaseServlet {
         throw new BizException(ResultCode.METHOD_NOT_ALLOWED, "不支持的子资源: " + segs[1]);
     }
 
+    /**
+     * 解析请求里的标签列表，同时兼容两种写法：
+     * <ul>
+     *   <li>{@code ?tags=劳动合同&tags=试用期} —— 重复参数，{@code getParameterValues} 返回数组；</li>
+     *   <li>{@code ?tags=劳动合同,试用期} —— 逗号串（中英文逗号均可）。</li>
+     * </ul>
+     *
+     * <p><b>修复说明</b>：{@code getParameterValues("tags")} 对 {@code ?tags=a,b} 返回的是
+     * {@code ["a,b"]}（非 null），原先直接 {@code List.of(arr)} 会让逗号串**永不被拆分**，
+     * 多个标签被当成一个存进字典（例如「试用期,加班费」）。现在统一按逗号二次拆分。</p>
+     */
     private List<String> tagList(HttpServletRequest req) {
         String[] arr = req.getParameterValues("tags");
         if (arr == null) {
-            String single = RequestUtil.getString(req, "tags");
-            return StringUtil.isEmpty(single) ? List.of() : List.of(single.split(","));
+            return List.of();
         }
-        return List.of(arr);
+        List<String> out = new java.util.ArrayList<>();
+        for (String raw : arr) {
+            if (StringUtil.isEmpty(raw)) {
+                continue;
+            }
+            for (String part : raw.split("[,，]")) {
+                String t = part.trim();
+                if (!t.isEmpty() && !out.contains(t)) {
+                    out.add(t);
+                }
+            }
+        }
+        return out;
     }
 }

@@ -53,6 +53,10 @@ public interface UserService {
     /** 后台用户分页查询 */
     PageResult<SysUser> page(String keyword, String role, Integer status, int pageNum, int pageSize);
 
+    /** 后台用户分页查询（带列头排序） */
+    PageResult<SysUser> page(String keyword, String role, Integer status, int pageNum, int pageSize,
+                             String sortName, String sortOrder);
+
     /** 启用 / 禁用账号 */
     void updateStatus(Long id, Integer status, Long operatorId);
 

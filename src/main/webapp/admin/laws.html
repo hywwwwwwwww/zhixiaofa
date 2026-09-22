@@ -3,33 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>法条管理 - 职小法后台</title>
+  <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
+  <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+  <title>法律管理 - 职小法管理后台</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
-<body>
+<body class="zf-admin-page">
 
 <div class="zf-app">
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
     <section class="zf-content">
-      <div id="admin-nav"></div>
-
       <div class="zf-card">
-        <div class="zf-card__head">
-          <div><h3 class="zf-card__title">法条管理</h3>
-            <p class="zf-card__desc">维护法规库法条，支撑问答与合同审查引用</p></div>
-          <button class="zf-btn zf-btn--primary" id="add-btn"><i class="bi bi-plus-lg"></i>新增法条</button>
+        <!-- 筛选条：先选法律，再看该法律下的法条 -->
+        <div class="zf-filter-bar" id="law-filter">
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">选择法律</span>
+            <select class="zf-form-control" data-filter="lawName"><option value="">全部法律</option></select>
+          </div>
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">关键词</span>
+            <input class="zf-form-control" type="text" data-filter="keyword" placeholder="搜索法条关键词">
+          </div>
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">分类</span>
+            <select class="zf-form-control" data-filter="category"><option value="">全部分类</option></select>
+          </div>
+          <div class="zf-filter-bar__actions">
+            <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
+            <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+          </div>
         </div>
 
-        <div class="zf-filter">
-          <input class="zf-form-control" type="text" id="f-keyword" placeholder="法规名 / 标题 / 关键词">
-          <select class="zf-form-control" id="f-category"><option value="">全部分类</option></select>
-          <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
-          <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+        <!-- 工具栏 + 结果计数 + 同步 + 新增 -->
+        <div class="zf-toolbar">
+          <span class="zf-toolbar__count" id="law-count">共 0 条法条</span>
+          <span class="zf-toolbar__count zf-toolbar__sync" id="law-sync-info"></span>
+          <span class="zf-toolbar__spacer"></span>
+          <button class="zf-btn zf-btn--ghost" id="sync-btn"><i class="bi bi-cloud-arrow-down"></i>立即同步</button>
+          <button class="zf-btn zf-btn--primary" id="add-btn"><i class="bi bi-plus-lg"></i>新增法条</button>
         </div>
 
         <table id="law-table" class="zf-table"></table>
@@ -64,8 +80,7 @@
           <div class="zf-grid zf-grid--2">
             <div class="zf-field">
               <label class="zf-form-label" for="l-category">分类 <span style="color:var(--zf-danger)">*</span></label>
-              <input class="zf-form-control" type="text" name="category" id="l-category" maxlength="30" list="law-cat-list">
-              <datalist id="law-cat-list"></datalist>
+              <select class="zf-form-control" name="category" id="l-category"></select>
               <div class="zf-form-error"></div>
             </div>
             <div class="zf-field">
@@ -97,17 +112,36 @@
   </div>
 </div>
 
+<!-- 法条详情模态框 -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">法条详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="detail-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
-<script src="../js/common.js"></script>
-<script src="admin-common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
+<script src="admin-common.js?v=20260922n"></script>
 <script>
 /**
- * @file laws.html —— 法条管理
- * @description 法规库法条的列表、新增、编辑、删除与分类筛选。
- *              分类下拉与输入联想来自 /law-articles/categories。
+ * @file laws.html —— 法律管理
+ * @description 先选择一部法律，再查看该法律下的全部法条，并支持新增、编辑、删除与筛选。
+ *              法律下拉来自 /law-articles/law-names，分类下拉来自 /law-articles/categories；
+ *              顶部「立即同步」从国家法律法规数据库拉取法条。
+ *              条文的「顺序号」由系统自动维护（新增法条后、同步完成后自动重排），页面无需手动操作。
+ *              页面外壳（左侧管理导航 + 顶部栏）由 ZF.initAdminPage 统一渲染。
  */
 (function ($, ZF) {
   'use strict';
@@ -115,63 +149,192 @@
   /** 当前编辑行的 id（新增时为 null） */
   var editingId = null;
 
-  ZF.initPage({ active: 'laws', title: '法条管理', sub: '维护法规库法条', needAdmin: true })
+  ZF.initAdminPage({ active: 'laws', title: '法律管理', sub: '按法律查看法条，支撑问答与合同审查引用' })
     .then(function () {
-      ZF.renderAdminNav('laws');
+      loadLawNames();
       loadCategories();
       initTable();
       bindFilters();
       bindAdd();
       bindLawForm();
+      initSync();
     });
 
-  /** 拉取分类并填充筛选下拉与输入联想 */
+  /* ---------------- 法律选择 ---------------- */
+
+  /** 拉取库中全部法规名称，填充「选择法律」下拉 */
+  function loadLawNames() {
+    ZF.get('/law-articles/law-names', null, { silent: true }).then(function (names) {
+      names = names || [];
+      var html = '<option value="">全部法律（共 ' + names.length + ' 部）</option>';
+      names.forEach(function (n) {
+        html += '<option value="' + ZF.escape(n) + '">' + ZF.escape(n) + '</option>';
+      });
+      $('#law-filter [data-filter="lawName"]').html(html);
+    }).catch(function () { /* 法律列表非关键，失败忽略 */ });
+  }
+
+  /* ---------------- 国家法律法规数据库同步 ---------------- */
+
+  var syncTimer = null;
+
+  /** 初始化同步：加载状态 + 绑定按钮 */
+  function initSync() {
+    loadSyncStatus();
+    $('#sync-btn').on('click', function () {
+      var $btn = $(this);
+      ZF.confirm('将从国家法律法规数据库抓取最新法规清单与条文结构（耗时约 1 分钟）。\n\n'
+        + '同步只更新元数据与条文骨架，不会覆盖已导入的正文和序号。确定继续？').then(function (ok) {
+        if (!ok) { return; }
+        ZF.btnLoading($btn, true, '启动中…');
+        ZF.post('/law-articles/sync', {}).then(function (r) {
+          if (r && r.success === false) {
+            ZF.toast(r.message || '同步正在进行中', 'warn');
+            ZF.btnLoading($btn, false);
+            return;
+          }
+          ZF.toast('同步已启动，正在后台抓取官网数据…', 'success');
+          // 按钮保持「同步中」禁用，直到轮询到同步结束，避免重复触发
+          ZF.btnLoading($btn, true, '同步中…');
+          startPolling();
+        }).catch(function () { ZF.btnLoading($btn, false); });
+      });
+    });
+  }
+
+  /** 拉取并渲染同步状态 */
+  function loadSyncStatus() {
+    ZF.get('/law-articles/sync/status', null, { silent: true }).then(renderSyncStatus).catch(function () { });
+  }
+
+  function renderSyncStatus(s) {
+    s = s || {};
+    var $info = $('#law-sync-info');
+    var $btn = $('#sync-btn');
+    if (s.running) {
+      $info.html('<i class="bi bi-arrow-repeat"></i> 同步中…');
+      ZF.btnLoading($btn, true, '同步中…');
+    } else {
+      ZF.btnLoading($btn, false, '立即同步');
+      if (s.lastSyncTime) {
+        $info.html('<i class="bi bi-clock-history"></i> 上次同步：' + ZF.escape(s.lastSyncTime) +
+          ' · ' + (s.lastArticleCount || 0) + ' 条');
+      } else {
+        $info.html('<i class="bi bi-cloud-arrow-down"></i> 尚未同步');
+      }
+    }
+  }
+
+  /** 轮询同步状态，完成后刷新表格 */
+  function startPolling() {
+    var tries = 0;
+    var poll = function () {
+      ZF.get('/law-articles/sync/status', null, { silent: true }).then(function (s) {
+        renderSyncStatus(s);
+        if (s && s.running) {
+          if (++tries > 300) {
+            ZF.toast('同步耗时较长，请稍后刷新页面查看结果', 'warn');
+            return;
+          }
+          syncTimer = setTimeout(poll, 2000);
+        } else {
+          if (s && s.lastResult) { ZF.toast(s.lastResult, 'success'); }
+          $('#law-table').bootstrapTable('refresh');
+          loadCategories();
+        }
+      }).catch(function () { syncTimer = setTimeout(poll, 3000); });
+    };
+    poll();
+  }
+
+  /** 拉取分类并填充「筛选栏」与「表单」两个下拉 */
   function loadCategories() {
     ZF.get('/law-articles/categories', null, { silent: true }).then(function (cats) {
       cats = cats || [];
-      var $sel = $('#f-category');
-      cats.forEach(function (c) {
-        $sel.append('<option value="' + ZF.escape(c) + '">' + ZF.escape(c) + '</option>');
-      });
-      $('#law-cat-list').html(cats.map(function (c) {
-        return '<option value="' + ZF.escape(c) + '"></option>';
-      }).join(''));
+      // 注意：本方法在「初始化 / 同步完成 / 保存成功」后都会被调用，
+      // 必须**整体替换**选项；用 append 累加会导致下拉选项无限重复。
+      var $sel = $('#law-filter [data-filter="category"]');
+      var current = $sel.val();
+      $sel.html(ZF.categoryOptions(cats, '全部分类'));
+      if (current) {
+        $sel.val(current);
+      }
+      // 表单里的分类下拉共用同一份数据（法条分类以库中实际存在的为准）
+      var $form = $('#l-category');
+      var formCur = $form.val();
+      $form.html(ZF.categoryOptions(cats));
+      if (formCur) {
+        $form.val(formCur);
+      }
     }).catch(function () { /* 分类非关键，失败忽略 */ });
   }
 
-  /** 操作列 */
+  /**
+   * 回填表单的分类下拉；若当前值不在候选里（历史数据），临时补一个选项，
+   * 避免编辑保存时被静默改成第一个分类。
+   */
+  function setLawCategoryValue(value) {
+    var v = $.trim(value || '');
+    var $sel = $('#l-category');
+    $sel.find('option[data-legacy]').remove();
+    if (v && $sel.find('option[value="' + v.replace(/"/g, '\\"') + '"]').length === 0) {
+      $sel.append('<option data-legacy="1" value="' + ZF.escape(v) + '">' + ZF.escape(v) + '（历史值）</option>');
+    }
+    $sel.val(v || $sel.find('option').first().val() || '');
+  }
+
+  /** 分类徽标 */
+  function catFormatter(v) {
+    return '<span class="zf-badge">' + ZF.escape(ZF.orDash(v)) + '</span>';
+  }
+
+  /** 条文正文截断展示 */
+  function contentFormatter(v) {
+    return ZF.escape(ZF.truncate(ZF.orDash(v), 36));
+  }
+
+  /** 操作列按钮（用 .zf-actions 包裹，禁止换行） */
   function operateFormatter(value, row) {
-    return [
-      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-edit"><i class="bi bi-pencil"></i>编辑</button>',
-      '<button class="zf-btn zf-btn--danger zf-btn--sm js-delete"><i class="bi bi-trash"></i>删除</button>'
-    ].join(' ');
+    return '<div class="zf-actions">' +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-detail" title="查看详情" aria-label="查看详情"><i class="bi bi-eye"></i></button>' +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-edit" title="编辑" aria-label="编辑"><i class="bi bi-pencil"></i></button>' +
+      '<button class="zf-btn zf-btn--icon zf-btn--danger js-delete" title="删除" aria-label="删除"><i class="bi bi-trash"></i></button>' +
+      '</div>';
   }
 
   /** 初始化表格 */
   function initTable() {
     ZF.initAdminTable('#law-table', '/law-articles', {
       pageSize: 10,
-      queryParams: function () {
-        return {
-          keyword: $.trim($('#f-keyword').val()),
-          category: $('#f-category').val()
-        };
-      },
+      queryParams: function () { return ZF.filterParams('#law-filter'); },
       columns: [
-        { field: 'id', title: 'ID', width: 64 },
+        {
+          // 「序号」= 当前列表的连续行号（跨页连续），不做「法律内序号」——
+          // 后者在「全部法律」视图下会因多部法律各自从 1 开始而出现重复。
+          field: 'seq', title: '序号', width: 72,
+          formatter: function (v, row, index) {
+            var opt = $('#law-table').bootstrapTable('getOptions');
+            return (opt.pageNumber - 1) * opt.pageSize + index + 1;
+          }
+        },
         { field: 'lawName', title: '法规名称', formatter: function (v) { return ZF.escape(v || ''); } },
         { field: 'articleNo', title: '条号', formatter: function (v) { return ZF.escape(v || ''); } },
-        { field: 'category', title: '分类', formatter: function (v) { return v ? ZF.escape(v) : '<span style="color:var(--zf-ink-3)">-</span>'; } },
-        { field: 'title', title: '标题', formatter: function (v) { return ZF.escape(ZF.truncate(v, 30)); } },
-        { field: 'keywords', title: '关键词', formatter: function (v) { return v ? ZF.escape(ZF.truncate(v, 20)) : '<span style="color:var(--zf-ink-3)">-</span>'; } },
-        { field: 'effectiveDate', title: '生效日期', formatter: function (v) { return ZF.escape(v || '-'); } },
+        { field: 'category', title: '分类', formatter: catFormatter },
+        { field: 'title', title: '章节', formatter: function (v) { return ZF.escape(ZF.truncate(v, 30)); } },
+        { field: 'content', title: '条文正文', formatter: contentFormatter },
         { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
       ]
+    });
+
+    /** 加载完成后更新顶部结果计数 */
+    $('#law-table').on('load-success.bs.table', function (e, data) {
+      $('#law-count').text('共 ' + ((data && data.total) || 0) + ' 条法条');
     });
   }
 
   /** 操作事件 */
   var operateEvents = {
+    'click .js-detail': function (e, v, row) { openDetail(row); },
     'click .js-edit': function (e, v, row) { openEdit(row); },
     'click .js-delete': function (e, v, row) { removeLaw(row); }
   };
@@ -180,10 +343,14 @@
   function bindFilters() {
     $('#search-btn').on('click', function () { ZF.refreshTable('#law-table'); });
     $('#reset-btn').on('click', function () {
-      $('#f-keyword').val(''); $('#f-category').val('');
+      $('#law-filter').find('[data-filter]').val('');
       ZF.refreshTable('#law-table');
     });
-    $('#f-keyword').on('keydown', function (e) {
+    // 选定法律后自动刷新，直接看到该法律的全部法条
+    $('#law-filter [data-filter="lawName"]').on('change', function () {
+      ZF.refreshTable('#law-table');
+    });
+    $('#law-filter [data-filter="keyword"]').on('keydown', function (e) {
       if (e.key === 'Enter') { ZF.refreshTable('#law-table'); }
     });
   }
@@ -196,7 +363,7 @@
       $('#law-form')[0].reset();
       $('#law-form').find('[name=id]').val('');
       ZF.clearValidate($('#law-form'));
-      new bootstrap.Modal($('#lawModal')[0]).show();
+      bootstrap.Modal.getOrCreateInstance($('#lawModal')[0]).show();
     });
   }
 
@@ -209,12 +376,12 @@
     $f.find('[name=id]').val(row.id);
     $f.find('[name=lawName]').val(row.lawName || '');
     $f.find('[name=articleNo]').val(row.articleNo || '');
-    $f.find('[name=category]').val(row.category || '');
+    setLawCategoryValue(row.category);
     $f.find('[name=title]').val(row.title || '');
     $f.find('[name=keywords]').val(row.keywords || '');
     $f.find('[name=content]').val(row.content || '');
     $f.find('[name=effectiveDate]').val(row.effectiveDate || '');
-    new bootstrap.Modal($('#lawModal')[0]).show();
+    bootstrap.Modal.getOrCreateInstance($('#lawModal')[0]).show();
   }
 
   /** 保存（新增/编辑） */
@@ -248,13 +415,43 @@
         : ZF.post('/law-articles', payload);
       req.then(function () {
         ZF.toast(editingId ? '已更新' : '已新增', 'success');
-        bootstrap.Modal.getInstance($('#lawModal')[0]).hide();
+        bootstrap.Modal.getOrCreateInstance($('#lawModal')[0]).hide();
         loadCategories();
         $('#law-table').bootstrapTable('refresh');
       }).catch(function () { /* 统一提示 */ }).then(function () {
         ZF.btnLoading($btn, false);
       });
     });
+  }
+
+  /** 单条详情项 */
+  function detailItem(label, value) {
+    return '<div class="zf-detail-grid__item">' +
+      '<div class="zf-detail-grid__label">' + ZF.escape(label) + '</div>' +
+      '<div class="zf-detail-grid__value">' + ZF.escape(ZF.orDash(value)) + '</div>' +
+      '</div>';
+  }
+
+  /** 打开详情弹窗（优先拉取详情接口，失败则回退到行数据） */
+  function openDetail(row) {
+    var render = function (d) {
+      d = d || row;
+      var html = '<div class="zf-detail-grid">' +
+        detailItem('法规名称', d.lawName) +
+        detailItem('条号', d.articleNo) +
+        detailItem('条序（该法律第几条）', d.seq) +
+        detailItem('分类', d.category) +
+        detailItem('章节', d.title) +
+        detailItem('关键词', d.keywords) +
+        detailItem('生效日期', d.effectiveDate) +
+        '</div>' +
+        '<div class="zf-detail-full">' +
+        '<div class="zf-detail-grid__label">条文内容</div>' +
+        '<div class="zf-detail-grid__value" style="white-space:pre-wrap">' + ZF.escape(ZF.orDash(d.content)) + '</div>' +
+        '</div>';
+      ZF.showDetailModal('#detailModal', '法条详情', html);
+    };
+    ZF.get('/law-articles/' + row.id, null, { silent: true }).then(render).catch(function () { render(row); });
   }
 
   /** 删除法条 */

@@ -34,6 +34,15 @@ public interface ContractService {
 
     PageResult<Contract> page(String keyword, String riskLevel, Integer status, int pageNum, int pageSize);
 
+    /**
+     * 后台合同分页（可排序）
+     *
+     * @param sortName  前端列名（实现层走白名单，非法值回退默认排序）
+     * @param sortOrder 排序方向（desc / asc）
+     */
+    PageResult<Contract> page(String keyword, String riskLevel, Integer status, int pageNum, int pageSize,
+                              String sortName, String sortOrder);
+
     /** 合同详情（含风险点明细，按高→中→低排序） */
     Contract detail(Long id, Long operatorId, boolean admin);
 

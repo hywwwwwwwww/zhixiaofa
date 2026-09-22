@@ -62,6 +62,13 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     @Override
     public PageResult<KnowledgeArticle> articlePage(String category, String keyword, Integer status,
                                                     int pageNum, int pageSize) {
+        return articlePage(category, keyword, status, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<KnowledgeArticle> articlePage(String category, String keyword, Integer status,
+                                                    int pageNum, int pageSize,
+                                                    String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = clamp(pageSize);
         long total = articleDao.countByCondition(keyword, category, status);
@@ -69,7 +76,7 @@ public class KnowledgeServiceImpl implements KnowledgeService {
             return PageResult.empty(pageNum, pageSize);
         }
         List<KnowledgeArticle> list = articleDao.findByCondition(keyword, category, status,
-                (pageNum - 1) * pageSize, pageSize);
+                (pageNum - 1) * pageSize, pageSize, sortName, sortOrder);
         for (KnowledgeArticle a : list) {
             a.setTags(articleTagDao.findTagNamesByArticleId(a.getId()));
         }
@@ -227,14 +234,20 @@ public class KnowledgeServiceImpl implements KnowledgeService {
 
     @Override
     public PageResult<QuizQuestion> quizPage(String keyword, String category, int pageNum, int pageSize) {
+        return quizPage(keyword, category, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<QuizQuestion> quizPage(String keyword, String category, int pageNum, int pageSize,
+                                             String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = clamp(pageSize);
         long total = quizDao.countByCondition(keyword, category);
         if (total == 0) {
             return PageResult.empty(pageNum, pageSize);
         }
-        return PageResult.of(quizDao.findByCondition(keyword, category, (pageNum - 1) * pageSize, pageSize),
-                total, pageNum, pageSize);
+        return PageResult.of(quizDao.findByCondition(keyword, category, (pageNum - 1) * pageSize, pageSize,
+                sortName, sortOrder), total, pageNum, pageSize);
     }
 
     @Override

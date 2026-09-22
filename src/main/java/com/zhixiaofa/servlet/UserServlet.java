@@ -38,7 +38,9 @@ public class UserServlet extends BaseServlet {
             if ("GET".equals(method)) {
                 return Result.success(ServiceFactory.user().page(
                         RequestUtil.getString(req, "keyword"), RequestUtil.getString(req, "role"),
-                        nullableInt(req, "status"), RequestUtil.getPageNum(req), RequestUtil.getPageSize(req)));
+                        nullableInt(req, "status"), RequestUtil.getPageNum(req), RequestUtil.getPageSize(req),
+                        // 列头排序：仅作为白名单查表的 key，具体校验在 SqlBuilder.orderBy
+                        RequestUtil.getString(req, "sortName"), RequestUtil.getString(req, "sortOrder")));
             }
             throw new BizException(ResultCode.METHOD_NOT_ALLOWED, "集合资源仅支持 GET");
         }

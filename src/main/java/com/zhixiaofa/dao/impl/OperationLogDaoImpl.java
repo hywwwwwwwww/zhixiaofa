@@ -100,14 +100,31 @@ public class OperationLogDaoImpl implements OperationLogDao {
 
     /* ---------------- 业务查询 / 统计 ---------------- */
 
+    /** 日志列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "id",
+            "costMs", "cost_ms",
+            "createdAt", "created_at");
+
+    /** 默认排序：按 id 倒序（最新在前） */
+    private static final String DEFAULT_ORDER = "id DESC";
+
     @Override
     public java.util.List<OperationLog> findByCondition(String keyword, String method, int offset, int limit) {
-        // 后台日志分页
+        return findByCondition(keyword, method, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<OperationLog> findByCondition(String keyword, String method, int offset, int limit,
+                                                        String sortName, String sortOrder) {
+        // 后台日志分页（关键词 + 方法 + 可选排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andLike("username, uri, action", keyword)
                         .andEq("method", method);
                 return JdbcExecutor.queryList(null,
-                        "SELECT * FROM operation_log WHERE 1=1" + sb.where() + " ORDER BY id DESC LIMIT ?, ?",
+                        "SELECT * FROM operation_log WHERE 1=1" + sb.where()
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER, sb.with(offset, limit));
     }
 

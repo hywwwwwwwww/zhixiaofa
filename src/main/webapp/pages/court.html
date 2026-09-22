@@ -6,7 +6,7 @@
   <title>AI 小法庭 - 职小法</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -15,15 +15,36 @@
     <header class="zf-topbar"></header>
 
     <section class="zf-content">
-      <div class="zf-grid zf-grid--2">
-        <!-- 左侧：提交案情 -->
-        <div class="zf-card">
-          <div class="zf-card__head">
-            <div>
-              <h3 class="zf-card__title">提交案情，开始推演</h3>
-              <p class="zf-card__desc">写清时间、金额、经过，系统依据类案统计给出胜诉概率与赔偿区间</p>
-            </div>
+      <!-- 工作台：左列（填写 / 推演记录，由页签切换），右列（结果，贯通两行） -->
+      <div class="zf-desk">
+        <!-- 左列：两块内容用页签切换，避免纵向堆叠过长 -->
+        <div class="zf-desk__panel">
+          <div class="zf-tabs" id="desk-tabs" role="tablist" aria-label="小法庭工作台面板">
+            <button type="button" class="zf-tabs__tab zf-tabs__tab--active" role="tab"
+                    id="zf-tab-input" data-name="input" aria-controls="zf-panel-input"
+                    aria-selected="true" tabindex="0">
+              <i class="bi bi-pencil-square"></i>填写案情
+            </button>
+            <button type="button" class="zf-tabs__tab" role="tab"
+                    id="zf-tab-history" data-name="history" aria-controls="zf-panel-history"
+                    aria-selected="false" tabindex="-1">
+              <i class="bi bi-clock-history"></i>推演记录
+              <span class="zf-tabs__count" id="tab-history-count" hidden></span>
+            </button>
           </div>
+
+          <!-- 页签面板 1：提交案情 -->
+          <div class="zf-card zf-desk__input" id="zf-panel-input"
+               role="tabpanel" aria-labelledby="zf-tab-input" tabindex="-1">
+            <div class="zf-card__head">
+              <div>
+                <h3 class="zf-card__title">提交案情，开始推演</h3>
+                <p class="zf-card__desc">写清时间、金额、证据，系统依据类案统计给出胜诉概率与赔偿区间</p>
+              </div>
+              <button class="zf-btn zf-btn--ghost zf-btn--sm" id="fill-sample" title="一键填入示例案情">
+                <i class="bi bi-magic"></i>填充示例
+              </button>
+            </div>
           <form id="court-form" novalidate>
             <div class="zf-field">
               <label class="zf-form-label" for="court-title">案件标题（选填）</label>
@@ -31,15 +52,16 @@
                 placeholder="如：被无故辞退索赔案" maxlength="50">
             </div>
             <div class="zf-field">
-              <label class="zf-form-label" for="court-type">案件类型 <span style="color:var(--zf-danger)">*</span></label>
-              <select class="zf-form-control" name="caseType" id="court-type">
-                <option value="">请选择案件类型</option>
-                <option value="拖欠工资">拖欠工资</option>
-                <option value="违法辞退">违法辞退</option>
-                <option value="加班费">加班费</option>
-                <option value="社保">社保</option>
-                <option value="其他">其他</option>
-              </select>
+              <label class="zf-form-label">案件类型 <span style="color:var(--zf-danger)">*</span></label>
+              <!-- 窄栏下用标签单选，比下拉少一次点击 -->
+              <div class="zf-chips" id="court-type">
+                <button type="button" class="zf-tag" data-v="拖欠工资" aria-pressed="false">拖欠工资</button>
+                <button type="button" class="zf-tag" data-v="违法辞退" aria-pressed="false">违法辞退</button>
+                <button type="button" class="zf-tag" data-v="加班费" aria-pressed="false">加班费</button>
+                <button type="button" class="zf-tag" data-v="社保" aria-pressed="false">社保</button>
+                <button type="button" class="zf-tag" data-v="其他" aria-pressed="false">其他</button>
+              </div>
+              <input type="hidden" name="caseType" id="court-type-value" value="">
               <div class="zf-form-error"></div>
             </div>
             <div class="zf-field">
@@ -47,42 +69,107 @@
               <textarea class="zf-form-control" name="description" id="court-desc" rows="7"
                 placeholder="请描述：什么时候发生、涉及金额多少、公司怎么说的、你手头有什么证据……（至少 10 字）"></textarea>
               <div class="zf-form-error"></div>
-              <div class="zf-form-hint">描述越具体，推演越准确</div>
+              <div class="zf-field__foot">
+                <div class="zf-form-hint">描述越具体，推演越准确</div>
+                <div class="zf-form-hint" id="court-count">已输入 0 字</div>
+              </div>
             </div>
-            <div style="text-align:right">
+            <div class="zf-form-actions">
+              <span class="zf-form-actions__tip"><i class="bi bi-shield-check"></i> 模拟推演，不构成法律意见</span>
               <button type="submit" class="zf-btn zf-btn--primary" id="court-submit">
                 <i class="bi bi-bank"></i>开始推演
               </button>
             </div>
           </form>
-        </div>
+          </div>
 
-        <!-- 右侧：推演结果 -->
-        <div class="zf-card" id="result-card" style="display:none">
+          <!-- 页签面板 2：历史推演（窄栏紧凑列表） -->
+          <div class="zf-card zf-desk__history" id="zf-panel-history"
+               role="tabpanel" aria-labelledby="zf-tab-history" tabindex="-1" hidden>
+            <div class="zf-card__head">
+              <div>
+                <h3 class="zf-card__title">我的推演记录</h3>
+                <p class="zf-card__desc">点击任意一条载入右侧查看</p>
+              </div>
+              <button class="zf-btn zf-btn--ghost zf-btn--sm" id="history-refresh">
+                <i class="bi bi-arrow-clockwise"></i>刷新
+              </button>
+            </div>
+            <div class="zf-history__list" id="history-list"></div>
+            <div id="history-pager"></div>
+          </div>
+        </div>
+        <!-- /zf-desk__panel -->
+
+        <!-- 右列：推演结果（未提交时显示引导占位） -->
+        <div class="zf-card zf-desk__result" id="result-card">
           <div class="zf-card__head">
-            <div><h3 class="zf-card__title">推演结果</h3>
-              <p class="zf-card__desc">基于类案大数据的模拟分析，仅供参考</p></div>
-            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close">
+            <div>
+              <h3 class="zf-card__title" id="result-title">推演前，你会拿到什么</h3>
+              <p class="zf-card__desc" id="result-desc">填写左侧案情，这里会生成胜诉概率与赔偿区间</p>
+            </div>
+            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close" style="display:none">
               <i class="bi bi-x-lg"></i>收起
             </button>
           </div>
-          <div id="result-body"></div>
-        </div>
-      </div>
-
-      <!-- 历史推演 -->
-      <div class="zf-card" style="margin-top:16px">
-        <div class="zf-card__head">
-          <div>
-            <h3 class="zf-card__title">我的推演记录</h3>
-            <p class="zf-card__desc">点击任意一条可查看完整推演结论</p>
+          <!-- 中段：占位引导 / 推演报告（内容不足时由底部操作条吸收富余高度） -->
+          <div class="zf-desk__result-body">
+            <div id="result-placeholder">
+              <ul class="zf-steps">
+                <li class="zf-steps__item"><i class="bi bi-1-circle"></i>填案情：时间、金额、证据是否完整</li>
+                <li class="zf-steps__item"><i class="bi bi-2-circle"></i>系统比对同类型号的类案统计</li>
+                <li class="zf-steps__item"><i class="bi bi-3-circle"></i>输出胜诉概率、赔偿区间与维权路径</li>
+              </ul>
+              <p class="zf-subtitle" style="margin:18px 0 10px">试试这些常见纠纷</p>
+              <div class="zf-quick">
+                <button type="button" class="zf-quick__item js-sample" data-sample="dismiss">被无故辞退</button>
+                <button type="button" class="zf-quick__item js-sample" data-sample="wage">公司拖欠工资</button>
+                <button type="button" class="zf-quick__item js-sample" data-sample="overtime">强制加班不给钱</button>
+                <button type="button" class="zf-quick__item js-sample" data-sample="social">试用期不交社保</button>
+              </div>
+              <p class="zf-subtitle" style="margin:18px 0 10px">覆盖的纠纷类型</p>
+              <div class="zf-tags">
+                <span class="zf-tag">拖欠工资</span>
+                <span class="zf-tag">违法辞退</span>
+                <span class="zf-tag">加班费</span>
+                <span class="zf-tag">社保补缴</span>
+              </div>
+              <p class="zf-note" style="margin-top:auto">推演口径：以案件类型为基准胜率，按证据完整度加权修正，
+                参照类案赔偿区间估算；结果基于类案统计的模拟推演，不构成法律意见。</p>
+            </div>
+            <!-- AI 进行中态：推演是数秒级请求，此前右栏纹丝不动、只有按钮文案变化，
+                 用户面对数秒白屏。改为阶段化推进（不报百分比 —— 后端不返回进度，
+                 报百分比必然是编的），阶段按固定节奏点亮，真实响应一到立即结算。 -->
+            <div id="result-running" class="zf-run" hidden aria-live="polite">
+              <p class="zf-run__lead">
+                <span class="zf-typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                正在推演，预计数秒
+              </p>
+              <ul class="zf-steps zf-steps--running" id="result-running-steps">
+                <li class="zf-steps__item"><i class="bi bi-1-circle"></i>已收到案情，正在校验完整性</li>
+                <li class="zf-steps__item"><i class="bi bi-2-circle"></i>比对同类型号的类案统计</li>
+                <li class="zf-steps__item"><i class="bi bi-3-circle"></i>生成胜诉概率与赔偿区间</li>
+              </ul>
+              <div class="zf-skel" aria-hidden="true">
+                <span class="zf-skel__bar" style="width:62%"></span>
+                <span class="zf-skel__bar" style="width:88%"></span>
+                <span class="zf-skel__bar" style="width:44%"></span>
+              </div>
+            </div>
+            <div id="result-body" style="display:none" aria-live="polite"></div>
           </div>
-          <button class="zf-btn zf-btn--ghost zf-btn--sm" id="history-refresh">
-            <i class="bi bi-arrow-clockwise"></i>刷新
-          </button>
+          <!-- 底部操作条：内容不足时靠 margin-top:auto 贴底，吸收右栏富余高度 -->
+          <div class="zf-desk__result-foot" id="result-foot" hidden>
+            <div class="zf-desk__result-foot-inner">
+              <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="result-copy">
+                <i class="bi bi-clipboard"></i>复制结论
+              </button>
+              <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="result-again">
+                <i class="bi bi-arrow-repeat"></i>再推演一次
+              </button>
+            </div>
+          </div>
         </div>
-        <div id="history-list"></div>
-        <div id="history-pager"></div>
       </div>
     </section>
   </main>
@@ -90,11 +177,13 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js"></script>
+<script src="../vendor/echarts/echarts.min.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file court.html —— AI 小法庭
- * @description 提交案情做胜诉概率与赔偿区间推演；下方分页展示历史推演，支持查看与删除。
+ * @description 工作台布局：左栏填案情 + 历史推演记录，右栏为常驻的结果区（未推演时显示引导占位）。
+ *              结果含胜诉结果分布环形图与赔付金额概率分布柱线图，历史记录点击后载入右栏查看。
  */
 (function ($, ZF) {
   'use strict';
@@ -102,16 +191,207 @@
   /** 当前历史分页页码 */
   var currentPage = 1;
 
+  /** 历史列表每页条数 */
+  var HISTORY_PAGE_SIZE = 8;
+
+  /** 图表配色：完全胜诉 / 部分胜诉 / 败诉 */
+  var OUTCOME_COLORS = ['#4285f4', '#fbbc05', '#c9ced6'];
+  /** 赔付金额分布的区间个数 */
+  var AMOUNT_BUCKETS = 6;
+  /** 金额分布的形态参数：越靠近区间中值概率越高（钟形） */
+  var AMOUNT_SIGMA = 1.25;
+  /** 已创建的 ECharts 实例，供窗口 resize 时统一重绘 */
+  var charts = [];
+  /** 图表容器 id 序号，保证同一页面内的实例 id 唯一（结果卡与历史详情都会用到） */
+  var chartSeq = 0;
+
+  /** 示例案情：空态快捷按钮与「填充示例」共用 */
+  var SAMPLES = {
+    dismiss: {
+      title: '被无故辞退索赔案', type: '违法辞退',
+      desc: '2024年7月1日入职XX科技有限公司，月薪8000元。2025年3月10日公司突然口头通知我第二天不用来上班，' +
+        '没有提前30天书面通知，也没有给任何经济补偿，理由只说是"业务调整"。我手上有劳动合同、工资流水和微信聊天记录。'
+    },
+    wage: {
+      title: '公司拖欠工资案', type: '拖欠工资',
+      desc: '公司从2025年1月起就没发工资，到现在已经拖欠2个月，月薪6000元，一共12000元。' +
+        '每次问都说资金紧张，我有工资流水和考勤打卡记录，微信上也有老板承认拖欠的聊天记录。'
+    },
+    overtime: {
+      title: '强制加班不给加班费案', type: '加班费',
+      desc: '入职以来每个周末都被要求加班，公司只说安排调休，但从来没真正调休过，也不发加班费。' +
+        '月薪7000元，我保留了考勤打卡记录、加班审批邮件和排班表截图。'
+    },
+    social: {
+      title: '试用期不交社保案', type: '社保',
+      desc: '2024年9月入职，试用期6个月，公司说转正后才给交社保，试用期内一直没缴。' +
+        '我有劳动合同、工资流水，还有HR在微信里明确说"转正再交"的聊天记录。'
+    }
+  };
+
+  /** 左栏页签实例（填写案情 / 推演记录） */
+  var deskTabs = null;
+
+  /** 最近一次推演结果，供「复制结论」等底部操作复用 */
+  var lastResult = null;
+
   ZF.initPage({ active: 'court', title: 'AI 小法庭', sub: '用类案大数据帮你预判胜算' })
     .then(function () {
+      bindTabs();
+      bindTypeChips();
+      bindSamples();
       bindForm();
-      $('#result-close').on('click', function () { $('#result-card').hide(); });
+      // 收起报告 → 回到占位引导，避免右栏空白
+      $('#result-close').on('click', function () { showPlaceholder(); });
+      bindResultFoot();
       bindHistoryEvents();
-      loadHistory(1);
+      updateCount();
+      loadHistory(1, false);
     });
+
+  // 容器宽度变化（侧栏切换、单双列重排）时重绘图表：window.resize 覆盖不到的情况用 ResizeObserver 兜底
+  window.addEventListener('resize', resizeCharts);
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { resizeCharts(); });
+    ro.observe(document.getElementById('result-body'));
+  }
+
+  /** 重绘所有存活实例（已销毁的先剔除） */
+  function resizeCharts() {
+    charts = charts.filter(function (ch) { return ch && !ch.isDisposed(); });
+    charts.forEach(function (ch) { ch.resize(); });
+  }
+
+  /**
+   * 左栏页签：填写案情 / 推演记录。
+   * 切换只切显隐、DOM 不销毁，未提交的草稿在来回切换时不会丢。
+   */
+  function bindTabs() {
+    deskTabs = ZF.tabs('#desk-tabs', {
+      value: 'input',
+      onChange: function (name) {
+        // 用 data 标记而不是探测 DOM 判断"是否加载过"。
+        // 若用 .zf-list__item 的存在性判断，一旦首次渲染失败就会反复补拉，
+        // 而 renderLoading 会清空列表 → 变成永远拉不出内容的死循环。
+        if (name === 'history' && !$('#history-list').data('loaded')) {
+          loadHistory(1, false);
+        }
+      }
+    });
+  }
+
+  /** 程序化切换左栏页签 */
+  function showTab(name) {
+    if (deskTabs) { deskTabs.select(name); }
+  }
+
+  /** 右栏底部操作条：复制结论 / 再推演一次 */
+  function bindResultFoot() {
+    $('#result-copy').on('click', function () {
+      if (!lastResult) { return; }
+      ZF.copyText(plainConclusion(lastResult), '推演结论已复制');
+    });
+    // 回到左栏表单页签并把光标落到描述框，直接改文案再推演
+    $('#result-again').on('click', function () {
+      showTab('input');
+      $('#court-desc').trigger('focus');
+    });
+  }
+
+  /** 把推演结果拼成纯文本，供复制到剪贴板 */
+  function plainConclusion(c) {
+    var dist = outcomeDistribution(c);
+    var amount = amountDistribution(c);
+    var rows = ['【推演结论】'];
+    rows.push('胜诉概率：' + clampProb(c.winProbability) + '%');
+    rows.push('走势分布：' + dist.map(function (d) { return d.name + ' ' + d.value + '%'; }).join('，'));
+    if (amount) {
+      rows.push('预估赔偿区间：' + ZF.money(c.compensationMin) + ' ~ ' + ZF.money(c.compensationMax) + ' 元');
+      rows.push('最可能落点：' + amount.labels[amount.probs.indexOf(Math.max.apply(null, amount.probs))] +
+        '（约 ' + Math.max.apply(null, amount.probs) + '%）');
+    }
+    rows.push('参考类案：' + (c.similarCount || 0) + ' 例');
+    if (c.resultSummary) {
+      rows.push('');
+      rows.push(c.resultSummary);
+    }
+    rows.push('');
+    rows.push('（基于类案统计的模拟推演，不构成法律意见）');
+    return rows.join('\n');
+  }
+
+  /** 案件类型标签单选：点选写入隐藏字段，供表单校验使用 */
+  function bindTypeChips() {
+    $('#court-type').on('click', '.zf-tag', function () {
+      var $chip = $(this);
+      $('#court-type .zf-tag').removeClass('zf-tag--active').attr('aria-pressed', 'false');
+      $chip.addClass('zf-tag--active').attr('aria-pressed', 'true');
+      $('#court-type-value').val($chip.data('v'));
+      ZF.clearValidate($('#court-form'));
+    });
+    // 键盘可达：Enter / 空格
+    $('#court-type').on('keydown', '.zf-tag', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+        e.preventDefault();
+        $(this).trigger('click');
+      }
+    });
+  }
+
+  /** 示例案情：一键填入表单，方便快速体验 */
+  function bindSamples() {
+    $(document).on('click', '.js-sample, #fill-sample', function () {
+      var key = $(this).data('sample') || 'dismiss';
+      var s = SAMPLES[key] || SAMPLES.dismiss;
+      $('#court-title').val(s.title);
+      $('#court-type-value').val(s.type);
+      $('#court-type .zf-tag').removeClass('zf-tag--active').attr('aria-pressed', 'false');
+      $('#court-type .zf-tag[data-v="' + s.type + '"]').addClass('zf-tag--active').attr('aria-pressed', 'true');
+      $('#court-desc').val(s.desc);
+      updateCount();
+      ZF.clearValidate($('#court-form'));
+      ZF.toast('已填入示例案情，可直接点「开始推演」', 'info');
+    });
+  }
+
+  /** 案情字数统计 */
+  function updateCount() {
+    $('#court-count').text('已输入 ' + $.trim($('#court-desc').val()).length + ' 字');
+  }
+
+  /**
+   * 推演进行中态：阶段化推进，不是假进度条。
+   * 后端不返回百分比，报百分比必然是编的；这里只按固定节奏点亮阶段，
+   * 让用户知道「系统在做什么」，真实响应一到立刻 stopRunning() 结算。
+   */
+  var runningTimer = null;
+  function startRunning() {
+    stopRunning();
+    $('#result-placeholder').hide();
+    $('#result-body').hide().empty();
+    $('#result-close').hide();
+    $('#result-foot').attr('hidden', 'hidden');
+    $('#result-running').removeAttr('hidden');
+    var $steps = $('#result-running-steps .zf-steps__item');
+    $steps.removeClass('is-done is-now').first().addClass('is-now');
+    var i = 0;
+    runningTimer = window.setInterval(function () {
+      /* 停在第 3 步等待真实响应，不做「假装已完成」 */
+      if (i >= $steps.length - 1) { return; }
+      i = i + 1;
+      $steps.eq(i - 1).removeClass('is-now').addClass('is-done');
+      $steps.eq(i).addClass('is-now');
+    }, 1600);
+  }
+  function stopRunning() {
+    if (runningTimer) { window.clearInterval(runningTimer); runningTimer = null; }
+    $('#result-running').attr('hidden', 'hidden')
+      .find('.zf-steps__item').removeClass('is-done is-now');
+  }
 
   /** 绑定案情提交表单 */
   function bindForm() {
+    $('#court-desc').on('input', updateCount);
     $('#court-form').on('submit', function (e) {
       e.preventDefault();
       var $form = $(this);
@@ -124,17 +404,22 @@
       }
       var $btn = $('#court-submit');
       ZF.btnLoading($btn, true, '推演中…');
+      startRunning();
       var payload = {
         title: $.trim($form.find('[name=title]').val()),
         caseType: $form.find('[name=caseType]').val(),
         description: $.trim($form.find('[name=description]').val())
       };
       ZF.post('/court-cases', payload).then(function (c) {
+        stopRunning();
         showResult(c);
         $form[0].reset();
-        loadHistory(1);
+        $('#court-type .zf-tag').removeClass('zf-tag--active').attr('aria-pressed', 'false');
+        updateCount();
+        loadHistory(1, false);
         ZF.toast('推演完成', 'success');
       }).catch(function () { /* 统一提示 */ }).then(function () {
+        stopRunning();
         ZF.btnLoading($btn, false);
       });
     });
@@ -146,111 +431,484 @@
    * @returns {string} HTML 片段
    */
   function renderResultHtml(c) {
-    var prob = Math.max(0, Math.min(100, Number(c.winProbability) || 0));
     var hasComp = (c.compensationMin || c.compensationMax);
     var compText = hasComp
       ? (ZF.money(c.compensationMin) + ' ~ ' + ZF.money(c.compensationMax) + ' 元')
       : '暂无明确赔偿区间';
+    var uid = ++chartSeq;
+    var amount = amountDistribution(c);
     var html = [];
-    html.push('<div style="margin-bottom:14px">');
-    html.push('<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">');
-    html.push('<span class="zf-subtitle" style="margin:0">胜诉概率</span>');
-    html.push('<strong style="color:var(--zf-primary);font-size:18px">' + prob + '%</strong>');
-    html.push('</div>');
-    // 用 Bootstrap 进度条可视化胜诉概率
-    html.push('<div class="progress" style="height:10px">');
-    html.push('<div class="progress-bar" role="progressbar" style="width:' + prob + '%" ' +
-      'aria-valuenow="' + prob + '" aria-valuemin="0" aria-valuemax="100"></div></div>');
-    html.push('</div>');
 
-    html.push('<div class="zf-grid zf-grid--2" style="margin-bottom:12px">');
-    html.push('<div><p class="zf-form-label" style="margin-bottom:2px">预估赔偿区间</p>' +
-      '<p style="margin:0;font-weight:600">' + compText + '</p></div>');
-    html.push('<div><p class="zf-form-label" style="margin-bottom:2px">参考类案数量</p>' +
-      '<p style="margin:0;font-weight:600">' + (c.similarCount || 0) + ' 例</p></div>');
+    // 首行：环形图（中心即胜诉率）+ 两个关键指标卡，横向铺满
+    html.push('<div class="zf-result-top">');
+    html.push('<div class="zf-result-top__chart zf-chart__box" id="court-pie-' + uid + '" style="height:200px"></div>');
+    html.push('<div class="zf-result-metrics">');
+    html.push('<div class="zf-metric"><p class="zf-metric__label">预估赔偿区间</p>' +
+      '<p class="zf-metric__value">' + compText + '</p></div>');
+    html.push('<div class="zf-metric"><p class="zf-metric__label">参考类案数量</p>' +
+      '<p class="zf-metric__value">' + (c.similarCount || 0) + ' 例</p></div>');
+    html.push('</div></div>');
+
+    // 第二行：赔付金额概率分布（柱状 + 累计折线），占满整列宽度
+    html.push('<div class="zf-chart">');
+    html.push('<p class="zf-chart__title">赔付金额概率分布 <span class="zf-chart__hint">柱：各金额区间概率 ｜ 线：累计概率</span></p>');
+    if (amount) {
+      var top = amount.probs.indexOf(Math.max.apply(null, amount.probs));
+      html.push('<p class="zf-chart__hint" style="margin:0 0 4px">最可能落在 ' + amount.labels[top] +
+        ' 区间（约 ' + amount.probs[top] + '%）</p>');
+      html.push('<div class="zf-chart__box" id="court-bar-' + uid + '" style="height:212px"></div>');
+    } else {
+      html.push('<div class="zf-chart__empty">该类型案件通常支持补缴社保而非金钱赔偿，暂无金额分布</div>');
+    }
     html.push('</div>');
 
     if (c.resultSummary) {
-      html.push('<p class="zf-subtitle">结论</p>');
+      html.push('<p class="zf-subtitle">推演结论</p>');
       html.push('<div class="zf-doc" style="max-height:none;white-space:normal">' + ZF.nl2br(c.resultSummary) + '</div>');
+    }
+
+    // 口径透明化：把两张图的数字落成可核对的小表，兼作右栏中段的填充
+    html.push(renderOdometer(c));
+    // 后续行动：从已有结果派生，不需要后端新字段
+    html.push(renderActions(c));
+    html.push('<p class="zf-note">推演口径：以案件类型为基准胜率，按证据完整度加权修正，' +
+      '参照类案赔偿区间估算。走势分布按「胜诉案件中约 55% 为全部支持」的劳动争议类案常见构成拆分；' +
+      '金额概率按区间中值附近的钟形分布估算。结果基于类案统计的模拟推演，不构成法律意见。</p>');
+    return html.join('');
+  }
+
+  /**
+   * 口径与计算过程：把环形图、柱线图的数字落成小表。
+   * 既方便用户核对「百分比从哪来」，也避免右栏在图表之后突然收尾。
+   * @param {Object} c 推演结果
+   * @returns {string} HTML 片段
+   */
+  function renderOdometer(c) {
+    var dist = outcomeDistribution(c);
+    var amount = amountDistribution(c);
+    var html = ['<p class="zf-subtitle">推演口径与计算过程</p>'];
+
+    html.push('<table class="zf-metrics-table"><thead><tr>' +
+      '<th>走向</th><th>占比</th></tr></thead><tbody>');
+    dist.forEach(function (d) {
+      html.push('<tr><td>' + d.name + '</td><td>' + d.value + '%</td></tr>');
+    });
+    html.push('</tbody></table>');
+
+    if (amount) {
+      html.push('<table class="zf-metrics-table" style="margin-top:10px"><thead><tr>' +
+        '<th>赔付区间</th><th>概率</th><th>累计</th></tr></thead><tbody>');
+      amount.labels.forEach(function (label, i) {
+        var hot = amount.probs[i] === Math.max.apply(null, amount.probs);
+        html.push('<tr><td>' + (hot ? '<strong>' + label + '</strong>' : label) + '</td>' +
+          '<td>' + amount.probs[i] + '%</td><td>' + amount.cum[i] + '%</td></tr>');
+      });
+      html.push('</tbody></table>');
     }
     return html.join('');
   }
 
-  /** 展示推演结果并滚动可见 */
+  /**
+   * 建议后续行动：按胜诉概率与赔偿区间给出可执行的下一步。
+   * @param {Object} c 推演结果
+   * @returns {string} HTML 片段
+   */
+  function renderActions(c) {
+    var p = clampProb(c.winProbability);
+    var items = [];
+    if (p >= 70) {
+      items.push(['bi-shield-check', '胜算较高：可先书面催告，对方仍不履行即向劳动仲裁委申请仲裁']);
+    } else if (p >= 45) {
+      items.push(['bi-shield-half', '胜算中等：优先补齐证据（工资流水、考勤、聊天记录）再决定是否仲裁']);
+    } else {
+      items.push(['bi-shield-exclamation', '胜算偏低：建议先咨询工会或法律援助，评估调解拿到的方案']);
+    }
+    items.push(['bi-folder-check', '整理证据：劳动合同、工资流水、考勤/排班记录、微信沟通记录']);
+    if (amountDistribution(c)) {
+      items.push(['bi-cash-coin', '仲裁请求金额建议按区间上沿主张，留出协商让步空间']);
+    } else {
+      items.push(['bi-arrow-repeat', '该类型多为行为之诉（如补缴社保），重点主张履行而非赔钱']);
+    }
+    items.push(['bi-telephone', '仲裁时效 1 年，自知道权利被侵害之日起算，别拖']);
+
+    var html = ['<p class="zf-subtitle">建议后续行动</p><div class="zf-actions">'];
+    items.forEach(function (it) {
+      html.push('<div class="zf-actions__item"><i class="bi ' + it[0] + '"></i><span>' +
+        ZF.escape(it[1]) + '</span></div>');
+    });
+    html.push('</div>');
+    return html.join('');
+  }
+
+  /* ==================================================================
+   *  图表：结果分布 + 赔付金额概率分布
+   * ================================================================== */
+
+  /** 胜诉概率归一化到 0~100，保留一位小数 */
+  function clampProb(v) {
+    var p = Number(v);
+    if (isNaN(p)) { p = 0; }
+    return round1(Math.max(0, Math.min(100, p)));
+  }
+
+  /** 保留一位小数 */
+  function round1(v) {
+    return Math.round(v * 10) / 10;
+  }
+
+  /**
+   * 把总胜诉率拆成三种走向的分布。
+   *
+   * <p>后端只给出一个总胜诉率 p，这里按劳动争议类案的常见构成假设
+   * 「胜诉案件中约 55% 为全部支持、45% 为部分支持」做拆分，
+   * 完全胜诉 + 部分胜诉 = p，再加败诉 (100 - p)，三者之和恒为 100%。</p>
+   *
+   * @param {Object} c 推演结果
+   * @returns {Array<Object>} [{name, value}]，value 为百分比
+   */
+  function outcomeDistribution(c) {
+    var p = clampProb(c.winProbability);
+    var full = round1(p * 0.55);
+    var partial = round1(p - full);
+    var lose = round1(100 - full - partial);
+    return [
+      { name: '完全胜诉', value: full },
+      { name: '部分胜诉', value: partial },
+      { name: '败诉', value: lose }
+    ];
+  }
+
+  /** 金额展示：万元口径（≥1万时）或千分位元 */
+  function fmtAmount(v, useWan) {
+    if (useWan) {
+      return (Math.round(v / 1000) / 10) + '万';
+    }
+    return ZF.money(Math.round(v));
+  }
+
+  /** 区间文案：整张图统一口径，左端省略单位，如 1.2~1.6万 / 6,000~7,000 */
+  function bucketLabel(a, b, useWan) {
+    if (useWan) {
+      return (Math.round(a / 1000) / 10) + '~' + fmtAmount(b, true);
+    }
+    return fmtAmount(a, false) + '~' + fmtAmount(b, false);
+  }
+
+  /**
+   * 计算赔付金额的概率分布。
+   *
+   * <p>后端给出的是赔偿区间 [min, max]，这里把区间等分成 6 段，
+   * 按「离区间中值越近概率越高」的钟形分布给每段赋概率，
+   * 并累计出累计概率，便于读「大概能拿到多少」。</p>
+   *
+   * @param {Object} c 推演结果
+   * @returns {Object|null} { labels, probs, cum, useWan }，无有效区间时返回 null
+   */
+  function amountDistribution(c) {
+    var min = Number(c.compensationMin) || 0;
+    var max = Number(c.compensationMax) || 0;
+    if (!(max > 0) || max <= min) {
+      return null;
+    }
+    // 整张图用统一金额口径：区间上限过万就用「万」，否则用元（避免同图混用单位）
+    var useWan = max >= 10000;
+    var labels = [];
+    var weights = [];
+    var center = (AMOUNT_BUCKETS - 1) / 2;
+    for (var i = 0; i < AMOUNT_BUCKETS; i++) {
+      var a = min + (max - min) * i / AMOUNT_BUCKETS;
+      var b = min + (max - min) * (i + 1) / AMOUNT_BUCKETS;
+      labels.push(bucketLabel(a, b, useWan));
+      var d = i - center;
+      weights.push(Math.exp(-(d * d) / (2 * AMOUNT_SIGMA * AMOUNT_SIGMA)));
+    }
+    var sum = weights.reduce(function (s, w) { return s + w; }, 0);
+    var probs = weights.map(function (w) {
+      return round1(w / sum * 100);
+    });
+    // 逐段四舍五入后会与 100% 有零头，把它补到概率最高的那一段，保证合计正好 100%
+    var diff = round1(100 - probs.reduce(function (s, v) { return s + v; }, 0));
+    if (diff !== 0) {
+      var maxIdx = probs.indexOf(Math.max.apply(null, probs));
+      probs[maxIdx] = round1(probs[maxIdx] + diff);
+    }
+    var cum = [];
+    var acc = 0;
+    probs.forEach(function (v, idx) {
+      acc += v;
+      cum.push(idx === AMOUNT_BUCKETS - 1 ? 100 : round1(acc));
+    });
+    return { labels: labels, probs: probs, cum: cum, useWan: useWan };
+  }
+
+  /**
+   * 在指定容器内挂载图表（容器必须已可见，否则 ECharts 取不到宽度）。
+   * 容器 id 前缀决定画哪张图：court-pie-* → 结果分布环形图，其余 → 金额分布柱线图。
+   * @param {jQuery|string} scope 容器，如 '#result-body'
+   * @param {Object} c 推演结果
+   */
+  function mountCharts(scope, c) {
+    $(scope).find('.zf-chart__box').each(function () {
+      var dom = this;
+      var old = echarts.getInstanceByDom(dom);
+      if (old) { old.dispose(); }          // 复用节点时先释放旧实例
+      var chart = echarts.init(dom);
+      charts.push(chart);
+      if ((dom.id || '').indexOf('court-pie-') === 0) {
+        chart.setOption(pieOption(c));
+      } else {
+        chart.setOption(barOption(c));
+      }
+    });
+  }
+
+  /** 释放容器内已创建的图表实例，避免重复渲染时内存泄漏 */
+  function disposeCharts(scope) {
+    $(scope).find('.zf-chart__box').each(function () {
+      var inst = echarts.getInstanceByDom(this);
+      if (inst) { inst.dispose(); }
+    });
+  }
+
+  /** 结果分布环形图配置 */
+  function pieOption(c) {
+    var dist = outcomeDistribution(c);
+    var p = clampProb(c.winProbability);
+    return {
+      color: OUTCOME_COLORS,
+      title: {
+        text: '胜诉 ' + p + '%',
+        left: '50%', top: '30%', textAlign: 'center',
+        textStyle: { fontSize: 15, fontWeight: 600, color: '#0e1115' }
+      },
+      tooltip: { trigger: 'item', formatter: '{b}：{c}%' },
+      legend: {
+        bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8,
+        textStyle: { fontSize: 11, color: '#333942' },
+        // 图例直接带出百分比，不依赖悬浮也能读到数值
+        formatter: function (name) {
+          var hit = null;
+          dist.forEach(function (d) { if (d.name === name) { hit = d; } });
+          return hit ? name + ' ' + hit.value + '%' : name;
+        }
+      },
+      series: [{
+        type: 'pie',
+        radius: ['44%', '66%'],
+        center: ['50%', '38%'],
+        avoidLabelOverlap: true,
+        label: { show: false },
+        emphasis: { scaleSize: 6 },
+        data: dist
+      }]
+    };
+  }
+
+  /** 赔付金额概率分布：柱状（区间概率）+ 折线（累计概率） */
+  function barOption(c) {
+    var d = amountDistribution(c);
+    var unit = d.useWan ? '' : ' 元';
+    return {
+      color: ['#4285f4', '#34a853'],
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: function (params) {
+          var rows = ['赔付区间 ' + params[0].axisValue + unit];
+          params.forEach(function (it) {
+            rows.push(it.marker + it.seriesName + '：' + it.value + '%');
+          });
+          return rows.join('<br>');
+        }
+      },
+      legend: {
+        data: ['区间概率', '累计概率'], bottom: 0,
+        icon: 'circle', itemWidth: 8, itemHeight: 8,
+        textStyle: { fontSize: 11, color: '#333942' }
+      },
+      grid: { left: 46, right: 18, top: 18, bottom: 44 },
+      xAxis: {
+        type: 'category',
+        data: d.labels,
+        axisLabel: { fontSize: 11, color: '#7f8d9f', hideOverlap: true },
+        axisLine: { lineStyle: { color: '#e7eaef' } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        max: 100,
+        axisLabel: { fontSize: 11, color: '#7f8d9f', formatter: '{value}%' },
+        splitLine: { lineStyle: { color: '#f0f2f5' } }
+      },
+      series: [
+        {
+          name: '区间概率', type: 'bar', barWidth: '54%',
+          itemStyle: { borderRadius: [4, 4, 0, 0] },
+          data: d.probs
+        },
+        {
+          name: '累计概率', type: 'line', smooth: true,
+          symbol: 'circle', symbolSize: 6,
+          lineStyle: { width: 2 },
+          areaStyle: { opacity: 0.06 },
+          data: d.cum
+        }
+      ]
+    };
+  }
+
+  /** 右栏回到占位引导（未推演 / 收起报告时） */
+  function showPlaceholder() {
+    stopRunning();
+    $('#result-title').text('推演前，你会拿到什么');
+    $('#result-desc').text('填写左侧案情，这里会生成胜诉概率与赔偿区间');
+    disposeCharts('#result-body');
+    $('#result-body').hide().empty();
+    $('#result-placeholder').show();
+    $('#result-close').hide();
+    $('#result-foot').attr('hidden', 'hidden');   // 占位态没有可复制/再推演的内容
+    lastResult = null;
+  }
+
+  /** 展示推演结果（右栏由占位引导切换为报告；必须先显示容器再挂图表，否则宽度为 0） */
   function showResult(c) {
-    $('#result-body').html(renderResultHtml(c));
-    $('#result-card').show();
+    $('#result-title').text('推演结果');
+    $('#result-desc').text('基于类案大数据的模拟分析，仅供参考');
+    disposeCharts('#result-body');
+    stopRunning();
+    $('#result-body').html(renderResultHtml(c)).addClass('zf-fade-up').show();
+    $('#result-placeholder').hide();
+    $('#result-close').show();
+    $('#result-foot').removeAttr('hidden');
+    lastResult = c;
+    mountCharts('#result-body', c);
     $('#result-card')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  /** 历史相关事件委托 */
-  function bindHistoryEvents() {
-    $('#history-list').on('click', '.zf-list__title', function () {
-      var $item = $(this).closest('.zf-list__item');
-      var $detail = $item.find('.zf-court-detail');
-      if ($detail.length) { $detail.toggle(); return; }
-      // 首次展开时拉取详情
-      var id = $item.data('id');
-      ZF.renderLoading($item.find('.zf-list__main'), '加载详情…');
-      ZF.get('/court-cases/' + id).then(function (c) {
-        $item.find('.zf-list__main').append(
-          '<div class="zf-court-detail zf-qa-detail">' + renderResultHtml(c) + '</div>');
-      }).catch(function () {
-        $item.find('.zf-list__main').append('<div class="zf-court-detail zf-qa-detail">加载失败</div>');
-      });
+  /** 把某条历史记录载入右侧结果卡（窄栏里不再原位展开） */
+  function loadIntoResult(id) {
+    $('#result-title').text('推演结果');
+    $('#result-desc').text('正在载入该条推演记录…');
+    disposeCharts('#result-body');
+    $('#result-placeholder').hide();
+    $('#result-close').show();
+    $('#result-body').html('<div class="zf-loading">加载推演结论…</div>').show();
+    ZF.get('/court-cases/' + id).then(function (c) {
+      showResult(c);
+      ZF.toast('已载入该条推演结论', 'info');
+    }).catch(function () {
+      $('#result-body').html('<div class="zf-empty">加载失败</div>');
     });
-    $('#history-list').on('click', '.js-del', function () {
+  }
+
+  /** 历史记录相关事件委托 */
+  function bindHistoryEvents() {
+    // 点标题 → 载入右侧结果卡
+    $('#history-list').on('click', '.zf-list__title', function () {
+      loadIntoResult($(this).closest('.zf-list__item').data('id'));
+    });
+    // 键盘可达：Enter / 空格
+    $('#history-list').on('keydown', '.zf-list__title', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+        e.preventDefault();
+        $(this).trigger('click');
+      }
+    });
+    $('#history-list').on('click', '.js-del', function (e) {
+      e.stopPropagation();
       var id = $(this).data('id');
       ZF.confirm('确定删除这条推演记录吗？').then(function (ok) {
         if (!ok) { return; }
         ZF.del('/court-cases/' + id).then(function () {
           ZF.toast('已删除', 'success');
-          loadHistory(currentPage);
+          loadHistory(1, false);
         }).catch(function () { /* 忽略 */ });
       });
     });
-    $('#history-refresh').on('click', function () { loadHistory(1); });
+    $('#history-refresh').on('click', function () { loadHistory(1, false); });
+    // 窄栏里用「加载更多」替代数字分页
+    $('#history-pager').on('click', '.js-more', function () {
+      loadHistory(currentPage + 1, true);
+    });
+  }
+
+  /** 单条历史记录（窄栏紧凑两行：标题+徽标 / 时间+类型+删除） */
+  function historyItemHtml(item) {
+    var prob = Number(item.winProbability) || 0;
+    var title = ZF.escape(item.title || ((item.caseType || '案件') + '推演'));
+    var html = '<div class="zf-list__item" data-id="' + item.id + '">';
+    html += '<p class="zf-list__title" tabindex="0" role="button" aria-label="载入推演结论">' +
+      '<span class="zf-list__title-main">' + title + '</span>' +
+      '<span class="zf-badge zf-badge--primary">胜诉 ' + prob + '%</span></p>';
+    html += '<div class="zf-list__meta">';
+    html += '<span>' + ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) +
+      ' · ' + ZF.escape(item.caseType || '其他') + '</span>';
+    html += '<button type="button" class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id +
+      '" title="删除"><i class="bi bi-trash"></i></button>';
+    html += '</div></div>';
+    return html;
   }
 
   /**
-   * 加载历史推演分页列表。
+   * 加载历史推演列表。
    * @param {number} pageNum 页码
+   * @param {boolean} append 是否追加（「加载更多」用），否则整体替换
    */
-  function loadHistory(pageNum) {
+  function loadHistory(pageNum, append) {
     currentPage = pageNum || 1;
     var $box = $('#history-list');
-    ZF.renderLoading($box, '加载推演记录…');
-    ZF.get('/court-cases/mine', { pageNum: currentPage, pageSize: 8 }).then(function (page) {
-      if (!page.list || !page.list.length) {
-        ZF.renderEmpty($box, '还没有推演记录，去试试胜算如何');
+    if (append) {
+      $('#history-pager').html('<div class="zf-loading">加载中…</div>');
+    } else if (!$box.find('.zf-list__item').length) {
+      // 已有内容时不覆盖，避免"明明渲染好了又被 loading 冲掉"
+      ZF.renderLoading($box, '加载推演记录…');
+    }
+    ZF.get('/court-cases/mine', { pageNum: currentPage, pageSize: HISTORY_PAGE_SIZE }).then(function (page) {
+      var list = page.list || [];
+      $box.data('loaded', true);   // 标记已成功拉取，页签切换时不再重复补拉
+      // 页签上的记录数徽标：无论有无数据都同步，空列表时自动隐藏
+      if (!append) { ZF.tabCount('#zf-tab-history', page.total); }
+      if (!list.length) {
+        if (append) {
+          ZF.toast('没有更多记录了', 'info');
+        } else {
+          ZF.renderEmpty($box, '还没有推演记录，填个案情试试');
+        }
         $('#history-pager').empty();
         return;
       }
-      var html = ['<div class="zf-list">'];
-      page.list.forEach(function (item) {
-        var prob = Number(item.winProbability) || 0;
-        html.push('<div class="zf-list__item" data-id="' + item.id + '">');
-        html.push('<div class="zf-list__main">');
-        html.push('<p class="zf-list__title" style="cursor:pointer">' +
-          ZF.escape(item.title || (item.caseType + '推演')) +
-          ' <i class="bi bi-chevron-down" style="font-size:11px;color:var(--zf-ink-3)"></i></p>');
-        html.push('<p class="zf-list__text">类型：' + ZF.escape(item.caseType || '其他') +
-          ' ｜ 胜诉概率 ' + prob + '%</p>');
-        html.push('</div>');
-        html.push('<div class="zf-list__meta" style="text-align:right">');
-        html.push('<span class="zf-badge zf-badge--primary">胜诉 ' + prob + '%</span><br>');
-        html.push(ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) + '<br>');
-        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id + '">' +
-          '<i class="bi bi-trash"></i>删除</button>');
-        html.push('</div></div>');
-      });
-      html.push('</div>');
-      $box.html(html.join(''));
-      ZF.renderPager('#history-pager', page, function (p) { loadHistory(p); });
+      var html = list.map(function (item) { return historyItemHtml(item); }).join('');
+      if (append) {
+        $box.find('.zf-list').append(html);
+      } else {
+        $box.html('<div class="zf-list">' + html + '</div>');
+      }
+      renderMore(page);
     }).catch(function () {
-      ZF.renderEmpty($box, '加载失败，请刷新重试');
+      if (append) {
+        $('#history-pager').empty();
+      } else {
+        ZF.renderEmpty($box, '加载失败，请刷新重试');
+      }
     });
+  }
+
+  /**
+   * 渲染「加载更多」按钮（窄栏里数字分页会挤爆，改用增量加载）。
+   * @param {Object} page 分页结果
+   */
+  function renderMore(page) {
+    var pages = page.pages || 0;
+    var total = page.total || 0;
+    var $pager = $('#history-pager');
+    if (currentPage < pages) {
+      var rest = total - currentPage * HISTORY_PAGE_SIZE;
+      $pager.html('<button type="button" class="zf-btn zf-btn--ghost zf-btn--sm js-more">' +
+        '<i class="bi bi-arrow-down-circle"></i>加载更多' + (rest > 0 ? '（还有 ' + rest + ' 条）' : '') + '</button>');
+    } else {
+      $pager.html('<p class="zf-form-hint" style="text-align:center;margin:12px 0 0">共 ' +
+        total + ' 条，已全部加载</p>');
+    }
   }
 })(jQuery, window.ZF);
 </script>

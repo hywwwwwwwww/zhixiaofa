@@ -54,6 +54,15 @@ public class QuizQuestionDaoImpl implements QuizQuestionDao {
         return row;
     };
 
+    /** 题目列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "id",
+            "difficulty", "difficulty",
+            "createdAt", "created_at");
+
+    /** 默认排序：按 id 倒序（最新在前） */
+    private static final String DEFAULT_ORDER = "id DESC";
+
     /* ---------------- 标准 CRUD ---------------- */
 
     @Override
@@ -114,12 +123,20 @@ public class QuizQuestionDaoImpl implements QuizQuestionDao {
 
     @Override
     public java.util.List<QuizQuestion> findByCondition(String keyword, String category, int offset, int limit) {
-        // 后台题目分页
+        return findByCondition(keyword, category, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<QuizQuestion> findByCondition(String keyword, String category, int offset, int limit,
+                                                         String sortName, String sortOrder) {
+        // 后台题目分页（关键词 + 分类 + 可选排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andLike("question, explanation", keyword)
                         .andEq("category", category);
                 return JdbcExecutor.queryList(null,
-                        "SELECT * FROM quiz_question WHERE 1=1" + sb.where() + " ORDER BY id DESC LIMIT ?, ?",
+                        "SELECT * FROM quiz_question WHERE 1=1" + sb.where()
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER, sb.with(offset, limit));
     }
 

@@ -118,9 +118,24 @@ public class QaRecordDaoImpl implements QaRecordDao {
         return JdbcExecutor.queryCount(null, "SELECT COUNT(*) FROM qa_record WHERE user_id = ?", userId);
     }
 
+    /** 问答列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "q.id",
+            "likeCount", "q.like_count",
+            "createdAt", "q.created_at");
+
+    /** 默认排序：按主键倒序（最新在前） */
+    private static final String DEFAULT_ORDER = "q.id DESC";
+
     @Override
     public java.util.List<QaRecord> findByCondition(String keyword, String category, Integer status, int offset, int limit) {
-        // 后台问答分页（关联用户昵称）
+        return findByCondition(keyword, category, status, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<QaRecord> findByCondition(String keyword, String category, Integer status,
+                                                     int offset, int limit, String sortName, String sortOrder) {
+        // 后台问答分页（关联用户昵称 + 可选排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andLike("q.question, q.answer", keyword)
                         .andEq("q.category", category)
@@ -128,7 +143,8 @@ public class QaRecordDaoImpl implements QaRecordDao {
                 return JdbcExecutor.queryList(null,
                         "SELECT q.*, u.nickname AS user_nickname, u.avatar AS user_avatar FROM qa_record q"
                                 + " LEFT JOIN sys_user u ON q.user_id = u.id WHERE 1=1" + sb.where()
-                                + " ORDER BY q.id DESC LIMIT ?, ?",
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER_WITH_USER, sb.with(offset, limit));
     }
 

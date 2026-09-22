@@ -77,4 +77,60 @@ public final class StringUtil {
         }
         return s.replaceAll("[\r\n\t]+", " ").trim();
     }
+
+    /**
+     * 解析条号中的中文数字，用于按条文自然顺序排序。
+     *
+     * <p>例：「第十条」→ 10，「第二十三条」→ 23，「第一百零一条」→ 101。
+     * 无法解析时返回 {@link Integer#MAX_VALUE}，使其排在最后。</p>
+     *
+     * @param articleNo 条号，如「第十条」
+     * @return 对应的阿拉伯数字
+     */
+    public static int parseArticleNo(String articleNo) {
+        if (isEmpty(articleNo)) {
+            return Integer.MAX_VALUE;
+        }
+        // 只取「第…条」之间的数字部分
+        int start = articleNo.indexOf('第');
+        int end = articleNo.lastIndexOf('条');
+        String numPart = (start >= 0 && end > start) ? articleNo.substring(start + 1, end) : articleNo;
+
+        int section = 0;
+        int number = 0;
+        for (char c : numPart.toCharArray()) {
+            int digit = chineseDigit(c);
+            if (digit >= 0) {
+                number = digit;
+            } else if (c == '十') {
+                section += (number == 0 ? 1 : number) * 10;
+                number = 0;
+            } else if (c == '百') {
+                section += (number == 0 ? 1 : number) * 100;
+                number = 0;
+            } else if (c == '千') {
+                section += (number == 0 ? 1 : number) * 1000;
+                number = 0;
+            }
+        }
+        int value = section + number;
+        return value == 0 ? Integer.MAX_VALUE : value;
+    }
+
+    /** 中文数字字符 → 阿拉伯数字，非数字返回 -1 */
+    private static int chineseDigit(char c) {
+        switch (c) {
+            case '一': return 1;
+            case '二': return 2;
+            case '三': return 3;
+            case '四': return 4;
+            case '五': return 5;
+            case '六': return 6;
+            case '七': return 7;
+            case '八': return 8;
+            case '九': return 9;
+            case '零': return 0;
+            default: return -1;
+        }
+    }
 }

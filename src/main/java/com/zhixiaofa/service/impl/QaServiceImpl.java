@@ -172,13 +172,19 @@ public class QaServiceImpl implements QaService {
 
     @Override
     public PageResult<QaRecord> page(String keyword, String category, Integer status, int pageNum, int pageSize) {
+        return page(keyword, category, status, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<QaRecord> page(String keyword, String category, Integer status, int pageNum, int pageSize,
+                                     String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = pageSize < 1 ? 10 : Math.min(pageSize, 100);
         long total = qaDao.countByCondition(keyword, category, status);
         if (total == 0) {
             return PageResult.empty(pageNum, pageSize);
         }
-        List<QaRecord> list = qaDao.findByCondition(keyword, category, status, (pageNum - 1) * pageSize, pageSize);
+        List<QaRecord> list = qaDao.findByCondition(keyword, category, status, (pageNum - 1) * pageSize, pageSize, sortName, sortOrder);
         for (QaRecord r : list) {
             r.setCreatedAtText(DateUtil.friendly(r.getCreatedAt()));
         }
@@ -247,7 +253,7 @@ public class QaServiceImpl implements QaService {
         Set<LawArticle> result = new LinkedHashSet<>();
         for (String kw : extractKeywords(question)) {
             try {
-                List<LawArticle> hit = lawDao.findByCondition(kw, null, 0, RECALL_LIMIT);
+                List<LawArticle> hit = lawDao.findByCondition(kw, null, null, 0, RECALL_LIMIT);
                 result.addAll(hit);
             } catch (Exception e) {
                 // 全文检索异常（如关键词全是停用词）不影响主流程，退回分类匹配
@@ -258,7 +264,7 @@ public class QaServiceImpl implements QaService {
             }
         }
         if (result.isEmpty() && StringUtil.isNotEmpty(category)) {
-            result.addAll(lawDao.findByCondition(null, category, 0, RECALL_LIMIT));
+            result.addAll(lawDao.findByCondition(null, category, null, 0, RECALL_LIMIT));
         }
         List<LawArticle> list = new ArrayList<>(result);
         return list.size() > RECALL_LIMIT ? list.subList(0, RECALL_LIMIT) : list;

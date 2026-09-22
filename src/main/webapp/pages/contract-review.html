@@ -6,7 +6,7 @@
   <title>合同智能审查 - 职小法</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -15,92 +15,218 @@
     <header class="zf-topbar"></header>
 
     <section class="zf-content">
-      <div class="zf-grid zf-grid--2" style="align-items:start">
-        <!-- 左侧：审查表单 -->
-        <div class="zf-card">
+      <!-- 工作台：左列（上传审查 / 合同档案，由页签切换），右列（审查报告，贯通两行） -->
+      <div class="zf-desk">
+        <!-- 左列：两块内容用页签切换，避免纵向堆叠过长。
+             id="history" 挂在 panel 外层（而不是面板上），保证首页跳转 #history 时
+             锚点元素始终可见，不受当前激活页签影响 -->
+        <div class="zf-desk__panel" id="history">
+          <div class="zf-tabs" id="desk-tabs" role="tablist" aria-label="合同审查工作台面板">
+            <button type="button" class="zf-tabs__tab zf-tabs__tab--active" role="tab"
+                    id="zf-tab-input" data-name="input" aria-controls="zf-panel-input"
+                    aria-selected="true" tabindex="0">
+              <i class="bi bi-cloud-arrow-up"></i>上传审查
+            </button>
+            <button type="button" class="zf-tabs__tab" role="tab"
+                    id="zf-tab-history" data-name="history" aria-controls="zf-panel-history"
+                    aria-selected="false" tabindex="-1">
+              <i class="bi bi-folder2-open"></i>合同档案
+              <span class="zf-tabs__count" id="tab-history-count" hidden></span>
+            </button>
+          </div>
+
+        <!-- 页签面板 1：审查表单 -->
+        <div class="zf-card zf-desk__input" id="zf-panel-input"
+             role="tabpanel" aria-labelledby="zf-tab-input" tabindex="-1">
           <div class="zf-card__head">
             <div>
-              <h3 class="zf-card__title">粘贴合同，开始审查</h3>
+              <h3 class="zf-card__title">上传或粘贴合同，开始审查</h3>
               <p class="zf-card__desc">逐条扫描风险条款，生成风险体检报告</p>
             </div>
             <button class="zf-btn zf-btn--ghost zf-btn--sm" id="fill-sample">
               <i class="bi bi-magic"></i>填充示例合同
             </button>
           </div>
+
+          <!-- 文件上传：上传 docx / pdf / txt，前端解析后自动填入合同正文。
+               紧凑单行布局，避免上传区独占近 300px 纵向空间 -->
+          <div class="zf-upload" id="upload-zone" tabindex="0" role="button"
+               aria-label="上传合同文件，支持 docx、pdf、txt">
+            <input type="file" id="upload-input" accept=".docx,.pdf,.txt,.md" hidden>
+            <div class="zf-upload__icon"><i class="bi bi-cloud-arrow-up"></i></div>
+            <div class="zf-upload__main">
+              <p class="zf-upload__title">拖入合同文件，或<span class="zf-upload__link">点击选择</span></p>
+              <p class="zf-upload__hint">支持 docx / pdf / txt，≤10MB，自动填入下方「合同正文」</p>
+            </div>
+            <div class="zf-upload__status" id="upload-status" role="status" aria-live="polite"></div>
+          </div>
+          <div class="zf-upload__divider"><span>或手动填写以下信息</span></div>
+
           <form id="contract-form" novalidate>
-            <div class="zf-grid zf-grid--2">
-              <div class="zf-field">
-                <label class="zf-form-label" for="cf-name">合同文件名</label>
-                <input class="zf-form-control" type="text" name="fileName" id="cf-name"
-                  placeholder="如：2024劳动合同" maxlength="50">
+            <div class="zf-form-group">
+              <p class="zf-subtitle">合同基本信息</p>
+              <div class="zf-grid zf-grid--2">
+                <div class="zf-field">
+                  <label class="zf-form-label" for="cf-name">合同文件名</label>
+                  <input class="zf-form-control" type="text" name="fileName" id="cf-name"
+                    placeholder="如：2024劳动合同" maxlength="50">
+                </div>
+                <div class="zf-field">
+                  <label class="zf-form-label" for="cf-type">合同类型 <span style="color:var(--zf-danger)">*</span></label>
+                  <select class="zf-form-control" name="contractType" id="cf-type">
+                    <option value="">请选择</option>
+                    <option value="劳动合同">劳动合同</option>
+                    <option value="实习协议">实习协议</option>
+                    <option value="竞业协议">竞业协议</option>
+                    <option value="其他">其他</option>
+                  </select>
+                  <div class="zf-form-error"></div>
+                </div>
               </div>
+            </div>
+
+            <div class="zf-form-group">
+              <p class="zf-subtitle">当事人与签订时间</p>
+              <div class="zf-grid zf-grid--2">
+                <div class="zf-field">
+                  <label class="zf-form-label" for="cf-a">甲方</label>
+                  <input class="zf-form-control" type="text" name="partyA" id="cf-a" placeholder="公司全称" maxlength="50">
+                </div>
+                <div class="zf-field">
+                  <label class="zf-form-label" for="cf-b">乙方</label>
+                  <input class="zf-form-control" type="text" name="partyB" id="cf-b" placeholder="你的姓名" maxlength="50">
+                </div>
+              </div>
+              <!-- 签订日期：只保留日历按钮，点按钮唤起原生日历选择；
+                   原生的年月日三段显示在小列里会挤到看不清，故改为
+                   只读文本框 + 日历按钮的形态。
+                   标签内联（.zf-field--inline）让整行从 71px 降到 40px，
+                   且日历按钮的左边缘与上方「甲方」输入框的左边缘对齐，
+                   三者右边缘也落在同一条竖线上，形成整齐的纵向对齐轴 -->
+              <div class="zf-field zf-field--inline">
+                <label class="zf-form-label" for="cf-date">签订日期</label>
+                <div class="zf-datepick" id="cf-date-wrap">
+                  <button type="button" class="zf-datepick__btn" id="cf-date-btn"
+                          aria-label="打开日历选择签订日期">
+                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                  </button>
+                  <input class="zf-form-control zf-datepick__text" type="text" id="cf-date-text"
+                    placeholder="请选择日期" readonly>
+                  <!-- 真正存值的原生 date 控件：视觉上隐藏但保持可访问与可编程赋值 -->
+                  <input class="zf-datepick__native" type="date" name="signDate" id="cf-date" tabindex="-1" aria-hidden="true">
+                </div>
+              </div>
+            </div>
+
+            <div class="zf-form-group">
+              <p class="zf-subtitle">合同正文</p>
               <div class="zf-field">
-                <label class="zf-form-label" for="cf-type">合同类型 <span style="color:var(--zf-danger)">*</span></label>
-                <select class="zf-form-control" name="contractType" id="cf-type">
-                  <option value="">请选择</option>
-                  <option value="劳动合同">劳动合同</option>
-                  <option value="实习协议">实习协议</option>
-                  <option value="竞业协议">竞业协议</option>
-                  <option value="其他">其他</option>
-                </select>
+                <label class="zf-form-label" for="cf-content">正文内容 <span style="color:var(--zf-danger)">*</span></label>
+                <textarea class="zf-form-control" name="content" id="cf-content" rows="3"
+                  placeholder="上传 docx / pdf 会自动填入这里，也可以直接把合同全文粘贴进来"></textarea>
                 <div class="zf-form-error"></div>
+                <div class="zf-field__foot">
+                  <div class="zf-form-hint">保留完整条款文本，识别效果更佳</div>
+                  <div class="zf-form-hint" id="cf-count">已输入 0 字</div>
+                </div>
               </div>
             </div>
-            <div class="zf-grid zf-grid--2">
-              <div class="zf-field">
-                <label class="zf-form-label" for="cf-a">甲方（用人单位）</label>
-                <input class="zf-form-control" type="text" name="partyA" id="cf-a" placeholder="公司全称" maxlength="50">
-              </div>
-              <div class="zf-field">
-                <label class="zf-form-label" for="cf-b">乙方（劳动者）</label>
-                <input class="zf-form-control" type="text" name="partyB" id="cf-b" placeholder="你的姓名" maxlength="50">
-              </div>
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="cf-date">签订日期</label>
-              <input class="zf-form-control" type="date" name="signDate" id="cf-date">
-            </div>
-            <div class="zf-field">
-              <label class="zf-form-label" for="cf-content">合同正文 <span style="color:var(--zf-danger)">*</span></label>
-              <textarea class="zf-form-control" name="content" id="cf-content" rows="9"
-                placeholder="把劳动合同全文粘贴到这里，系统会逐条分析风险"></textarea>
-              <div class="zf-form-error"></div>
-              <div class="zf-form-hint">建议粘贴完整文本，识别效果更佳</div>
-            </div>
-            <div style="text-align:right">
+
+            <div class="zf-form-actions">
+              <span class="zf-form-actions__tip"><i class="bi bi-shield-check"></i> 内容仅用于本次风险分析</span>
+              <button type="button" class="zf-btn zf-btn--ghost" id="cf-reset">
+                <i class="bi bi-arrow-counterclockwise"></i>清空重填
+              </button>
               <button type="submit" class="zf-btn zf-btn--primary" id="cf-submit">
                 <i class="bi bi-search"></i>开始审查
               </button>
             </div>
           </form>
-        </div>
+          </div>
 
-        <!-- 右侧：审查结果 -->
-        <div class="zf-card" id="result-card" style="display:none">
+          <!-- 页签面板 2：我的合同档案 -->
+          <div class="zf-card zf-desk__history" id="zf-panel-history"
+               role="tabpanel" aria-labelledby="zf-tab-history" tabindex="-1" hidden>
+            <div class="zf-card__head">
+              <div>
+                <h3 class="zf-card__title">我的合同档案</h3>
+                <p class="zf-card__desc">点击任意一份载入右侧查看风险明细</p>
+              </div>
+              <button class="zf-btn zf-btn--ghost zf-btn--sm" id="history-refresh">
+                <i class="bi bi-arrow-clockwise"></i>刷新
+              </button>
+            </div>
+            <div class="zf-history__list" id="history-list"></div>
+            <div id="history-pager"></div>
+          </div>
+        </div>
+        <!-- /zf-desk__panel -->
+
+        <!-- 右列：审查报告（未提交时显示占位说明，避免右栏空白） -->
+        <div class="zf-card zf-desk__result" id="result-card">
           <div class="zf-card__head">
-            <div><h3 class="zf-card__title">风险体检报告</h3>
-              <p class="zf-card__desc">整体风险等级与逐条风险明细</p></div>
-            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close">
+            <div>
+              <h3 class="zf-card__title" id="result-title">审查能帮你发现什么</h3>
+              <p class="zf-card__desc" id="result-desc">提交后在这里生成风险体检报告</p>
+            </div>
+            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close" style="display:none">
               <i class="bi bi-x-lg"></i>收起
             </button>
           </div>
-          <div id="result-body"></div>
-        </div>
-      </div>
-
-      <!-- 历史合同 -->
-      <div class="zf-card" style="margin-top:16px">
-        <div class="zf-card__head">
-          <div>
-            <h3 class="zf-card__title">我的合同档案</h3>
-            <p class="zf-card__desc">点击任意一份可载入查看风险明细</p>
+          <!-- 中段：占位说明 / 风险报告（内容不足时由底部操作条吸收富余高度） -->
+          <div class="zf-desk__result-body">
+            <div id="result-placeholder">
+              <ul class="zf-steps">
+                <li class="zf-steps__item"><i class="bi bi-1-circle"></i>上传 docx / pdf，或粘贴合同全文</li>
+                <li class="zf-steps__item"><i class="bi bi-2-circle"></i>系统逐条扫描风险条款</li>
+                <li class="zf-steps__item"><i class="bi bi-3-circle"></i>输出风险等级、法条依据与修改建议</li>
+              </ul>
+              <p class="zf-subtitle" style="margin:18px 0 10px">覆盖的常见风险</p>
+              <div class="zf-tags">
+                <span class="zf-tag">试用期超标</span>
+                <span class="zf-tag">违约金过高</span>
+                <span class="zf-tag">竞业限制无补偿</span>
+                <span class="zf-tag">社保未缴</span>
+                <span class="zf-tag">加班无补偿</span>
+                <span class="zf-tag">单方解除条件</span>
+              </div>
+              <p class="zf-note" style="margin-top:auto">审查口径：以《劳动合同法》及配套司法解释为基准，
+                扫描试用期、违约金、竞业限制、社保、加班与解除条件等高频条款；
+                结果基于规则匹配，不构成法律意见，重大签约请咨询执业律师。</p>
+            </div>
+            <!-- AI 进行中态：审查是数秒级请求，此前右栏纹丝不动、只有按钮文案变化，
+                 用户面对数秒白屏。改为阶段化推进（不报百分比 —— 后端不返回进度，
+                 报百分比必然是编的），阶段按固定节奏点亮，真实响应一到立即结算。 -->
+            <div id="result-running" class="zf-run" hidden aria-live="polite">
+              <p class="zf-run__lead">
+                <span class="zf-typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                正在审查，预计数秒
+              </p>
+              <ul class="zf-steps zf-steps--running" id="result-running-steps">
+                <li class="zf-steps__item"><i class="bi bi-1-circle"></i>已收到合同，正在解析条款结构</li>
+                <li class="zf-steps__item"><i class="bi bi-2-circle"></i>逐条扫描风险条款并匹配法条</li>
+                <li class="zf-steps__item"><i class="bi bi-3-circle"></i>生成风险等级与修改建议</li>
+              </ul>
+              <div class="zf-skel" aria-hidden="true">
+                <span class="zf-skel__bar" style="width:62%"></span>
+                <span class="zf-skel__bar" style="width:88%"></span>
+                <span class="zf-skel__bar" style="width:44%"></span>
+              </div>
+            </div>
+            <div id="result-body" style="display:none" aria-live="polite"></div>
           </div>
-          <button class="zf-btn zf-btn--ghost zf-btn--sm" id="history-refresh">
-            <i class="bi bi-arrow-clockwise"></i>刷新
-          </button>
+          <!-- 底部操作条：内容不足时靠 margin-top:auto 贴底，吸收右栏富余高度 -->
+          <div class="zf-desk__result-foot" id="result-foot" hidden>
+            <div class="zf-desk__result-foot-inner">
+              <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="result-copy">
+                <i class="bi bi-clipboard"></i>复制报告
+              </button>
+              <button type="button" class="zf-btn zf-btn--ghost zf-btn--sm" id="result-again">
+                <i class="bi bi-arrow-repeat"></i>再查一份
+              </button>
+            </div>
+          </div>
         </div>
-        <div id="history-list"></div>
-        <div id="history-pager"></div>
       </div>
     </section>
   </main>
@@ -108,11 +234,14 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js"></script>
+<script src="../vendor/mammoth/mammoth.browser.min.js"></script>
+<script src="../vendor/pdfjs/pdf.min.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file contract-review.html —— 合同智能审查
- * @description 提交合同全文做风险审查；右侧展示整体风险等级与逐条风险明细；下方历史合同可载入查看。
+ * @description 支持上传 docx / pdf / txt（前端解析成文本后填入正文，可再编辑）或直接粘贴；
+ *              提交后右侧展示整体风险等级与逐条风险明细；下方历史合同可载入查看。
  */
 (function ($, ZF) {
   'use strict';
@@ -120,14 +249,564 @@
   /** 当前历史分页页码 */
   var currentPage = 1;
 
+  /** 历史列表每页条数 */
+  var HISTORY_PAGE_SIZE = 8;
+
+  /** 允许上传的扩展名 */
+  var UPLOAD_EXTS = ['docx', 'pdf', 'txt', 'md'];
+  /** 单文件体积上限：10MB */
+  var UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+  /** PDF 最多解析页数，避免超大文件卡住浏览器 */
+  var PDF_MAX_PAGES = 30;
+  /** 单个文件的解析超时（毫秒） */
+  var PARSE_TIMEOUT = 15000;
+
+  // pdf.js 的 worker 使用同版本的本地文件，不走 CDN
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = ZF.CTX + '/vendor/pdfjs/pdf.worker.min.js';
+  }
+
+  /** 左栏页签实例（上传审查 / 合同档案） */
+  var deskTabs = null;
+
+  /** 最近一次审查结果，供「复制报告」等底部操作复用 */
+  var lastResult = null;
+
   ZF.initPage({ active: 'contract', title: '合同智能审查', sub: '逐条扫描风险条款，守护签约安全' })
     .then(function () {
+      bindTabs();
+      bindUpload();
       bindForm();
+      bindDatePicker();
       bindSample();
-      $('#result-close').on('click', function () { $('#result-card').hide(); });
+      // 收起报告 → 回到右栏占位说明，避免右半屏空白
+      $('#result-close').on('click', function () { showPlaceholder(); });
+      bindResultFoot();
       bindHistoryEvents();
-      loadHistory(1);
+      updateCount();
+      // 等档案列表渲染完再定位锚点（支持从首页「审查合同」直达 #history）
+      loadHistory(1, false).then(function () {
+        ZF.handleHashAnchor();
+      });
     });
+
+  /**
+   * 左栏页签：上传审查 / 合同档案。
+   * 切换只切显隐、DOM 不销毁，未提交的草稿与已解析的合同正文都不会丢。
+   */
+  function bindTabs() {
+    deskTabs = ZF.tabs('#desk-tabs', {
+      value: 'input',
+      onChange: function (name) {
+        if (name === 'history') {
+          // 用 data 标记而不是探测 DOM 判断"是否加载过"。
+          // 若用 .zf-list__item 的存在性判断，一旦首次渲染失败就会反复补拉，
+          // 而 renderLoading 会清空列表 → 变成永远拉不出内容的死循环。
+          if (!$('#history-list').data('loaded')) {
+            loadHistory(1, false);
+          }
+          // 面板从隐藏切换为显示后高度会变，锚点需重新定位（首页跳转 #history 用）
+          ZF.handleHashAnchor();
+        }
+      }
+    });
+    // 从首页「审查合同」跳转过来时 hash 为 #history，落到档案页签更符合意图
+    if (window.location.hash === '#history') {
+      deskTabs.select('history');
+    }
+  }
+
+  /** 程序化切换左栏页签 */
+  function showTab(name) {
+    if (deskTabs) { deskTabs.select(name); }
+  }
+
+  /* ==================================================================
+   *  签订日期：只保留日历按钮
+   * ================================================================== */
+
+  /**
+   * 绑定日期选择：点日历按钮（或只读文本框）唤起原生日历面板，
+   * 选好后把值同步到只读文本框做展示，真正提交的仍是隐藏的 date 控件。
+   */
+  function bindDatePicker() {
+    var $native = $('#cf-date');
+    var $text = $('#cf-date-text');
+
+    /** 唤起原生日历：优先 showPicker()，旧浏览器退回 focus + click */
+    function openPicker() {
+      var el = $native[0];
+      if (!el) { return; }
+      if (typeof el.showPicker === 'function') {
+        try { el.showPicker(); return; } catch (e) { /* 需用户手势，退回下面的方案 */ }
+      }
+      el.focus();
+      el.click();
+    }
+
+    $('#cf-date-btn').on('click', openPicker);
+    $text.on('click', openPicker);
+
+    // 原生控件变更后同步展示文案
+    $native.on('change input', function () {
+      syncDateText();
+      ZF.clearValidate($('#contract-form'));
+    });
+
+    /** 把 ISO 值渲染成「2025年12月1日」；空值回到占位提示。
+     *  同时切换 --filled 态，让日历按钮从淡蓝底转为实心蓝底白图标，
+     *  作为「已填写」的视觉反馈。 */
+    function syncDateText() {
+      var v = $native.val();
+      $('#cf-date-wrap').toggleClass('zf-datepick--filled', !!v);
+      if (!v) { $text.val(''); return; }
+      var parts = String(v).split('-');
+      if (parts.length !== 3) { $text.val(v); return; }
+      $text.val(parts[0] + '年' + Number(parts[1]) + '月' + Number(parts[2]) + '日');
+    }
+
+    // 供智能预填 / 清空重填调用：外部直接改 #cf-date 的值后要同步展示
+    $.fn.zfSyncDate = function () { syncDateText(); return this; };
+
+    syncDateText();   // 初始同步一次，保证刷新后按钮状态与已有值一致
+  }
+
+  /** 右栏底部操作条：复制报告 / 再查一份 */
+  function bindResultFoot() {
+    $('#result-copy').on('click', function () {
+      if (!lastResult) { return; }
+      ZF.copyText(plainReport(lastResult), '风险报告已复制');
+    });
+    // 回到左栏表单页签并把光标落到正文框，方便换一份合同
+    $('#result-again').on('click', function () {
+      showTab('input');
+      $('#cf-content').trigger('focus');
+    });
+  }
+
+  /** 把风险报告拼成纯文本，供复制到剪贴板 */
+  function plainReport(c) {
+    var risks = c.risks || [];
+    var rows = ['【风险体检报告】' + (c.fileName || '未命名合同')];
+    rows.push('合同类型：' + (c.contractType || '其他'));
+    rows.push('风险等级：' + riskLevelText(c.riskLevel) + '，共 ' + (c.riskCount || risks.length) + ' 个风险点');
+    if (!risks.length) {
+      rows.push('');
+      rows.push('未发现明显风险，合同相对规范。');
+    } else {
+      risks.forEach(function (r, i) {
+        rows.push('');
+        rows.push((i + 1) + '. [' + riskLevelText(r.riskLevel) + ']' +
+          (r.clauseNo ? ' 条款 ' + r.clauseNo : ''));
+        if (r.clauseContent) { rows.push('   原文：' + r.clauseContent); }
+        if (r.riskDesc) { rows.push('   风险：' + r.riskDesc); }
+        if (r.suggestion) { rows.push('   建议：' + r.suggestion); }
+        if (r.lawName) { rows.push('   依据：' + r.lawName + (r.lawArticleNo ? ' ' + r.lawArticleNo : '')); }
+      });
+    }
+    rows.push('');
+    rows.push('（基于规则匹配的自动审查，不构成法律意见）');
+    return rows.join('\n');
+  }
+
+  /** 风险等级的纯文本，供复制与行动清单使用 */
+  function riskLevelText(level) {
+    if (level === 'high') { return '高风险'; }
+    if (level === 'medium') { return '中风险'; }
+    if (level === 'low') { return '低风险'; }
+    return '未见明显风险';
+  }
+
+  /* ==================================================================
+   *  合同文件上传与解析
+   * ================================================================== */
+
+  /** 绑定拖拽 / 点击选择 / 重新选择 / 移除 / 键盘操作 */
+  function bindUpload() {
+    var $zone = $('#upload-zone');
+    var $input = $('#upload-input');
+
+    // 整块可点击选择文件（「重新选择」「移除」按钮除外）
+    $zone.on('click', function (e) {
+      if ($(e.target).closest('.js-remove, .js-repick').length || e.target === $input[0]) {
+        return;
+      }
+      $input.trigger('click');
+    });
+    // 键盘可达：Enter / 空格 等同点击
+    $zone.on('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+        e.preventDefault();
+        $input.trigger('click');
+      }
+    });
+    $input.on('change', function () {
+      if (this.files && this.files[0]) {
+        handleFile(this.files[0]);
+      }
+      this.value = '';   // 清空后同一个文件才能再次触发 change
+    });
+    // 拖拽高亮
+    $zone.on('dragover dragenter', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      $zone.addClass('zf-upload--over');
+    });
+    $zone.on('dragleave dragend drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      $zone.removeClass('zf-upload--over');
+    });
+    $zone.on('drop', function (e) {
+      var dt = e.originalEvent && e.originalEvent.dataTransfer;
+      var files = dt && dt.files;
+      if (files && files.length) {
+        handleFile(files[0]);
+      }
+    });
+    // 重新选择文件
+    $zone.on('click', '.js-repick', function (e) {
+      e.stopPropagation();
+      $input.trigger('click');
+    });
+    // 移除解析结果（只清上传区状态，已填入的正文保留）
+    $zone.on('click', '.js-remove', function (e) {
+      e.stopPropagation();
+      showUploadIdle();
+    });
+  }
+
+  /** 回到上传空态（清掉文件条与状态类，正文保留） */
+  function showUploadIdle() {
+    $('#upload-zone').removeClass('zf-upload--done zf-upload--loading zf-upload--error');
+    $('#upload-status').empty();
+  }
+
+  /**
+   * 处理选中的合同文件：校验 → 解析 → 回填正文与文件名。
+   * @param {File} file 用户选择的文件
+   */
+  function handleFile(file) {
+    var name = file.name || '';
+    var ext = (name.split('.').pop() || '').toLowerCase();
+    if (UPLOAD_EXTS.indexOf(ext) < 0) {
+      setUploadStatus('error', '不支持的文件类型：.' + ext + '，请上传 docx / pdf / txt');
+      return;
+    }
+    if (file.size > UPLOAD_MAX_BYTES) {
+      setUploadStatus('error', '文件太大了（' + fmtSize(file.size) + '），请控制在 10MB 以内');
+      return;
+    }
+    if (!mimeMatches(file, ext)) {
+      setUploadStatus('error', '文件内容与扩展名不符（浏览器识别为 ' + file.type +
+        '），请确认后重新上传，或直接把文本粘贴到正文里');
+      return;
+    }
+    setUploadStatus('loading', '正在解析 ' + name + '…');
+
+    // 加超时保护：极端 PDF 可能让解析卡很久
+    withTimeout(parseFile(file, ext), PARSE_TIMEOUT, '解析超时（超过 15 秒），请重试或直接粘贴文本')
+      .then(function (text) {
+        var content = (text || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+        if (content.length < 10) {
+          setUploadStatus('error', '没能从《' + name + '》里提取到文字，' +
+            '扫描件（图片型 PDF）或加密文档无法解析，请直接粘贴文本');
+          return;
+        }
+        applyContent(content, name, file);
+      }).catch(function (err) {
+        setUploadStatus('error', '解析失败：' + ((err && err.message) || '未知错误') + '，请重试或直接粘贴文本');
+      });
+  }
+
+  /**
+   * 给 Promise 加超时保护。
+   * @param {Promise} p 原始 Promise
+   * @param {number} ms 超时毫秒
+   * @param {string} msg 超时提示文案
+   * @returns {Promise}
+   */
+  function withTimeout(p, ms, msg) {
+    return Promise.race([p, new Promise(function (resolve, reject) {
+      window.setTimeout(function () { reject(new Error(msg)); }, ms);
+    })]);
+  }
+
+  /**
+   * 用浏览器给出的 MIME 类型交叉校验扩展名，防「改后缀」导致的解析异常。
+   * 部分系统对 docx 等类型会给出空串，此时信任扩展名，不拦截。
+   * @param {File} file 文件
+   * @param {string} ext 扩展名
+   * @returns {boolean} 是否匹配
+   */
+  function mimeMatches(file, ext) {
+    var t = (file.type || '').toLowerCase();
+    if (!t || t === 'application/octet-stream') {
+      return true;
+    }
+    if (ext === 'pdf') {
+      return t === 'application/pdf';
+    }
+    if (ext === 'docx') {
+      return t.indexOf('word') >= 0 || t.indexOf('officedocument') >= 0;
+    }
+    return t.indexOf('text') === 0;
+  }
+
+  /**
+   * 把解析结果写入正文与文件名。
+   * 正文里已有内容时先确认，避免直接覆盖用户手填 / 粘贴的合同。
+   * @param {string} content 解析出的文本
+   * @param {string} name 文件名
+   * @param {File} file 文件对象
+   */
+  function applyContent(content, name, file) {
+    if ($.trim($('#cf-content').val())) {
+      ZF.confirm('「合同正文」已有内容，是否用《' + name + '》的解析结果覆盖？').then(function (ok) {
+        if (ok) { writeContent(content, name, file); }
+      });
+      return;
+    }
+    writeContent(content, name, file);
+  }
+
+  /** 写入正文、补齐文件名与识别到的信息，并提示结果 */
+  function writeContent(content, name, file) {
+    $('#cf-content').val(content);
+    if (!$('#cf-name').val()) {
+      $('#cf-name').val(name.replace(/\.[^.]+$/, ''));   // 自动带上合同文件名
+    }
+    ZF.clearValidate($('#contract-form'));
+    updateCount();
+    setUploadStatus('ok', name, file.size, content.length);
+    smartPrefill(content);   // 从正文里识别合同类型 / 甲乙双方 / 签订日期
+    ZF.toast('已解析《' + name + '》，提取 ' + content.length + ' 字，核对后可开始审查', 'success');
+  }
+
+  /* ==================================================================
+   *  智能预填：从合同正文里识别关键信息
+   * ================================================================== */
+
+  /** 合同类型关键词表（命中数量最多者胜出，与后端 QaServiceImpl 的分类思路一致） */
+  var TYPE_KEYWORDS = {
+    '劳动合同': ['劳动合同', '试用期', '用人单位', '劳动者', '解除劳动合同'],
+    '实习协议': ['实习', '实习生', '实习期', '毕业实习'],
+    '竞业协议': ['竞业限制', '竞业禁止', '保密协议', '商业秘密']
+  };
+
+  /**
+   * 依据正文关键词判定合同类型。
+   * @param {string} text 合同正文
+   * @returns {string} 命中最多的类型，都没命中返回空串
+   */
+  function detectContractType(text) {
+    var best = '';
+    var bestScore = 0;
+    Object.keys(TYPE_KEYWORDS).forEach(function (type) {
+      var score = 0;
+      TYPE_KEYWORDS[type].forEach(function (kw) {
+        if (text.indexOf(kw) >= 0) { score++; }
+      });
+      if (score > bestScore) {
+        bestScore = score;
+        best = type;
+      }
+    });
+    return best;
+  }
+
+  /**
+   * 从正文中提取当事人名称。
+   *
+   * <p>兼容「甲方：X」「甲方（用人单位）: X」等写法；
+   * 遇到换行、连续空格、全角空格或对方称谓即停止，
+   * 避免把「甲方：A　　乙方：B」这种同一行的写法整行吞掉。</p>
+   *
+   * @param {string} text 合同正文
+   * @param {Array<string>} labels 该方的可能叫法
+   * @param {Array<string>} stops 需要中断匹配的称谓（通常是对方称谓）
+   * @returns {string} 提取到的名称，失败返回空串
+   */
+  function extractParty(text, labels, stops) {
+    var stopGroup = (stops && stops.length) ? '|' + stops.join('|') : '';
+    var re = new RegExp('(?:' + labels.join('|') + ')' +
+      '(?:（[^）]{0,10}）|\\([^)]{0,10}\\))?\\s*[:：]\\s*' +
+      '([^\\n，,；;：:]{2,30}?)(?=\\s{2,}|\\u3000|\\n|$' + stopGroup + ')');
+    var m = text.match(re);
+    if (!m) {
+      return '';
+    }
+    return m[1].replace(/[\s\u3000]+$/, '').replace(/[与和、,，.。]+$/, '').trim();
+  }
+
+  /**
+   * 从正文中提取签订日期，输出 yyyy-MM-dd（适配 date 输入框）。
+   * @param {string} text 合同正文
+   * @returns {string} 日期串，未识别返回空串
+   */
+  function extractSignDate(text) {
+    var m = text.match(/(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?/);
+    if (!m) {
+      return '';
+    }
+    var mm = Number(m[2]);
+    var dd = Number(m[3]);
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) {
+      return '';
+    }
+    return m[1] + '-' + (mm < 10 ? '0' + mm : mm) + '-' + (dd < 10 ? '0' + dd : dd);
+  }
+
+  /**
+   * 把识别到的信息填进表单：只在字段为空时填，不覆盖用户已输入的内容。
+   * @param {string} text 合同正文
+   */
+  function smartPrefill(text) {
+    var filled = [];
+    var type = detectContractType(text);
+    if (type && !$('#cf-type').val()) {
+      $('#cf-type').val(type);
+      filled.push('合同类型');
+    }
+    var a = extractParty(text, ['甲方', '用人单位', '公司名称'], ['乙方', '劳动者', '员工姓名']);
+    if (a && !$('#cf-a').val()) {
+      $('#cf-a').val(a);
+      filled.push('甲方');
+    }
+    var b = extractParty(text, ['乙方', '劳动者', '员工姓名'], ['甲方', '用人单位', '公司名称']);
+    if (b && !$('#cf-b').val()) {
+      $('#cf-b').val(b);
+      filled.push('乙方');
+    }
+    var date = extractSignDate(text);
+    if (date && !$('#cf-date').val()) {
+      $('#cf-date').val(date);
+      $('#cf-date').zfSyncDate();   // 同步只读文本框的展示文案
+      filled.push('签订日期');
+    }
+    if (filled.length) {
+      ZF.toast('已根据正文自动识别：' + filled.join('、') + '，请核对', 'info');
+    }
+  }
+
+  /** 更新正文字数统计 */
+  function updateCount() {
+    var n = $.trim($('#cf-content').val()).length;
+    $('#cf-count').text('已输入 ' + n + ' 字');
+  }
+
+  /**
+   * 按扩展名解析文件为纯文本。
+   * @param {File} file 文件
+   * @param {string} ext 小写扩展名
+   * @returns {Promise<string>} 提取到的文本
+   */
+  function parseFile(file, ext) {
+    if (ext === 'docx') {
+      if (!window.mammoth) {
+        return Promise.reject(new Error('docx 解析库未加载'));
+      }
+      return file.arrayBuffer().then(function (buf) {
+        return window.mammoth.extractRawText({ arrayBuffer: buf }).then(function (res) {
+          return res.value;
+        });
+      });
+    }
+    if (ext === 'pdf') {
+      return readPdf(file);
+    }
+    return file.text();   // txt / md
+  }
+
+  /**
+   * 用 pdf.js 逐页提取 PDF 文本。
+   * @param {File} file PDF 文件
+   * @returns {Promise<string>} 每页文本用空行分隔
+   */
+  function readPdf(file) {
+    if (!window.pdfjsLib) {
+      return Promise.reject(new Error('pdf 解析库未加载'));
+    }
+    var total = 0;
+    return file.arrayBuffer().then(function (buf) {
+      return window.pdfjsLib.getDocument({ data: buf }).promise;
+    }).then(function (pdf) {
+      total = pdf.numPages;
+      var pages = Math.min(total, PDF_MAX_PAGES);
+      var jobs = [];
+      for (var i = 1; i <= pages; i++) {
+        jobs.push(pageText(pdf, i));
+      }
+      return Promise.all(jobs).then(function (texts) {
+        pdf.destroy();   // 解析完及时释放，避免大文件长期占用内存
+        var suffix = total > PDF_MAX_PAGES
+          ? '\n\n（原文共 ' + total + ' 页，仅解析前 ' + PDF_MAX_PAGES + ' 页）'
+          : '';
+        return texts.join('\n\n') + suffix;
+      });
+    });
+  }
+
+  /** 取第 n 页的文本 */
+  function pageText(pdf, n) {
+    return pdf.getPage(n).then(function (page) {
+      return page.getTextContent();
+    }).then(function (content) {
+      return (content.items || []).map(function (it) {
+        return it.str;
+      }).join('').trim();
+    });
+  }
+
+  /**
+   * 渲染上传状态，并同步上传区的四态样式。
+   * @param {string} type loading | ok | error
+   * @param {string} message 文件名或提示文案
+   * @param {number} [size] 文件字节数（ok 时使用）
+   * @param {number} [chars] 提取到的字数（ok 时使用）
+   */
+  function setUploadStatus(type, message, size, chars) {
+    var $zone = $('#upload-zone');
+    var $box = $('#upload-status');
+    $zone.removeClass('zf-upload--loading zf-upload--done zf-upload--error');
+    $box.removeClass('zf-upload__status--ok zf-upload__status--error');
+
+    if (type === 'loading') {
+      $zone.addClass('zf-upload--loading');
+      $box.html('<span class="spinner-border spinner-border-sm"></span> ' + ZF.escape(message));
+      return;
+    }
+    if (type === 'ok') {
+      // 折叠成一行文件条：名称 + 体积 + 字数 + 重新选择 / 移除
+      $zone.addClass('zf-upload--done');
+      $box.addClass('zf-upload__status--ok').html(
+        '<span class="zf-upload__file">' +
+        '<i class="bi bi-file-earmark-text"></i>' +
+        '<span class="zf-upload__name" title="' + ZF.escape(message) + '">' + ZF.escape(message) + '</span>' +
+        '<span class="zf-upload__meta">' + fmtSize(size) + ' · 已提取 ' + chars + ' 字</span>' +
+        '<i class="bi bi-check-circle-fill zf-upload__check"></i>' +
+        '<span class="zf-upload__acts">' +
+        '<button type="button" class="js-repick" title="重新选择">重新选择</button>' +
+        '<button type="button" class="js-remove" title="移除"><i class="bi bi-x-lg"></i></button>' +
+        '</span></span>');
+      return;
+    }
+    $zone.addClass('zf-upload--error');
+    $box.addClass('zf-upload__status--error').html(
+      '<i class="bi bi-exclamation-triangle"></i> ' + ZF.escape(message));
+  }
+
+  /** 文件大小展示 */
+  function fmtSize(bytes) {
+    bytes = Number(bytes) || 0;
+    if (bytes >= 1024 * 1024) {
+      return (bytes / 1024 / 1024).toFixed(1) + 'MB';
+    }
+    if (bytes >= 1024) {
+      return Math.round(bytes / 1024) + 'KB';
+    }
+    return bytes + 'B';
+  }
 
   /** 一键填充示例劳动合同，方便演示 */
   function bindSample() {
@@ -147,24 +826,42 @@
       if (!$('#cf-type').val()) { $('#cf-type').val('劳动合同'); }
       if (!$('#cf-a').val()) { $('#cf-a').val('XX科技有限公司'); }
       if (!$('#cf-b').val()) { $('#cf-b').val('张三'); }
+      updateCount();
       ZF.toast('已填充示例，可直接点「开始审查」', 'info');
     });
   }
 
   /** 绑定审查表单提交 */
   function bindForm() {
+    // 正文字数实时统计（粘贴 / 手动输入都会更新）
+    $('#cf-content').on('input', updateCount);
+
+    // 清空重填：显式重置表单 + 上传区 + 校验态与报告卡
+    $('#cf-reset').on('click', function () {
+      ZF.confirm('清空当前填写的内容？').then(function (ok) {
+        if (!ok) { return; }
+        $('#contract-form')[0].reset();
+        $('#cf-date').zfSyncDate();   // 重置后清掉只读文本框里的日期文案
+        ZF.clearValidate($('#contract-form'));
+        showUploadIdle();
+        updateCount();
+        showPlaceholder();
+      });
+    });
+
     $('#contract-form').on('submit', function (e) {
       e.preventDefault();
       var $form = $(this);
       ZF.clearValidate($form);
       if (!ZF.validate($form, {
         contractType: { required: true, message: '请选择合同类型' },
-        content: { required: true, message: '请粘贴合同正文' }
+        content: { required: true, message: '请上传文件或粘贴合同正文' }
       })) {
         return;
       }
       var $btn = $('#cf-submit');
       ZF.btnLoading($btn, true, '审查中…');
+      startRunning();
       var payload = {
         fileName: $.trim($form.find('[name=fileName]').val()) || '未命名合同',
         contractType: $form.find('[name=contractType]').val(),
@@ -174,10 +871,12 @@
         content: $.trim($form.find('[name=content]').val())
       };
       ZF.post('/contracts', payload).then(function (c) {
+        stopRunning();
         showResult(c);
         loadHistory(1);
         ZF.toast('审查完成', 'success');
       }).catch(function () { /* 统一提示 */ }).then(function () {
+        stopRunning();
         ZF.btnLoading($btn, false);
       });
     });
@@ -189,112 +888,282 @@
    * @returns {string} HTML 片段
    */
   function renderResultHtml(c) {
-    var html = ['<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'];
-    html.push(ZF.riskBadge(c.riskLevel));
-    html.push('<span class="zf-subtitle" style="margin:0">共发现 ' + (c.riskCount || 0) + ' 个风险点</span>');
-    html.push('</div>');
-
     var risks = c.risks || [];
+    var high = 0, medium = 0, low = 0;
+    risks.forEach(function (r) {
+      if (r.riskLevel === 'high') { high++; }
+      else if (r.riskLevel === 'medium') { medium++; }
+      else { low++; }
+    });
+
+    // 首行：整体等级 + 三档风险计数，横向铺满（右栏宽，单行放得下）
+    var html = ['<div class="zf-result-top"><div class="zf-result-metrics">'];
+    html.push('<div class="zf-metric"><p class="zf-metric__label">整体风险等级</p>' +
+      '<p class="zf-metric__value">' + riskLevelText(c.riskLevel) + '</p></div>');
+    html.push('<div class="zf-metric"><p class="zf-metric__label">风险点总数</p>' +
+      '<p class="zf-metric__value">' + (c.riskCount || risks.length) + ' 个</p></div>');
+    html.push('<div class="zf-metric"><p class="zf-metric__label">高 / 中 / 低</p>' +
+      '<p class="zf-metric__value">' + high + ' / ' + medium + ' / ' + low + '</p></div>');
+    html.push('<div class="zf-metric"><p class="zf-metric__label">合同类型</p>' +
+      '<p class="zf-metric__value">' + ZF.escape(c.contractType || '其他') + '</p></div>');
+    html.push('</div></div>');
+
     if (!risks.length) {
       html.push('<div class="zf-empty" style="padding:24px 0"><i class="bi bi-emoji-smile zf-empty__icon"></i>未发现明显风险，合同相对规范</div>');
-      return html.join('');
+    } else {
+      html.push('<p class="zf-subtitle">风险点明细（按严重程度排序）</p>');
+      // 高风险排前面，让用户先看到最该改的条款
+      var sorted = risks.slice().sort(function (a, b) {
+        return riskWeight(b.riskLevel) - riskWeight(a.riskLevel);
+      });
+      sorted.forEach(function (r) {
+        html.push('<div class="zf-risk">');
+        html.push('<div class="zf-risk__head">');
+        html.push(ZF.riskBadge(r.riskLevel));
+        if (r.clauseNo) {
+          html.push('<span class="zf-risk__clause">条款 ' + ZF.escape(r.clauseNo) + '</span>');
+        }
+        html.push('</div>');
+        if (r.clauseContent) {
+          html.push('<div class="zf-quote">' + ZF.escape(r.clauseContent) + '</div>');
+        }
+        if (r.riskDesc) {
+          html.push('<p class="zf-risk__desc"><strong>风险：</strong>' + ZF.escape(r.riskDesc) + '</p>');
+        }
+        if (r.suggestion) {
+          html.push('<p class="zf-risk__sug"><i class="bi bi-lightbulb"></i> 建议：' + ZF.escape(r.suggestion) + '</p>');
+        }
+        if (r.lawName) {
+          html.push('<p class="zf-risk__law"><i class="bi bi-book"></i> 关联法规：' + ZF.escape(r.lawName) +
+            (r.lawArticleNo ? (' ' + ZF.escape(r.lawArticleNo)) : '') + '</p>');
+        }
+        html.push('</div>');
+      });
     }
-    risks.forEach(function (r) {
-      html.push('<div class="zf-risk">');
-      html.push('<div class="zf-risk__head">');
-      html.push(ZF.riskBadge(r.riskLevel));
-      if (r.clauseNo) {
-        html.push('<span class="zf-risk__clause">条款 ' + ZF.escape(r.clauseNo) + '</span>');
-      }
-      html.push('</div>');
-      if (r.clauseContent) {
-        html.push('<div class="zf-quote">' + ZF.escape(r.clauseContent) + '</div>');
-      }
-      if (r.riskDesc) {
-        html.push('<p class="zf-risk__desc"><strong>风险：</strong>' + ZF.escape(r.riskDesc) + '</p>');
-      }
-      if (r.suggestion) {
-        html.push('<p class="zf-risk__sug"><i class="bi bi-lightbulb"></i> 建议：' + ZF.escape(r.suggestion) + '</p>');
-      }
-      if (r.lawName) {
-        html.push('<p class="zf-risk__law"><i class="bi bi-book"></i> 关联法规：' + ZF.escape(r.lawName) +
-          (r.lawArticleNo ? (' ' + ZF.escape(r.lawArticleNo)) : '') + '</p>');
-      }
-      html.push('</div>');
-    });
+
+    // 后续行动 + 口径说明：补齐右栏中段，避免风险条目少时下方大片留白
+    html.push(renderActions(c, risks));
+    html.push('<p class="zf-note">审查口径：以《劳动合同法》及配套司法解释为基准，' +
+      '扫描试用期期限、违约金、竞业限制补偿、社保缴纳、加班补偿与单方解除条件等高频条款；' +
+      '结果基于规则匹配，不构成法律意见，重大签约请咨询执业律师。</p>');
     return html.join('');
   }
 
-  /** 展示审查结果 */
+  /** 风险等级权重，用于把高风险排到前面 */
+  function riskWeight(level) {
+    if (level === 'high') { return 3; }
+    if (level === 'medium') { return 2; }
+    return 1;
+  }
+
+  /**
+   * 建议后续行动：按风险构成给出可执行的下一步。
+   * @param {Object} c 合同对象
+   * @param {Array} risks 风险点数组
+   * @returns {string} HTML 片段
+   */
+  function renderActions(c, risks) {
+    var hasHigh = false;
+    risks.forEach(function (r) { if (r.riskLevel === 'high') { hasHigh = true; } });
+    var items = [];
+    if (hasHigh) {
+      items.push(['bi-exclamation-triangle', '存在高风险条款：签约前务必与对方协商修改，或要求书面补充说明']);
+    } else if (risks.length) {
+      items.push(['bi-pencil-square', '风险可控：可就中低风险条款提出修改意见，留痕后签约']);
+    } else {
+      items.push(['bi-check2-circle', '条款相对规范：正常签约即可，注意留存一份盖章原件']);
+    }
+    items.push(['bi-folder-check', '保存原件：劳动合同、offer、工资流水与沟通记录一并归档']);
+    items.push(['bi-hourglass-split', '注意时效：劳动争议仲裁时效为 1 年，自知道权利被侵害之日起算']);
+    items.push(['bi-person-badge', '重大决策（如竞业限制、高额违约金）建议先咨询执业律师']);
+
+    var html = ['<p class="zf-subtitle">建议后续行动</p><div class="zf-actions">'];
+    items.forEach(function (it) {
+      html.push('<div class="zf-actions__item"><i class="bi ' + it[0] + '"></i><span>' +
+        ZF.escape(it[1]) + '</span></div>');
+    });
+    html.push('</div>');
+    return html.join('');
+  }
+
+  /** 右栏回到占位说明（未提交 / 收起报告时的状态） */
+  function showPlaceholder() {
+    stopRunning();
+    $('#result-title').text('审查能帮你发现什么');
+    $('#result-desc').text('提交后在这里生成风险体检报告');
+    $('#result-body').hide().empty();
+    $('#result-placeholder').show();
+    $('#result-close').hide();
+    $('#result-foot').attr('hidden', 'hidden');   // 占位态没有可复制的内容
+    lastResult = null;
+  }
+
+  /**
+   * 审查进行中态：阶段化推进，不是假进度条。
+   * 后端不返回百分比，报百分比必然是编的；这里只按固定节奏点亮阶段，
+   * 让用户知道「系统在做什么」，真实响应一到立刻 stopRunning() 结算。
+   */
+  var runningTimer = null;
+  function startRunning() {
+    stopRunning();
+    $('#result-placeholder').hide();
+    $('#result-body').hide().empty();
+    $('#result-close').hide();
+    $('#result-foot').attr('hidden', 'hidden');
+    $('#result-running').removeAttr('hidden');
+    var $steps = $('#result-running-steps .zf-steps__item');
+    $steps.removeClass('is-done is-now').first().addClass('is-now');
+    var i = 0;
+    runningTimer = window.setInterval(function () {
+      /* 停在第 3 步等待真实响应，不做「假装已完成」 */
+      if (i >= $steps.length - 1) { return; }
+      i = i + 1;
+      $steps.eq(i - 1).removeClass('is-now').addClass('is-done');
+      $steps.eq(i).addClass('is-now');
+    }, 1600);
+  }
+  function stopRunning() {
+    if (runningTimer) { window.clearInterval(runningTimer); runningTimer = null; }
+    $('#result-running').attr('hidden', 'hidden')
+      .find('.zf-steps__item').removeClass('is-done is-now');
+  }
+
+  /** 展示审查结果（右栏由占位说明切换为报告） */
   function showResult(c) {
-    $('#result-body').html(renderResultHtml(c));
-    $('#result-card').show();
+    $('#result-title').text('风险体检报告');
+    $('#result-desc').text('整体风险等级与逐条风险明细');
+    stopRunning();
+    $('#result-body').html(renderResultHtml(c)).addClass('zf-fade-up').show();
+    $('#result-placeholder').hide();
+    $('#result-close').show();
+    $('#result-foot').removeAttr('hidden');
+    lastResult = c;
     $('#result-card')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /** 历史相关事件委托 */
   function bindHistoryEvents() {
-    // 点击载入详情到右侧结果区
+    // 点标题 → 载入右栏报告
     $('#history-list').on('click', '.zf-list__title', function () {
-      var id = $(this).closest('.zf-list__item').data('id');
-      $('#result-body').html('<div class="zf-loading">加载合同风险明细…</div>');
-      $('#result-card').show();
-      ZF.get('/contracts/' + id).then(function (c) {
-        showResult(c);
-        ZF.toast('已载入合同风险明细', 'info');
-      }).catch(function () {
-        $('#result-body').html('<div class="zf-empty">加载失败</div>');
-      });
+      loadIntoResult($(this).closest('.zf-list__item').data('id'));
     });
-    $('#history-list').on('click', '.js-del', function () {
+    // 键盘可达：Enter / 空格
+    $('#history-list').on('keydown', '.zf-list__title', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+        e.preventDefault();
+        $(this).trigger('click');
+      }
+    });
+    $('#history-list').on('click', '.js-del', function (e) {
+      e.stopPropagation();
       var id = $(this).data('id');
       ZF.confirm('确定删除这份合同档案吗？').then(function (ok) {
         if (!ok) { return; }
         ZF.del('/contracts/' + id).then(function () {
           ZF.toast('已删除', 'success');
-          loadHistory(currentPage);
+          loadHistory(1, false);
         }).catch(function () { /* 忽略 */ });
       });
     });
-    $('#history-refresh').on('click', function () { loadHistory(1); });
+    $('#history-refresh').on('click', function () { loadHistory(1, false); });
+    // 窄栏里用「加载更多」替代数字分页
+    $('#history-pager').on('click', '.js-more', function () {
+      loadHistory(currentPage + 1, true);
+    });
+  }
+
+  /** 把某份历史合同载入右栏报告 */
+  function loadIntoResult(id) {
+    $('#result-title').text('风险体检报告');
+    $('#result-desc').text('正在载入该份合同的明细');
+    $('#result-placeholder').hide();
+    $('#result-close').show();
+    $('#result-body').html('<div class="zf-loading">加载合同风险明细…</div>').show();
+    ZF.get('/contracts/' + id).then(function (c) {
+      showResult(c);
+      ZF.toast('已载入合同风险明细', 'info');
+    }).catch(function () {
+      $('#result-body').html('<div class="zf-empty">加载失败</div>');
+    });
+  }
+
+  /** 单条合同档案（窄栏紧凑两行：文件名+风险徽标 / 时间+类型+删除） */
+  function historyItemHtml(item) {
+    var html = '<div class="zf-list__item" data-id="' + item.id + '">';
+    html += '<p class="zf-list__title" tabindex="0" role="button" aria-label="载入风险明细">' +
+      '<span class="zf-list__title-main">' + ZF.escape(item.fileName || '未命名合同') + '</span>' +
+      ZF.riskBadge(item.riskLevel) + '</p>';
+    html += '<div class="zf-list__meta">';
+    html += '<span>' + ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) +
+      ' · ' + ZF.escape(item.contractType || '其他') +
+      ' · 风险点 ' + (item.riskCount || 0) + '</span>';
+    html += '<button type="button" class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id +
+      '" title="删除"><i class="bi bi-trash"></i></button>';
+    html += '</div></div>';
+    return html;
   }
 
   /**
-   * 加载历史合同分页列表。
+   * 加载历史合同列表。
    * @param {number} pageNum 页码
+   * @param {boolean} append 是否追加（「加载更多」用），否则整体替换
+   * @returns {Promise} 首次加载后用于定位锚点
    */
-  function loadHistory(pageNum) {
+  function loadHistory(pageNum, append) {
     currentPage = pageNum || 1;
     var $box = $('#history-list');
-    ZF.renderLoading($box, '加载合同档案…');
-    ZF.get('/contracts/mine', { pageNum: currentPage, pageSize: 8 }).then(function (page) {
-      if (!page.list || !page.list.length) {
-        ZF.renderEmpty($box, '还没有合同档案，先审查一份吧');
+    if (append) {
+      $('#history-pager').html('<div class="zf-loading">加载中…</div>');
+    } else if (!$box.find('.zf-list__item').length) {
+      // 已有内容时不覆盖，避免"明明渲染好了又被 loading 冲掉"
+      ZF.renderLoading($box, '加载合同档案…');
+    }
+    return ZF.get('/contracts/mine', { pageNum: currentPage, pageSize: HISTORY_PAGE_SIZE }).then(function (page) {
+      var list = page.list || [];
+      $box.data('loaded', true);   // 标记已成功拉取，页签切换时不再重复补拉
+      // 页签上的档案数徽标：无论有无数据都同步，空列表时自动隐藏
+      if (!append) { ZF.tabCount('#zf-tab-history', page.total); }
+      if (!list.length) {
+        if (append) {
+          ZF.toast('没有更多记录了', 'info');
+        } else {
+          ZF.renderEmpty($box, '还没有合同档案，先审查一份吧');
+        }
         $('#history-pager').empty();
         return;
       }
-      var html = ['<div class="zf-list">'];
-      page.list.forEach(function (item) {
-        html.push('<div class="zf-list__item" data-id="' + item.id + '">');
-        html.push('<div class="zf-list__main">');
-        html.push('<p class="zf-list__title" style="cursor:pointer">' + ZF.escape(item.fileName || '未命名合同') +
-          ' <i class="bi bi-chevron-right" style="font-size:11px;color:var(--zf-ink-3)"></i></p>');
-        html.push('<p class="zf-list__text">类型：' + ZF.escape(item.contractType || '其他') + '</p>');
-        html.push('</div>');
-        html.push('<div class="zf-list__meta" style="text-align:right">');
-        html.push(ZF.riskBadge(item.riskLevel) + '<br>');
-        html.push('风险点 ' + (item.riskCount || 0) + '<br>');
-        html.push(ZF.escape(ZF.formatDate(item.createdAt || item.createdAtText, false)) + '<br>');
-        html.push('<button class="zf-btn zf-btn--ghost zf-btn--sm js-del" data-id="' + item.id + '">' +
-          '<i class="bi bi-trash"></i>删除</button>');
-        html.push('</div></div>');
-      });
-      html.push('</div>');
-      $box.html(html.join(''));
-      ZF.renderPager('#history-pager', page, function (p) { loadHistory(p); });
+      var html = list.map(function (item) { return historyItemHtml(item); }).join('');
+      if (append) {
+        $box.find('.zf-list').append(html);
+      } else {
+        $box.html('<div class="zf-list">' + html + '</div>');
+      }
+      renderMore(page);
     }).catch(function () {
-      ZF.renderEmpty($box, '加载失败，请刷新重试');
+      if (append) {
+        $('#history-pager').empty();
+      } else {
+        ZF.renderEmpty($box, '加载失败，请刷新重试');
+      }
     });
+  }
+
+  /**
+   * 渲染「加载更多」按钮（窄栏里数字分页会挤爆，改用增量加载）。
+   * @param {Object} page 分页结果
+   */
+  function renderMore(page) {
+    var pages = page.pages || 0;
+    var total = page.total || 0;
+    var $pager = $('#history-pager');
+    if (currentPage < pages) {
+      var rest = total - currentPage * HISTORY_PAGE_SIZE;
+      $pager.html('<button type="button" class="zf-btn zf-btn--ghost zf-btn--sm js-more">' +
+        '<i class="bi bi-arrow-down-circle"></i>加载更多' + (rest > 0 ? '（还有 ' + rest + ' 条）' : '') + '</button>');
+    } else {
+      $pager.html('<p class="zf-form-hint" style="text-align:center;margin:12px 0 0">共 ' +
+        total + ' 条，已全部加载</p>');
+    }
   }
 })(jQuery, window.ZF);
 </script>

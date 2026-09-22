@@ -67,6 +67,19 @@ public interface QuizQuestionDao {
     java.util.List<QuizQuestion> findByCondition(String keyword, String category, int offset, int limit);
 
     /**
+     * 后台题目分页（带排序）
+     *
+     * @param keyword 参数
+     * @param category 参数
+     * @param offset 参数
+     * @param limit 参数
+     * @param sortName 前端列名（实现层走白名单，非法值回退默认排序）
+     * @param sortOrder 排序方向（desc / asc）
+     * @return 查询结果
+     */
+    java.util.List<QuizQuestion> findByCondition(String keyword, String category, int offset, int limit, String sortName, String sortOrder);
+
+    /**
      * 后台题目条件计数
      *
      * @param keyword 参数

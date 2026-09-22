@@ -1,0 +1,55 @@
+
+/* ================================================================ 首页 · 使用概览指标卡
+ *
+ * 【为什么需要这一段】
+ * 通用 .zf-stat 的取值是为「个人中心左栏的窄方卡」和「管理后台的小卡」定的：
+ *   图标 42px、数字 22px、标签 12px、gap 12px、卡片 padding 18/20。
+ * 但首页这 4 张卡在视觉上完全不是小卡 —— 实测 1440×900 下每张 270.8×168.9px，
+ * 内容却只有「42px 图标 + 45px 宽的文字块」，即：
+ *   · 竖向：内容约占卡片高度的 1/4，上下各留一大片白
+ *   · 横向：1440 下内容 45px / 可用 230.8px（19.5%），1920 下 45px / 350.8px（12.8%）
+ *   · .zf-stat__go 用 margin-left:auto 顶到最右，实测离右边框只剩 1px（贴边）
+ *
+ * 【为什么不用改通用类】
+ * .zf-stat 同时被 profile.html（4 张）与 admin/index.html（8 张）复用，
+ * 动通用值会连带改掉那两处。所以这里统一挂 .zf-content--home 作用域。
+ *
+ * 【特异性说明】下面整段都是 (0,2,0) 起点，高于通用的单类 (0,1,0)；
+ * 与 .zf-profile__stats 段（约 1672 行）同为 (0,2,0) 但互斥（作用域不同），
+ * 且本段在文件末尾，即使将来出现同特异性冲突也会由后者胜出。
+ */
+
+/* 1) 卡片：内边距略放宽，给放大后的内容留呼吸；高度仍由内容撑开，不写死 */
+.zf-content--home #stat-grid .zf-stat { padding: 20px 22px; gap: 16px; }
+
+/* 2) 图标：42 → 52px。
+ *    这个尺寸不是随手定的：卡片内容高 = max(图标, 数字块)，
+ *    数字块 = 标签 18 + 数字 31.2 + 间距 1 = 50.2px，图标给 52 才能成为决定项，
+ *    卡片高度净增 10px，首页整体不足以产生纵向滚动（改后需实测确认）。 */
+.zf-content--home #stat-grid .zf-stat__icon {
+  width: 52px; height: 52px; flex: 0 0 52px; font-size: 22px;
+}
+
+/* 3) 文字块：吃掉图标右侧的全部剩余宽度，把箭头推回它该在的位置。
+ *    不加这条时文字块是收缩到内容宽的，居中在「图标右缘 → 箭头左缘」之间，
+ *    于是箭头虽然被 margin-left:auto 顶到最右，文字却飘在卡片中段。 */
+.zf-content--home #stat-grid .zf-stat > div { flex: 1 1 auto; min-width: 0; }
+
+/* 4) 数字与标签：22 → 26px / 12 → 12.5px。
+ *    与个人中心刻意做出主次：那一栏是 19px 的辅助指标，首页这组是主角。 */
+.zf-content--home #stat-grid .zf-stat__label { font-size: 12.5px; }
+.zf-content--home #stat-grid .zf-stat__value { font-size: 26px; margin-top: 2px; }
+
+/* 5) 箭头：从贴边 1px 挪回 8px，并随卡片一起放大。
+ *    注意 .zf-card 的 padding 已在第 1) 条放宽到 22px，所以这里只补一个视觉退让。 */
+.zf-content--home #stat-grid .zf-stat__go { font-size: 14px; margin-right: 8px; }
+
+/* 6) 窄屏：1440 下四个「52 图标 + 50.2 文字 + 14 箭头 + 退让」约需 150px，
+ *    而 1280 时单卡可用宽只有 186.8px，仍有余量；但到 1100 断点前会偏紧，
+ *    这里提前把图标与数字收回通用档位，避免文字被挤到换行。 */
+@media (max-width: 1280px) {
+  .zf-content--home #stat-grid .zf-stat__icon {
+    width: 46px; height: 46px; flex: 0 0 46px; font-size: 19px;
+  }
+  .zf-content--home #stat-grid .zf-stat__value { font-size: 23px; }
+}

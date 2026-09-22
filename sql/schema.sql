@@ -53,16 +53,19 @@ CREATE TABLE `law_article` (
     `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '法条主键',
     `law_name`       VARCHAR(100) NOT NULL                COMMENT '法规名称，如《中华人民共和国劳动合同法》',
     `article_no`     VARCHAR(30)  NOT NULL                COMMENT '条号，如“第十条”',
-    `category`       VARCHAR(30)  NOT NULL                COMMENT '分类：劳动合同/工资报酬/工时休假/社会保险/解除终止/其他',
-    `title`          VARCHAR(200)     NULL                COMMENT '条文标题',
-    `content`        TEXT         NOT NULL                COMMENT '条文正文',
+    `seq`            INT              NULL                COMMENT '法律内序号（该法律的第几条，从 1 开始）',
+    `category`       VARCHAR(30)  NOT NULL                COMMENT '分类：劳动合同/劳动报酬/工作时间与休息休假/社会保险/解除与终止/其他',
+    `title`          VARCHAR(200)     NULL                COMMENT '条文标题（可为章节名）',
+    `content`        TEXT             NULL                COMMENT '条文正文（自动同步时部分条文可能未命中正文，允许为空）',
     `keywords`       VARCHAR(255)     NULL                COMMENT '关键词(检索辅助)',
     `effective_date` DATE             NULL                COMMENT '生效日期',
+    `source`         VARCHAR(50)  NOT NULL DEFAULT 'manual' COMMENT '来源：manual=手工录入 / flk_npc=国家法律法规数据库同步',
+    `source_id`      VARCHAR(64)      NULL                COMMENT '来源侧唯一标识（国家法律法规数据库的 bbbs）',
     `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_law_name_no` (`law_name`, `article_no`),
     KEY `idx_law_category` (`category`),
-    KEY `idx_law_name_no`  (`law_name`, `article_no`),
     FULLTEXT KEY `ft_law_content` (`title`, `content`, `keywords`) WITH PARSER ngram
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='法律法规条文表';
 

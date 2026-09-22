@@ -70,6 +70,20 @@ public interface QaRecordDao {
     java.util.List<QaRecord> findByCondition(String keyword, String category, Integer status, int offset, int limit);
 
     /**
+     * 后台问答分页（关联用户昵称，支持列头排序）
+     *
+     * @param keyword 参数
+     * @param category 参数
+     * @param status 参数
+     * @param offset 参数
+     * @param limit 参数
+     * @param sortName 排序列名（白名单 key，见实现）
+     * @param sortOrder 排序方向 asc/desc
+     * @return 查询结果
+     */
+    java.util.List<QaRecord> findByCondition(String keyword, String category, Integer status, int offset, int limit, String sortName, String sortOrder);
+
+    /**
      * 后台问答条件计数
      *
      * @param keyword 参数

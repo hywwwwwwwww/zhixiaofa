@@ -46,7 +46,9 @@ public class QaServlet extends BaseServlet {
                 return Result.success(ServiceFactory.qa().page(
                         RequestUtil.getString(req, "keyword"), RequestUtil.getString(req, "category"),
                         UserServlet.nullableInt(req, "status"),
-                        RequestUtil.getPageNum(req), RequestUtil.getPageSize(req)));
+                        RequestUtil.getPageNum(req), RequestUtil.getPageSize(req),
+                        // 列头排序：仅作为白名单查表的 key，具体校验在 SqlBuilder.orderBy
+                        RequestUtil.getString(req, "sortName"), RequestUtil.getString(req, "sortOrder")));
             }
             throw new BizException(ResultCode.METHOD_NOT_ALLOWED, "不支持的请求方法: " + method);
         }

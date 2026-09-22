@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
+  <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+  <title>题库管理 - 职小法管理后台</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922e">
+</head>
+<body class="zf-admin-page">
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 题目分类分布（可选） -->
+      <div class="zf-card" style="margin-bottom:18px">
+        <div class="zf-card__head"><div><h3 class="zf-card__title">题目分类分布</h3>
+          <p class="zf-card__desc">各分类题目数量占比</p></div></div>
+        <div id="quiz-pie" class="zf-chart zf-chart--sm"></div>
+      </div>
+
+      <div class="zf-card">
+        <div class="zf-card__head">
+          <div><h3 class="zf-card__title">题库管理</h3>
+            <p class="zf-card__desc">维护法律知识自测题目</p></div>
+          <button class="zf-btn zf-btn--primary" id="add-btn"><i class="bi bi-plus-lg"></i>新增题目</button>
+        </div>
+
+        <!-- 筛选条 -->
+        <div class="zf-filter-bar" id="quiz-filter">
+          <div class="zf-filter-bar__item">
+            <input class="zf-form-control" type="text" data-filter="keyword" placeholder="题干 / 解析">
+          </div>
+          <div class="zf-filter-bar__item">
+            <label class="zf-filter-bar__label">分类</label>
+            <select class="zf-form-control" data-filter="category"></select>
+          </div>
+          <div class="zf-filter-bar__actions">
+            <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
+            <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+          </div>
+        </div>
+
+        <!-- 工具栏 + 结果计数 -->
+        <div class="zf-toolbar">
+          <span class="zf-toolbar__count" id="quiz-count">共 0 道题</span>
+          <span class="zf-toolbar__spacer"></span>
+        </div>
+
+        <table id="quiz-table" class="zf-table"></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 题目编辑模态框 -->
+<div class="modal fade" id="quizModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="quiz-modal-title">新增题目</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="quiz-form" novalidate>
+        <div class="modal-body">
+          <input type="hidden" name="id">
+          <div class="zf-grid zf-grid--2">
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-category">分类 <span style="color:var(--zf-danger)">*</span></label>
+              <select class="zf-form-control" name="category" id="q-category"></select>
+              <div class="zf-form-error"></div>
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-difficulty">难度</label>
+              <select class="zf-form-control" name="difficulty" id="q-difficulty">
+                <option value="1">简单</option>
+                <option value="2">中等</option>
+                <option value="3">困难</option>
+              </select>
+            </div>
+          </div>
+          <div class="zf-field">
+            <label class="zf-form-label" for="q-question">题干 <span style="color:var(--zf-danger)">*</span></label>
+            <textarea class="zf-form-control" name="question" id="q-question" rows="2"></textarea>
+            <div class="zf-form-error"></div>
+          </div>
+          <div class="zf-grid zf-grid--2">
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-optionA">选项 A <span style="color:var(--zf-danger)">*</span></label>
+              <input class="zf-form-control" type="text" name="optionA" id="q-optionA" maxlength="120">
+              <div class="zf-form-error"></div>
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-optionB">选项 B <span style="color:var(--zf-danger)">*</span></label>
+              <input class="zf-form-control" type="text" name="optionB" id="q-optionB" maxlength="120">
+              <div class="zf-form-error"></div>
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-optionC">选项 C <span style="color:var(--zf-danger)">*</span></label>
+              <input class="zf-form-control" type="text" name="optionC" id="q-optionC" maxlength="120">
+              <div class="zf-form-error"></div>
+            </div>
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-optionD">选项 D <span style="color:var(--zf-danger)">*</span></label>
+              <input class="zf-form-control" type="text" name="optionD" id="q-optionD" maxlength="120">
+              <div class="zf-form-error"></div>
+            </div>
+          </div>
+          <div class="zf-grid zf-grid--2">
+            <div class="zf-field">
+              <label class="zf-form-label" for="q-correct">正确答案 <span style="color:var(--zf-danger)">*</span></label>
+              <select class="zf-form-control" name="correctOption" id="q-correct">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+              <div class="zf-form-error"></div>
+            </div>
+          </div>
+          <div class="zf-field">
+            <label class="zf-form-label" for="q-explanation">解析</label>
+            <textarea class="zf-form-control" name="explanation" id="q-explanation" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="zf-btn zf-btn--primary" id="quiz-save"><i class="bi bi-check2"></i>保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 题目查看模态框 -->
+<div class="modal fade" id="quizViewModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">题目详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="quiz-view-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
+<script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
+<script src="../vendor/echarts/echarts.min.js"></script>
+<script src="../js/common.js?v=20260922e"></script>
+<script src="admin-common.js?v=20260922e"></script>
+<script>
+/**
+ * @file quiz.html —— 题库管理
+ * @description 法律自测题目的分类分布、列表、新增、编辑、查看与删除。
+ *              页面外壳（左侧管理导航 + 顶部栏）由 ZF.initAdminPage 统一渲染，
+ *              本页仅提供管理动作（维护题目），不提供用户答题入口。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /** 图表统一配色 */
+  var COLORS = ['#4285f4', '#34a853', '#fbbc05', '#ef4444', '#9334e6', '#00bcd4', '#ff7043', '#607d8b'];
+
+  /** 当前编辑行的 id（新增时为 null） */
+  var editingId = null;
+
+  ZF.initAdminPage({ active: 'quiz', title: '题库管理', sub: '法律知识自测题库维护' })
+    .then(function () {
+      initCategorySelect();
+      initStats();
+      initTable();
+      bindFilters();
+      bindAdd();
+      bindQuizForm();
+      bindView();
+    });
+
+  /** 初始化分类下拉：筛选栏（含「全部分类」）+ 表单 */
+  function initCategorySelect() {
+    var cats = ZF.QUIZ_CATEGORIES;
+    $('#quiz-filter [data-filter="category"]').html(ZF.categoryOptions(cats, '全部分类'));
+    $('#q-category').html(ZF.categoryOptions(cats));
+  }
+
+  /**
+   * 回填分类下拉；若当前值不在预设清单里（历史数据），临时补一个选项，
+   * 避免编辑保存时被静默改成第一个分类。
+   */
+  function setCategoryValue(value) {
+    var v = $.trim(value || '');
+    var $sel = $('#q-category');
+    $sel.find('option[data-legacy]').remove();
+    if (v && ZF.QUIZ_CATEGORIES.indexOf(v) < 0) {
+      $sel.append('<option data-legacy="1" value="' + ZF.escape(v) + '">' + ZF.escape(v) + '（历史值）</option>');
+    }
+    $sel.val(v || ZF.QUIZ_CATEGORIES[0]);
+  }
+
+  /** 分类徽标：空值显示占位符，否则用中性徽标 */
+  function categoryBadge(v) {
+    if (!v) { return '<span class="zf-badge zf-badge--mid">-</span>'; }
+    return '<span class="zf-badge zf-badge--mid">' + ZF.escape(v) + '</span>';
+  }
+
+  /** 正确答案徽标：A/B/C/D 用主色徽标 */
+  function correctBadge(opt) {
+    return '<span class="zf-badge zf-badge--primary">' + ZF.escape(opt || '-') + '</span>';
+  }
+
+  /** 难度徽标：1简单(绿) / 2中等(黄) / 3困难(红) */
+  function difficultyBadge(d) {
+    if (d === 1 || d === '1') { return '<span class="zf-badge zf-badge--ok">简单</span>'; }
+    if (d === 3 || d === '3') { return '<span class="zf-badge zf-badge--high">困难</span>'; }
+    return '<span class="zf-badge zf-badge--mid">中等</span>';
+  }
+
+  /** 操作列：查看 / 编辑 / 删除（用 .zf-actions 包裹，禁止换行） */
+  function operateFormatter(value, row) {
+    return '<div class="zf-actions">' +
+      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-view"><i class="bi bi-eye"></i>查看</button>' +
+      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-edit"><i class="bi bi-pencil"></i>编辑</button>' +
+      '<button class="zf-btn zf-btn--danger zf-btn--sm js-delete"><i class="bi bi-trash"></i>删除</button>' +
+      '</div>';
+  }
+
+  /** 渲染分类分布饼图（可选，含加载/空态/resize） */
+  function initStats() {
+    var $box = $('#quiz-pie');
+    ZF.renderLoading($box, '加载中…');
+    ZF.get('/quiz/stats').then(function (arr) {
+      arr = arr || [];
+      if (!arr.length) { ZF.renderEmpty($box, '暂无题目数据'); return; }
+      var data = arr.map(function (d) { return { name: d.label, value: d.value }; });
+      var chart = ZF.registerChart(echarts.init($box[0]));
+      chart.setOption({
+        color: COLORS,
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: { type: 'scroll', orient: 'horizontal', bottom: 0, textStyle: { fontSize: 11 } },
+        series: [{
+          type: 'pie', radius: ['38%', '64%'], center: ['50%', '44%'],
+          avoidLabelOverlap: true, label: { fontSize: 11 }, data: data
+        }]
+      });
+      chart.resize();
+    }).catch(function () { ZF.renderEmpty($box, '加载失败'); });
+  }
+
+  /** 初始化表格 */
+  function initTable() {
+    ZF.initAdminTable('#quiz-table', '/quiz/page', {
+      pageSize: 10,
+      // 初始排序：id 倒序（与后端默认一致，点列头可切换）
+      sortName: 'id',
+      sortOrder: 'desc',
+      queryParams: function () { return ZF.filterParams('#quiz-filter'); },
+      columns: [
+        { field: 'id', title: 'ID', width: 64, sortable: true },
+        { field: 'category', title: '分类', formatter: categoryBadge },
+        { field: 'question', title: '题干', formatter: function (v) { return ZF.escape(ZF.truncate(v, 40)); } },
+        { field: 'correctOption', title: '正确答案', formatter: correctBadge },
+        { field: 'difficulty', title: '难度', formatter: difficultyBadge, sortable: true },
+        { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
+      ]
+    });
+
+    /** 加载完成后更新顶部结果计数 */
+    $('#quiz-table').on('load-success.bs.table', function (e, data) {
+      $('#quiz-count').text('共 ' + ((data && data.total) || 0) + ' 道题');
+    });
+  }
+
+  /** 操作事件 */
+  var operateEvents = {
+    'click .js-view': function (e, v, row) { openView(row); },
+    'click .js-edit': function (e, v, row) { openEdit(row); },
+    'click .js-delete': function (e, v, row) { removeQuiz(row); }
+  };
+
+  /** 绑定筛选 */
+  function bindFilters() {
+    $('#search-btn').on('click', function () { ZF.refreshTable('#quiz-table'); });
+    $('#reset-btn').on('click', function () {
+      $('#quiz-filter').find('[data-filter]').val('');
+      ZF.refreshTable('#quiz-table');
+    });
+    $('#quiz-filter [data-filter="keyword"]').on('keydown', function (e) {
+      if (e.key === 'Enter') { ZF.refreshTable('#quiz-table'); }
+    });
+  }
+
+  /** 打开新增 */
+  function bindAdd() {
+    $('#add-btn').on('click', function () {
+      editingId = null;
+      $('#quiz-modal-title').text('新增题目');
+      $('#quiz-form')[0].reset();
+      $('#quiz-form').find('[name=id]').val('');
+      $('#quiz-form').find('[name=correctOption]').val('A');
+      $('#quiz-form').find('[name=difficulty]').val('1');
+      ZF.clearValidate($('#quiz-form'));
+      bootstrap.Modal.getOrCreateInstance($('#quizModal')[0]).show();
+    });
+  }
+
+  /** 打开编辑并回填 */
+  function openEdit(row) {
+    editingId = row.id;
+    $('#quiz-modal-title').text('编辑题目');
+    var $f = $('#quiz-form');
+    ZF.clearValidate($f);
+    $f.find('[name=id]').val(row.id);
+    setCategoryValue(row.category);
+    $f.find('[name=difficulty]').val(row.difficulty != null ? String(row.difficulty) : '1');
+    $f.find('[name=question]').val(row.question || '');
+    $f.find('[name=optionA]').val(row.optionA || '');
+    $f.find('[name=optionB]').val(row.optionB || '');
+    $f.find('[name=optionC]').val(row.optionC || '');
+    $f.find('[name=optionD]').val(row.optionD || '');
+    $f.find('[name=correctOption]').val(row.correctOption || 'A');
+    $f.find('[name=explanation]').val(row.explanation || '');
+    bootstrap.Modal.getOrCreateInstance($('#quizModal')[0]).show();
+  }
+
+  /** 打开查看并渲染题目详情（正确选项高亮） */
+  function openView(row) {
+    var opts = [['A', row.optionA], ['B', row.optionB], ['C', row.optionC], ['D', row.optionD]];
+    var html = '<p class="zf-quiz-q__title">' + ZF.escape(row.question || '') + '</p>';
+    opts.forEach(function (o) {
+      var isCorrect = (o[0] === row.correctOption);
+      var badgeCls = isCorrect ? 'zf-badge--ok' : 'zf-badge--mid';
+      html += '<div class="zf-quiz-opt ' + (isCorrect ? 'zf-quiz-opt--correct' : '') + '">' +
+        '<span class="zf-badge ' + badgeCls + '">' + o[0] + '</span>' +
+        '<span>' + ZF.escape(o[1] || '-') + '</span></div>';
+    });
+    html += '<div style="margin-top:10px">答案：' + correctBadge(row.correctOption) +
+      '　难度：' + difficultyBadge(row.difficulty) + '</div>';
+    html += '<div class="zf-quiz-explain"><strong>解析：</strong>' +
+      ZF.escape(row.explanation || '无') + '</div>';
+    ZF.showDetailModal('#quizViewModal', '题目详情', html);
+  }
+
+  /** 保存（新增/编辑） */
+  function bindQuizForm() {
+    $('#quiz-form').on('submit', function (e) {
+      e.preventDefault();
+      var $form = $(this);
+      ZF.clearValidate($form);
+      if (!ZF.validate($form, {
+        category: { required: true, message: '分类不能为空' },
+        question: { required: true, message: '题干不能为空' },
+        optionA: { required: true, message: '选项 A 不能为空' },
+        optionB: { required: true, message: '选项 B 不能为空' },
+        optionC: { required: true, message: '选项 C 不能为空' },
+        optionD: { required: true, message: '选项 D 不能为空' },
+        correctOption: { required: true, message: '请选择正确答案' }
+      })) {
+        return;
+      }
+      var payload = {
+        category: $.trim($form.find('[name=category]').val()),
+        difficulty: Number($form.find('[name=difficulty]').val()),
+        question: $.trim($form.find('[name=question]').val()),
+        optionA: $.trim($form.find('[name=optionA]').val()),
+        optionB: $.trim($form.find('[name=optionB]').val()),
+        optionC: $.trim($form.find('[name=optionC]').val()),
+        optionD: $.trim($form.find('[name=optionD]').val()),
+        correctOption: $form.find('[name=correctOption]').val(),
+        explanation: $.trim($form.find('[name=explanation]').val())
+      };
+      var $btn = $('#quiz-save');
+      ZF.btnLoading($btn, true, '保存中…');
+      var req = editingId
+        ? ZF.put('/quiz/' + editingId, payload)
+        : ZF.post('/quiz', payload);
+      req.then(function () {
+        ZF.toast(editingId ? '已更新' : '已新增', 'success');
+        bootstrap.Modal.getOrCreateInstance($('#quizModal')[0]).hide();
+        $('#quiz-table').bootstrapTable('refresh');
+      }).catch(function () { /* 统一提示 */ }).then(function () {
+        ZF.btnLoading($btn, false);
+      });
+    });
+  }
+
+  /** 删除题目 */
+  function removeQuiz(row) {
+    ZF.confirm('确定删除该题目吗？此操作不可恢复。').then(function (ok) {
+      if (!ok) { return; }
+      ZF.del('/quiz/' + row.id).then(function () {
+        ZF.toast('已删除', 'success');
+        $('#quiz-table').bootstrapTable('refresh');
+      }).catch(function () { /* 统一提示 */ });
+    });
+  }
+
+  /** 绑定查看（占位，实际逻辑在 operateEvents 内） */
+  function bindView() { /* 无额外委托，事件已绑定到表格行 */ }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

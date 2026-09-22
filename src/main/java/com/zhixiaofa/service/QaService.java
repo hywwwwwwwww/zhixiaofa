@@ -33,6 +33,9 @@ public interface QaService {
     /** 后台问答分页 */
     PageResult<QaRecord> page(String keyword, String category, Integer status, int pageNum, int pageSize);
 
+    /** 后台问答分页（支持列头排序） */
+    PageResult<QaRecord> page(String keyword, String category, Integer status, int pageNum, int pageSize, String sortName, String sortOrder);
+
     /** 点赞 */
     void like(Long id, Long userId);
 

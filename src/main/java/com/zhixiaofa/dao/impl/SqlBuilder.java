@@ -39,14 +39,39 @@ public final class SqlBuilder {
     /**
      * 多列模糊匹配（OR 关系）。
      *
-     * @param columns 常量列名串，如 {@code "q.question, q.answer"}，绝不能来自用户输入
+     * <p>支持传入多个列（逗号分隔）：{@code "q.question, q.answer"} 会展开成</p>
+     * <pre>(q.question LIKE CONCAT('%', ?, '%') OR q.answer LIKE CONCAT('%', ?, '%'))</pre>
+     *
+     * <p><b>修复记录</b>：原实现直接把整个 {@code columns} 串当成「一个列名」拼进 SQL，
+     * 于是多列调用会生成 {@code (q.question, q.answer LIKE ...)} 这种逗号表达式，
+     * 触发 SQL 语法错误（DaoException）。由于 8 个 DAO 都按本方法的注释传入多列
+     * （问答 / 合同 / 模板 / 日志 / 题库 / 用户 / AI小法庭 / 文书记录），
+     * 导致这些模块的<b>关键词搜索一搜就报 500</b>。</p>
+     *
+     * @param columns 常量列名串（可含多个列，逗号分隔），绝不能来自用户输入
      * @param value   用户输入的关键词，为空时该条件不生效
      */
     public SqlBuilder andLike(String columns, String value) {
-        if (value != null && !value.trim().isEmpty()) {
-            where.append(" AND (").append(columns).append(" LIKE CONCAT('%', ?, '%')) ");
-            args.add(value.trim());
+        if (value == null || value.trim().isEmpty()) {
+            return this;
         }
+        String kw = value.trim();
+        where.append(" AND (");
+        boolean first = true;
+        for (String raw : columns.split(",")) {
+            String col = raw.trim();
+            if (col.isEmpty()) {
+                continue;
+            }
+            if (!first) {
+                where.append(" OR ");
+            }
+            // 每一列各占一个 ?，参数需按列逐个绑定
+            where.append(col).append(" LIKE CONCAT('%', ?, '%')");
+            args.add(kw);
+            first = false;
+        }
+        where.append(") ");
         return this;
     }
 
@@ -132,6 +157,30 @@ public final class SqlBuilder {
     /** @return 可直接拼到 "WHERE 1=1" 之后的 SQL 片段，无条件时返回空串 */
     public String where() {
         return where.toString();
+    }
+
+    /**
+     * 生成排序子句，供前端点击列头切换升降序。
+     *
+     * <p><b>为什么需要白名单</b>：ORDER BY 的列名<b>无法用 {@code ?} 参数化</b>，
+     * 只能拼进 SQL 字符串。若直接把前端传来的列名拼进去就是 SQL 注入漏洞。
+     * 因此这里用「前端字段名 → 真实列名」的映射表：前端值<b>只作为 key 查表</b>，
+     * 查不到就回退到默认排序，永远不会把用户输入拼进 SQL。</p>
+     *
+     * @param sortName  前端传来的排序列名（如 {@code "publishedAt"}）
+     * @param order     排序方向，仅识别 {@code desc}（其余一律按 asc）
+     * @param whitelist 白名单映射：key=前端列名，value=真实列名（可带表别名），
+     *                  例如 {@code Map.of("publishedAt", "published_at", "viewCount", "view_count")}
+     * @param fallback  未命中白名单时使用的默认排序（常量 SQL 片段，如 {@code "published_at DESC, id DESC"}）
+     * @return 以 {@code " ORDER BY "} 开头的完整片段
+     */
+    public static String orderBy(String sortName, String order,
+                                 java.util.Map<String, String> whitelist, String fallback) {
+        String col = (whitelist == null || sortName == null) ? null : whitelist.get(sortName);
+        if (col == null || col.trim().isEmpty()) {
+            return " ORDER BY " + fallback;
+        }
+        return " ORDER BY " + col + ("desc".equalsIgnoreCase(order) ? " DESC" : " ASC");
     }
 
     /** @return 当前已收集的参数 */

@@ -1,0 +1,4108 @@
+{
+ "home": {
+  "file": "pages/home.html",
+  "desc": "首页/工作台卡片流",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 77,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "全部记录"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用2条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "更多文章"
+     }
+    ],
+    "smallTargetCount": 7,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 1125,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 1125,
+      "h": 125
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 270.8,
+      "h": 125
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 513.5,
+      "h": 361
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 81
+    },
+    "docH": 1210,
+    "docW": 1425,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "15px": 6,
+     "11.5px": 15,
+     "11px": 1,
+     "13.5px": 17,
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "26px": 4,
+     "14.5px": 5
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-top:2px": 5,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 7,
+     "padding-bottom:9px": 7,
+     "padding-left:11px": 10,
+     "padding-right:11px": 10,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-bottom:20px": 5,
+     "margin-bottom:14px": 4,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 3,
+     "padding-left:20px": 3,
+     "padding-right:20px": 3,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "margin-bottom:18px": 2,
+     "padding-top:20px": 4,
+     "padding-left:22px": 4,
+     "padding-right:22px": 4,
+     "margin-top:3px": 4,
+     "padding-top:16px": 5,
+     "padding-bottom:16px": 5,
+     "padding-left:18px": 5,
+     "padding-right:18px": 5,
+     "padding-top:13px": 9,
+     "padding-bottom:13px": 9,
+     "padding-left:10px": 9,
+     "padding-right:10px": 9,
+     "margin-bottom:3px": 9,
+     "margin-top:4px": 4,
+     "padding-top:2px": 4,
+     "padding-bottom:2px": 4,
+     "padding-left:9px": 4,
+     "padding-right:9px": 4
+    },
+    "radiusBag": {
+     "12px": 13,
+     "8px": 24,
+     "999px": 4
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 65,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "全部记录"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用2条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "更多文章"
+     }
+    ],
+    "smallTargetCount": 7,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 1033,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 1033,
+      "h": 256.4
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 509.5,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 467.5,
+      "h": 361
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 69
+    },
+    "docH": 1361,
+    "docW": 1085,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 3,
+     "padding-right:11px": 3,
+     "padding-top:22px": 1,
+     "padding-bottom:20px": 5,
+     "margin-bottom:14px": 4,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 3,
+     "padding-left:20px": 3,
+     "padding-right:20px": 3,
+     "margin-top:2px": 4,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "padding-left:16px": 1,
+     "padding-right:16px": 1,
+     "margin-bottom:18px": 2,
+     "padding-top:20px": 4,
+     "padding-left:22px": 4,
+     "padding-right:22px": 4,
+     "margin-top:3px": 4,
+     "padding-top:16px": 5,
+     "padding-bottom:16px": 5,
+     "padding-left:18px": 5,
+     "padding-right:18px": 5,
+     "padding-top:13px": 9,
+     "padding-bottom:13px": 9,
+     "padding-left:10px": 9,
+     "padding-right:10px": 9,
+     "margin-bottom:3px": 9,
+     "margin-top:4px": 4,
+     "padding-top:2px": 4,
+     "padding-bottom:2px": 4,
+     "padding-left:9px": 4,
+     "padding-right:9px": 4
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 65,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "全部记录"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用2条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "更多文章"
+     }
+    ],
+    "smallTargetCount": 7,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 773,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 773,
+      "h": 526.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 773,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 731,
+      "h": 341
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 69
+    },
+    "docH": 2056,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 3,
+     "padding-right:11px": 3,
+     "padding-top:16px": 6,
+     "padding-bottom:16px": 6,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:14px": 4,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 3,
+     "padding-left:20px": 3,
+     "padding-right:20px": 3,
+     "margin-top:2px": 4,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "margin-bottom:18px": 2,
+     "padding-top:20px": 4,
+     "padding-bottom:20px": 4,
+     "padding-left:22px": 4,
+     "padding-right:22px": 4,
+     "margin-top:3px": 4,
+     "padding-left:18px": 5,
+     "padding-right:18px": 5,
+     "padding-top:13px": 9,
+     "padding-bottom:13px": 9,
+     "padding-left:10px": 9,
+     "padding-right:10px": 9,
+     "margin-bottom:3px": 9,
+     "margin-top:4px": 4,
+     "padding-top:2px": 4,
+     "padding-bottom:2px": 4,
+     "padding-left:9px": 4,
+     "padding-right:9px": 4
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 65,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "全部记录"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用2条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+      "w": 97.7,
+      "h": 21.3,
+      "txt": "引用1条法规"
+     },
+     {
+      "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 74,
+      "h": 30.8,
+      "txt": "更多文章"
+     }
+    ],
+    "smallTargetCount": 7,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 513,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 513,
+      "h": 526.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 513,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 471,
+      "h": 361
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 69
+    },
+    "docH": 2256,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 3,
+     "padding-right:11px": 3,
+     "padding-top:16px": 6,
+     "padding-bottom:16px": 6,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:14px": 4,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 3,
+     "padding-left:20px": 3,
+     "padding-right:20px": 3,
+     "margin-top:2px": 4,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "margin-bottom:18px": 2,
+     "padding-top:20px": 4,
+     "padding-bottom:20px": 4,
+     "padding-left:22px": 4,
+     "padding-right:22px": 4,
+     "margin-top:3px": 4,
+     "padding-left:18px": 5,
+     "padding-right:18px": 5,
+     "padding-top:13px": 9,
+     "padding-bottom:13px": 9,
+     "padding-left:8px": 9,
+     "padding-right:8px": 9,
+     "margin-bottom:3px": 9,
+     "margin-top:4px": 4,
+     "padding-top:2px": 4,
+     "padding-bottom:2px": 4,
+     "padding-left:9px": 4,
+     "padding-right:9px": 4
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "court": {
+  "file": "pages/court.html",
+  "desc": "模拟法庭（左输入右结果）",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 49,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "填充示例"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "拖欠工资"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "违法辞退"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 56.5,
+      "h": 25.3,
+      "txt": "加班费"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保补缴"
+     }
+    ],
+    "smallTargetCount": 6,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 380,
+      "h": 613.6
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 788
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 380,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 51
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 10,
+     "11px": 1,
+     "13.5px": 10,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-top:2px": 3,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 9,
+     "padding-bottom:9px": 9,
+     "padding-left:11px": 13,
+     "padding-right:11px": 13,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-bottom:20px": 1,
+     "margin-bottom:14px": 5,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-top:16px": 1,
+     "padding-bottom:16px": 1,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 3,
+     "margin-bottom:5px": 3,
+     "padding-left:12px": 3,
+     "padding-right:12px": 3,
+     "padding-top:6px": 5,
+     "padding-bottom:6px": 5,
+     "padding-left:13px": 5,
+     "padding-right:13px": 5,
+     "margin-top:4px": 2,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 3,
+     "padding-top:7px": 4,
+     "padding-bottom:7px": 4,
+     "padding-top:4px": 4,
+     "padding-bottom:4px": 4,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "12px": 3,
+     "8px": 13,
+     "999px": 16
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 37,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "填充示例"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "拖欠工资"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "违法辞退"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 56.5,
+      "h": 25.3,
+      "txt": "加班费"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保补缴"
+     }
+    ],
+    "smallTargetCount": 6,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 1033,
+      "h": 450
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 927
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 39
+    },
+    "docH": 1037,
+    "docW": 1085,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "gapBag": {
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 6,
+     "padding-right:11px": 6,
+     "padding-top:22px": 1,
+     "padding-bottom:20px": 1,
+     "margin-bottom:14px": 5,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:10px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:5px": 3,
+     "padding-top:9px": 2,
+     "padding-bottom:9px": 2,
+     "padding-left:12px": 3,
+     "padding-right:12px": 3,
+     "padding-top:6px": 5,
+     "padding-bottom:6px": 5,
+     "padding-left:13px": 5,
+     "padding-right:13px": 5,
+     "margin-top:4px": 2,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "padding-left:20px": 1,
+     "padding-right:20px": 1,
+     "margin-top:18px": 3,
+     "padding-top:7px": 4,
+     "padding-bottom:7px": 4,
+     "padding-top:4px": 4,
+     "padding-bottom:4px": 4,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 37,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "填充示例"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "拖欠工资"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "违法辞退"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 56.5,
+      "h": 25.3,
+      "txt": "加班费"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保补缴"
+     }
+    ],
+    "smallTargetCount": 6,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 773,
+      "h": 553.9
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1030.9
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 39
+    },
+    "docH": 1131,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 6,
+     "padding-right:11px": 6,
+     "padding-top:16px": 2,
+     "padding-bottom:16px": 2,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:14px": 5,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:5px": 3,
+     "padding-top:9px": 2,
+     "padding-bottom:9px": 2,
+     "padding-left:12px": 3,
+     "padding-right:12px": 3,
+     "padding-top:6px": 5,
+     "padding-bottom:6px": 5,
+     "padding-left:13px": 5,
+     "padding-right:13px": 5,
+     "margin-top:4px": 2,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 3,
+     "padding-top:7px": 4,
+     "padding-bottom:7px": 4,
+     "padding-top:4px": 4,
+     "padding-bottom:4px": 4,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 37,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "填充示例"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "拖欠工资"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "违法辞退"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 56.5,
+      "h": 25.3,
+      "txt": "加班费"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保补缴"
+     }
+    ],
+    "smallTargetCount": 6,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 513,
+      "h": 553.9
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1050.5
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 39
+    },
+    "docH": 1151,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 6,
+     "padding-right:11px": 6,
+     "padding-top:16px": 2,
+     "padding-bottom:16px": 2,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:14px": 5,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:5px": 3,
+     "padding-top:9px": 2,
+     "padding-bottom:9px": 2,
+     "padding-left:12px": 3,
+     "padding-right:12px": 3,
+     "padding-top:6px": 5,
+     "padding-bottom:6px": 5,
+     "padding-left:13px": 5,
+     "padding-right:13px": 5,
+     "margin-top:4px": 2,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 3,
+     "padding-top:7px": 4,
+     "padding-bottom:7px": 4,
+     "padding-top:4px": 4,
+     "padding-bottom:4px": 4,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "contract": {
+  "file": "pages/contract-review.html",
+  "desc": "合同审查",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 52,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 117.5,
+      "h": 30.8,
+      "txt": "填充示例合同"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "试用期超标"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "违约金过高"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 102.5,
+      "h": 25.3,
+      "txt": "竞业限制无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保未缴"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "加班无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 91,
+      "h": 25.3,
+      "txt": "单方解除条件"
+     }
+    ],
+    "smallTargetCount": 8,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 380,
+      "h": 733
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 338,
+      "h": 77
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 788
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 380,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 55
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 14,
+     "11px": 2,
+     "13.5px": 12,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "margin-top:2px": 3,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 13,
+     "padding-bottom:9px": 13,
+     "padding-left:11px": 15,
+     "padding-right:11px": 15,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-bottom:20px": 1,
+     "margin-bottom:14px": 2,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 2,
+     "padding-right:14px": 2,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "padding-top:16px": 1,
+     "padding-bottom:16px": 1,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 2,
+     "padding-top:13px": 1,
+     "padding-bottom:13px": 1,
+     "padding-left:15px": 1,
+     "padding-right:15px": 1,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:3px": 1,
+     "margin-top:4px": 3,
+     "margin-bottom:4px": 1,
+     "margin-bottom:12px": 3,
+     "margin-bottom:9px": 3,
+     "margin-bottom:11px": 6,
+     "margin-bottom:5px": 5,
+     "padding-left:12px": 7,
+     "padding-right:12px": 7,
+     "padding-top:1px": 1,
+     "padding-bottom:1px": 1,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 1,
+     "padding-top:4px": 6,
+     "padding-bottom:4px": 6,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "12px": 4,
+     "8px": 17,
+     "999px": 10,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 38,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 117.5,
+      "h": 30.8,
+      "txt": "填充示例合同"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "试用期超标"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "违约金过高"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 102.5,
+      "h": 25.3,
+      "txt": "竞业限制无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保未缴"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "加班无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 91,
+      "h": 25.3,
+      "txt": "单方解除条件"
+     }
+    ],
+    "smallTargetCount": 8,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 1033,
+      "h": 630
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 999,
+      "h": 74
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1025.6
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 41
+    },
+    "docH": 1136,
+    "docW": 1085,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 10
+    },
+    "gapBag": {
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 8,
+     "padding-right:11px": 8,
+     "padding-top:22px": 1,
+     "padding-bottom:20px": 1,
+     "margin-bottom:14px": 2,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 2,
+     "padding-right:14px": 2,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "margin-bottom:10px": 2,
+     "margin-top:2px": 2,
+     "padding-top:9px": 7,
+     "padding-bottom:9px": 7,
+     "padding-left:12px": 8,
+     "padding-right:12px": 8,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-bottom:8px": 9,
+     "margin-bottom:6px": 3,
+     "margin-bottom:5px": 5,
+     "padding-top:1px": 1,
+     "padding-bottom:1px": 1,
+     "margin-top:4px": 2,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "padding-left:20px": 1,
+     "padding-right:20px": 1,
+     "margin-top:18px": 1,
+     "padding-top:4px": 6,
+     "padding-bottom:4px": 6,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 40,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 117.5,
+      "h": 30.8,
+      "txt": "填充示例合同"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "试用期超标"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "违约金过高"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 102.5,
+      "h": 25.3,
+      "txt": "竞业限制无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保未缴"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "加班无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 91,
+      "h": 25.3,
+      "txt": "单方解除条件"
+     }
+    ],
+    "smallTargetCount": 8,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 773,
+      "h": 892.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 731,
+      "h": 163.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1287.8
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 43
+    },
+    "docH": 1388,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 12
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 8,
+     "padding-right:11px": 8,
+     "padding-top:16px": 2,
+     "padding-bottom:16px": 2,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "margin-bottom:14px": 2,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 2,
+     "padding-right:14px": 2,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 2,
+     "margin-top:2px": 2,
+     "padding-top:13px": 1,
+     "padding-bottom:13px": 1,
+     "padding-left:15px": 1,
+     "padding-right:15px": 1,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:3px": 1,
+     "margin-top:4px": 3,
+     "margin-bottom:4px": 1,
+     "margin-bottom:12px": 3,
+     "margin-bottom:9px": 3,
+     "margin-bottom:11px": 6,
+     "margin-bottom:5px": 5,
+     "padding-top:9px": 6,
+     "padding-bottom:9px": 6,
+     "padding-left:12px": 7,
+     "padding-right:12px": 7,
+     "padding-top:1px": 1,
+     "padding-bottom:1px": 1,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 1,
+     "padding-top:4px": 6,
+     "padding-bottom:4px": 6,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 40,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 117.5,
+      "h": 30.8,
+      "txt": "填充示例合同"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "试用期超标"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "违约金过高"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 102.5,
+      "h": 25.3,
+      "txt": "竞业限制无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 68,
+      "h": 25.3,
+      "txt": "社保未缴"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 79.5,
+      "h": 25.3,
+      "txt": "加班无补偿"
+     },
+     {
+      "sel": "span.zf-tag",
+      "w": 91,
+      "h": 25.3,
+      "txt": "单方解除条件"
+     }
+    ],
+    "smallTargetCount": 8,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 513,
+      "h": 892.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 471,
+      "h": 163.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1340.6
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 43
+    },
+    "docH": 1441,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 12
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 8,
+     "padding-right:11px": 8,
+     "padding-top:16px": 2,
+     "padding-bottom:16px": 2,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "margin-bottom:14px": 2,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 2,
+     "padding-right:14px": 2,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:10px": 2,
+     "margin-top:2px": 2,
+     "padding-top:13px": 1,
+     "padding-bottom:13px": 1,
+     "padding-left:15px": 1,
+     "padding-right:15px": 1,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:3px": 1,
+     "margin-top:4px": 3,
+     "margin-bottom:4px": 1,
+     "margin-bottom:12px": 3,
+     "margin-bottom:9px": 3,
+     "margin-bottom:11px": 6,
+     "margin-bottom:5px": 5,
+     "padding-top:9px": 6,
+     "padding-bottom:9px": 6,
+     "padding-left:12px": 7,
+     "padding-right:12px": 7,
+     "padding-top:1px": 1,
+     "padding-bottom:1px": 1,
+     "margin-top:12px": 1,
+     "padding-top:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "margin-top:18px": 1,
+     "padding-top:4px": 6,
+     "padding-bottom:4px": 6,
+     "padding-top:10px": 1,
+     "padding-bottom:10px": 1
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "doc": {
+  "file": "pages/doc-drafting.html",
+  "desc": "法律文书起草（左模板右页签）",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 47,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "重选模板"
+     }
+    ],
+    "smallTargetCount": 2,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 380,
+      "h": 612.9
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 338,
+      "h": 478.2
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 612.9
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 746,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 746,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 47
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 8,
+     "11px": 1,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "14.5px": 3,
+     "14px": 1
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "margin-top:2px": 3,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 7,
+     "padding-bottom:9px": 7,
+     "padding-left:11px": 9,
+     "padding-right:11px": 9,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 5,
+     "padding-bottom:5px": 5,
+     "padding-bottom:40px": 1,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-bottom:12px": 1,
+     "padding-top:6px": 3,
+     "padding-bottom:6px": 3,
+     "padding-left:13px": 3,
+     "padding-right:13px": 3,
+     "padding-right:2px": 1,
+     "padding-top:13px": 3,
+     "padding-bottom:13px": 3,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-top:34px": 1,
+     "padding-bottom:26px": 1,
+     "margin-bottom:10px": 1,
+     "margin-top:18px": 1,
+     "margin-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1
+    },
+    "radiusBag": {
+     "12px": 6,
+     "8px": 10,
+     "999px": 7
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 35,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "重选模板"
+     }
+    ],
+    "smallTargetCount": 2,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 1033,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 991,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 1033,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 35
+    },
+    "docH": 1169,
+    "docW": 1085,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 5,
+     "padding-bottom:5px": 5,
+     "padding-left:11px": 2,
+     "padding-right:11px": 2,
+     "padding-top:22px": 1,
+     "padding-bottom:40px": 1,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:12px": 1,
+     "padding-top:6px": 3,
+     "padding-bottom:6px": 3,
+     "padding-left:13px": 3,
+     "padding-right:13px": 3,
+     "padding-right:2px": 1,
+     "padding-top:13px": 3,
+     "padding-bottom:13px": 3,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-top:34px": 1,
+     "padding-bottom:26px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-bottom:10px": 1,
+     "margin-top:18px": 1,
+     "margin-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 35,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "重选模板"
+     }
+    ],
+    "smallTargetCount": 2,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 773,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 731,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 773,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 35
+    },
+    "docH": 1163,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 5,
+     "padding-bottom:5px": 5,
+     "padding-left:11px": 2,
+     "padding-right:11px": 2,
+     "padding-top:16px": 1,
+     "padding-bottom:40px": 1,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:12px": 1,
+     "padding-top:6px": 3,
+     "padding-bottom:6px": 3,
+     "padding-left:13px": 3,
+     "padding-right:13px": 3,
+     "padding-right:2px": 1,
+     "padding-top:13px": 3,
+     "padding-bottom:13px": 3,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-top:34px": 1,
+     "padding-bottom:26px": 1,
+     "margin-bottom:10px": 1,
+     "margin-top:18px": 1,
+     "margin-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 35,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "重选模板"
+     }
+    ],
+    "smallTargetCount": 2,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 513,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 471,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 513,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 35
+    },
+    "docH": 1163,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 5,
+     "padding-bottom:5px": 5,
+     "padding-left:11px": 2,
+     "padding-right:11px": 2,
+     "padding-top:16px": 1,
+     "padding-bottom:40px": 1,
+     "padding-left:16px": 3,
+     "padding-right:16px": 3,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "margin-bottom:12px": 1,
+     "padding-top:6px": 3,
+     "padding-bottom:6px": 3,
+     "padding-left:13px": 3,
+     "padding-right:13px": 3,
+     "padding-right:2px": 1,
+     "padding-top:13px": 3,
+     "padding-bottom:13px": 3,
+     "padding-left:14px": 6,
+     "padding-right:14px": 6,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-top:34px": 1,
+     "padding-bottom:26px": 1,
+     "margin-bottom:10px": 1,
+     "margin-top:18px": 1,
+     "margin-top:12px": 1,
+     "padding-top:8px": 1,
+     "padding-bottom:8px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "kn": {
+  "file": "pages/knowledge.html",
+  "desc": "法律知识库（筛选+网格）",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 37,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 1140,
+      "h": 504.6
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 1098,
+      "h": 365.6
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 37
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 7,
+     "11px": 1,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "14.5px": 5
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 8,
+     "padding-right:16px": 8,
+     "margin-top:2px": 3,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 8,
+     "padding-bottom:9px": 8,
+     "padding-left:11px": 8,
+     "padding-right:11px": 8,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 1,
+     "padding-bottom:5px": 1,
+     "padding-bottom:20px": 1,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "padding-left:12px": 1,
+     "padding-right:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:6px": 1,
+     "padding-bottom:6px": 1,
+     "padding-left:13px": 1,
+     "padding-right:13px": 1,
+     "padding-top:15px": 5,
+     "padding-bottom:15px": 5,
+     "padding-top:10px": 5,
+     "margin-top:14px": 1
+    },
+    "radiusBag": {
+     "12px": 8,
+     "8px": 11,
+     "999px": 1
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 25,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 1048,
+      "h": 504.6
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 1006,
+      "h": 365.6
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 25
+    },
+    "docH": 800,
+    "docW": 1100,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 1,
+     "padding-top:5px": 1,
+     "padding-bottom:5px": 1,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:22px": 1,
+     "padding-bottom:20px": 1,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "padding-top:9px": 1,
+     "padding-bottom:9px": 1,
+     "padding-left:12px": 1,
+     "padding-right:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-left:16px": 7,
+     "padding-right:16px": 7,
+     "padding-top:6px": 1,
+     "padding-bottom:6px": 1,
+     "padding-left:13px": 1,
+     "padding-right:13px": 1,
+     "padding-top:15px": 5,
+     "padding-bottom:15px": 5,
+     "padding-top:10px": 5,
+     "margin-top:14px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 25,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 773,
+      "h": 773.5
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 731,
+      "h": 618.7
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 25
+    },
+    "docH": 1016,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 1,
+     "padding-bottom:5px": 1,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:16px": 1,
+     "padding-bottom:16px": 1,
+     "padding-left:16px": 8,
+     "padding-right:16px": 8,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "padding-top:9px": 1,
+     "padding-bottom:9px": 1,
+     "padding-left:12px": 1,
+     "padding-right:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:6px": 1,
+     "padding-bottom:6px": 1,
+     "padding-left:13px": 1,
+     "padding-right:13px": 1,
+     "padding-top:15px": 5,
+     "padding-bottom:15px": 5,
+     "padding-top:10px": 5,
+     "margin-top:14px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 25,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 513,
+      "h": 773.5
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 471,
+      "h": 618.7
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 25
+    },
+    "docH": 1016,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 1,
+     "padding-top:5px": 1,
+     "padding-bottom:5px": 1,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:16px": 1,
+     "padding-bottom:16px": 1,
+     "padding-left:16px": 8,
+     "padding-right:16px": 8,
+     "padding-top:18px": 2,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "margin-bottom:14px": 3,
+     "margin-top:2px": 2,
+     "padding-top:9px": 1,
+     "padding-bottom:9px": 1,
+     "padding-left:12px": 1,
+     "padding-right:12px": 1,
+     "padding-top:8px": 2,
+     "padding-bottom:8px": 2,
+     "padding-top:6px": 1,
+     "padding-bottom:6px": 1,
+     "padding-left:13px": 1,
+     "padding-right:13px": 1,
+     "padding-top:15px": 5,
+     "padding-bottom:15px": 5,
+     "padding-top:10px": 5,
+     "margin-top:14px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "qa": {
+  "file": "pages/qa.html",
+  "desc": "法律问答",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 71,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "历史对话 0"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 80,
+      "h": 30.8,
+      "txt": "新对话"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "1"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "2"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "3"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "6"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     }
+    ],
+    "smallTargetCount": 15,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 64,
+     "Georgia, \"Noto Serif SC\", Cambria, \"Times New Roman\", SimSun, \"Microsoft YaHei\", serif": 15
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 2,
+     "11.5px": 20,
+     "11px": 1,
+     "13.5px": 23,
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1
+    },
+    "gapBag": {
+     "padding-top:22px": 1,
+     "padding-bottom:22px": 2,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-top:2px": 1,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 15,
+     "padding-bottom:9px": 12,
+     "padding-left:11px": 22,
+     "padding-right:11px": 22,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 2,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-top:18px": 2,
+     "padding-top:12px": 2,
+     "padding-bottom:12px": 1,
+     "padding-left:18px": 2,
+     "padding-right:18px": 2,
+     "padding-bottom:18px": 1,
+     "padding-top:11px": 8,
+     "padding-bottom:11px": 8,
+     "padding-left:15px": 8,
+     "padding-right:15px": 8,
+     "margin-top:9px": 3,
+     "margin-top:11px": 4,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:12px": 13,
+     "padding-right:12px": 13,
+     "padding-bottom:10px": 5,
+     "margin-top:6px": 9,
+     "margin-top:3px": 10,
+     "margin-top:7px": 4,
+     "padding-top:3px": 12,
+     "padding-bottom:3px": 12,
+     "padding-top:7px": 1,
+     "padding-bottom:7px": 1,
+     "padding-left:10px": 1,
+     "padding-right:10px": 1,
+     "padding-top:6px": 2,
+     "padding-bottom:6px": 2,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:8px": 1
+    },
+    "radiusBag": {
+     "12px": 3,
+     "8px": 14,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 59,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "历史对话 0"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 80,
+      "h": 30.8,
+      "txt": "新对话"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "1"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "2"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "3"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "6"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     }
+    ],
+    "smallTargetCount": 15,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 52,
+     "Georgia, \"Noto Serif SC\", Cambria, \"Times New Roman\", SimSun, \"Microsoft YaHei\", serif": 15
+    },
+    "docH": 800,
+    "docW": 1100,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 1,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 2,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 15,
+     "padding-right:11px": 15,
+     "padding-top:18px": 2,
+     "padding-bottom:22px": 1,
+     "padding-top:12px": 2,
+     "padding-bottom:12px": 1,
+     "padding-left:18px": 2,
+     "padding-right:18px": 2,
+     "padding-bottom:18px": 1,
+     "padding-top:11px": 8,
+     "padding-bottom:11px": 8,
+     "padding-left:15px": 8,
+     "padding-right:15px": 8,
+     "margin-top:9px": 3,
+     "padding-top:9px": 8,
+     "margin-top:11px": 4,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:12px": 13,
+     "padding-right:12px": 13,
+     "padding-bottom:10px": 5,
+     "margin-top:6px": 9,
+     "padding-bottom:9px": 5,
+     "margin-top:3px": 10,
+     "margin-top:7px": 4,
+     "padding-top:3px": 12,
+     "padding-bottom:3px": 12,
+     "padding-left:16px": 1,
+     "padding-right:16px": 1,
+     "padding-top:7px": 1,
+     "padding-bottom:7px": 1,
+     "padding-left:10px": 1,
+     "padding-right:10px": 1,
+     "padding-top:6px": 2,
+     "padding-bottom:6px": 2,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:8px": 1
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 59,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 92.5,
+      "h": 30.8,
+      "txt": "历史对话 0"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 80,
+      "h": 30.8,
+      "txt": "新对话"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "1"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "2"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "3"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "6"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     }
+    ],
+    "smallTargetCount": 15,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 52,
+     "Georgia, \"Noto Serif SC\", Cambria, \"Times New Roman\", SimSun, \"Microsoft YaHei\", serif": 15
+    },
+    "docH": 1000,
+    "docW": 820,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 2,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 15,
+     "padding-right:11px": 15,
+     "padding-top:12px": 3,
+     "padding-left:12px": 14,
+     "padding-right:12px": 14,
+     "padding-bottom:12px": 1,
+     "padding-left:18px": 2,
+     "padding-right:18px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "padding-top:11px": 8,
+     "padding-bottom:11px": 8,
+     "padding-left:15px": 8,
+     "padding-right:15px": 8,
+     "margin-top:9px": 3,
+     "padding-top:9px": 8,
+     "margin-top:11px": 4,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-bottom:10px": 5,
+     "margin-top:6px": 9,
+     "padding-bottom:9px": 5,
+     "margin-top:3px": 10,
+     "margin-top:7px": 4,
+     "padding-top:3px": 12,
+     "padding-bottom:3px": 12,
+     "padding-left:16px": 1,
+     "padding-right:16px": 1,
+     "padding-top:7px": 1,
+     "padding-bottom:7px": 1,
+     "padding-left:10px": 1,
+     "padding-right:10px": 1,
+     "padding-top:6px": 2,
+     "padding-bottom:6px": 2,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:8px": 1
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 58,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 36.5,
+      "h": 30.8,
+      "txt": "历史对话 0"
+     },
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 80,
+      "h": 30.8,
+      "txt": "新对话"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "1"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "2"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "3"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     },
+     {
+      "sel": "button.zf-msg__act.js-copy",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "复制"
+     },
+     {
+      "sel": "button.zf-msg__act.js-like",
+      "w": 45.7,
+      "h": 25.3,
+      "txt": "6"
+     },
+     {
+      "sel": "button.zf-msg__act.js-del",
+      "w": 62.5,
+      "h": 25.3,
+      "txt": "删除"
+     }
+    ],
+    "smallTargetCount": 15,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 51,
+     "Georgia, \"Noto Serif SC\", Cambria, \"Times New Roman\", SimSun, \"Microsoft YaHei\", serif": 15
+    },
+    "docH": 900,
+    "docW": 560,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 24,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "gapBag": {
+     "padding-top:14px": 1,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 2,
+     "padding-top:5px": 3,
+     "padding-bottom:5px": 3,
+     "padding-left:11px": 15,
+     "padding-right:11px": 15,
+     "padding-top:12px": 3,
+     "padding-left:12px": 14,
+     "padding-right:12px": 14,
+     "padding-bottom:12px": 1,
+     "padding-left:18px": 2,
+     "padding-right:18px": 2,
+     "padding-top:18px": 1,
+     "padding-bottom:18px": 1,
+     "padding-top:11px": 8,
+     "padding-bottom:11px": 8,
+     "padding-left:15px": 8,
+     "padding-right:15px": 8,
+     "margin-top:9px": 3,
+     "padding-top:9px": 8,
+     "margin-top:11px": 4,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-bottom:10px": 5,
+     "margin-top:6px": 9,
+     "padding-bottom:9px": 5,
+     "margin-top:3px": 10,
+     "margin-top:7px": 4,
+     "padding-top:3px": 12,
+     "padding-bottom:3px": 12,
+     "padding-left:16px": 1,
+     "padding-right:16px": 1,
+     "padding-top:7px": 1,
+     "padding-bottom:7px": 1,
+     "padding-left:10px": 1,
+     "padding-right:10px": 1,
+     "padding-top:6px": 2,
+     "padding-bottom:6px": 2,
+     "padding-left:2px": 1,
+     "padding-right:2px": 1,
+     "margin-top:8px": 1
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "shadowBag": {}
+   }
+  }
+ },
+ "pf": {
+  "file": "pages/profile.html",
+  "desc": "个人中心（左概览右页签）",
+  "probe": "function () {\n  function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }\n  function cs(el, p) { return window.getComputedStyle(el).getPropertyValue(p); }\n\n  // ---- 1. 对比度计算 ----\n  function lum(c) {\n    var m = c.match(/\\d+(\\.\\d+)?/g);\n    if (!m) { return null; }\n    var r = +m[0] / 255, g = +m[1] / 255, b = +m[2] / 255;\n    function f(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }\n    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);\n  }\n  function cr(fg, bg) {\n    var a = lum(fg), b = lum(bg);\n    if (a === null || b === null) { return null; }\n    var hi = Math.max(a, b), lo = Math.min(a, b);\n    return +(((hi + 0.05) / (lo + 0.05)).toFixed(2));\n  }\n  function effBg(el) {\n    var n = el, guard = 0;\n    while (n && guard++ < 30) {\n      var c = cs(n, 'background-color');\n      var m = c.match(/[\\d.]+/g);\n      if (m && m.length >= 3 && (m.length < 4 || parseFloat(m[3]) > 0.5)) { return c; }\n      n = n.parentElement;\n    }\n    return 'rgb(255,255,255)';\n  }\n\n  var out = {};\n\n  // ---- 2. 可读文字对比度扫描 ----\n  var textNodes = [];\n  var all = document.querySelectorAll('*');\n  for (var i = 0; i < all.length; i++) {\n    var el = all[i];\n    // 只取直接含文本的叶子\n    var hasText = false;\n    for (var k = 0; k < el.childNodes.length; k++) {\n      if (el.childNodes[k].nodeType === 3 && el.childNodes[k].textContent.trim().length > 1) { hasText = true; break; }\n    }\n    if (!hasText) { continue; }\n    var r = el.getBoundingClientRect();\n    if (r.width < 2 || r.height < 2) { continue; }\n    if (cs(el, 'visibility') === 'hidden' || cs(el, 'display') === 'none') { continue; }\n    if (parseFloat(cs(el, 'opacity')) < 0.1) { continue; }\n    var fs = px(cs(el, 'font-size'));\n    var fw = cs(el, 'font-weight');\n    var ratio = cr(cs(el, 'color'), effBg(el));\n    var large = fs >= 18.66 || (fs >= 14 && (fw === '700' || fw === 'bold' || +fw >= 700));\n    var need = large ? 3.0 : 4.5;\n    var txt = '';\n    for (var k2 = 0; k2 < el.childNodes.length; k2++) {\n      if (el.childNodes[k2].nodeType === 3) { txt += el.childNodes[k2].textContent; }\n    }\n    txt = txt.trim().replace(/\\s+/g, ' ').slice(0, 26);\n    if (!txt) { continue; }\n    textNodes.push({\n      sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),\n      txt: txt, fs: +fs.toFixed(1), fw: fw, color: cs(el, 'color'),\n      bg: effBg(el), ratio: ratio, need: need,\n      pass: ratio === null ? null : ratio >= need,\n      large: large\n    });\n  }\n  // 只报不通过的，按 ratio 升序\n  var fails = [];\n  for (var i2 = 0; i2 < textNodes.length; i2++) {\n    if (textNodes[i2].pass === false) { fails.push(textNodes[i2]); }\n  }\n  fails.sort(function (a, b) { return a.ratio - b.ratio; });\n  out.textTotal = textNodes.length;\n  out.contrastFails = fails.slice(0, 60);\n  out.contrastFailCount = fails.length;\n\n  // ---- 3. 点击目标尺寸（>=32px 经验值，WCAG 2.5.5 为 44px）----\n  var clickable = document.querySelectorAll('a, button, [role=\"button\"], input[type=\"checkbox\"], input[type=\"radio\"], .zf-tag, .zf-chip, .zf-tabs__item, .zf-pager__item, [aria-pressed]');\n  var small = [];\n  for (var j = 0; j < clickable.length; j++) {\n    var c2 = clickable[j];\n    var rr = c2.getBoundingClientRect();\n    if (rr.width < 1 || rr.height < 1) { continue; }\n    if (cs(c2, 'visibility') === 'hidden' || cs(c2, 'display') === 'none') { continue; }\n    if (rr.height < 32 || rr.width < 24) {\n      small.push({\n        sel: c2.tagName.toLowerCase() + (c2.className && typeof c2.className === 'string' ? '.' + String(c2.className).trim().split(/\\s+/).join('.') : ''),\n        w: +rr.width.toFixed(1), h: +rr.height.toFixed(1),\n        txt: (c2.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 20)\n      });\n    }\n  }\n  out.smallTargets = small.slice(0, 40);\n  out.smallTargetCount = small.length;\n\n  // ---- 4. 硬编码色（非令牌）扫描：从样式表读，不依赖 DOM ----\n  var hexBag = {};\n  var rgbaBag = {};\n  try {\n    for (var s = 0; s < document.styleSheets.length; s++) {\n      var sheet = document.styleSheets[s];\n      var rules;\n      try { rules = sheet.cssRules; } catch (e) { continue; }\n      if (!rules) { continue; }\n      for (var q = 0; q < rules.length; q++) {\n        var rule = rules[q];\n        if (rule.type !== 1) { continue; }\n        var body = rule.style ? rule.cssText : '';\n        var hs = body.match(/#[0-9a-fA-F]{3,8}\\b/g) || [];\n        for (var h = 0; h < hs.length; h++) { hexBag[hs[h].toLowerCase()] = (hexBag[hs[h].toLowerCase()] || 0) + 1; }\n        var rs = body.match(/rgba?\\([^)]*\\)/g) || [];\n        for (var g = 0; g < rs.length; g++) { rgbaBag[rs[g]] = (rgbaBag[rs[g]] || 0) + 1; }\n      }\n    }\n  } catch (e2) { out.sheetErr = String(e2); }\n  out.hexBag = hexBag;\n  out.rgbaBag = rgbaBag;\n\n  // ---- 5. 布局几何：主要区块 ----\n  var blocks = [];\n  var sel = ['.zf-card', '.zf-grid', '.zf-stat', '.zf-desk', '.zf-work', '.zf-panel',\n    '.zf-list', '.zf-art-grid', '.zf-tabs', '.zf-empty', '.zf-doc', '.zf-law'];\n  for (var t = 0; t < sel.length; t++) {\n    var ns = document.querySelectorAll(sel[t]);\n    if (!ns.length) { continue; }\n    var first = ns[0].getBoundingClientRect();\n    blocks.push({\n      cls: sel[t], count: ns.length,\n      w: +first.width.toFixed(1), h: +first.height.toFixed(1)\n    });\n  }\n  out.blocks = blocks;\n\n  // ---- 6. 字体族分组统计 ----\n  var fontBag = {};\n  for (var fi = 0; fi < all.length; fi++) {\n    var fe = all[fi];\n    var fr = fe.getBoundingClientRect();\n    if (fr.width < 2 || fr.height < 2) { continue; }\n    var hasT = false;\n    for (var kk = 0; kk < fe.childNodes.length; kk++) {\n      if (fe.childNodes[kk].nodeType === 3 && fe.childNodes[kk].textContent.trim()) { hasT = true; break; }\n    }\n    if (!hasT) { continue; }\n    var ff = cs(fe, 'font-family');\n    fontBag[ff] = (fontBag[ff] || 0) + 1;\n  }\n  out.fontBag = fontBag;\n\n  // ---- 7. 页面高度 / 溢出 ----\n  out.docH = document.documentElement.scrollHeight;\n  out.docW = document.documentElement.scrollWidth;\n  out.viewW = window.innerWidth;\n  out.viewH = window.innerHeight;\n  out.hOverflow = out.docW > window.innerWidth + 1;\n  out.hOverflowPx = out.docW - window.innerWidth;\n\n  // 找出真正横向溢出的元素\n  if (out.hOverflow) {\n    var ovf = [];\n    for (var oi = 0; oi < all.length; oi++) {\n      var oe = all[oi];\n      var orr = oe.getBoundingClientRect();\n      if (orr.right > window.innerWidth + 1 && orr.width > 8) {\n        ovf.push({\n          sel: oe.tagName.toLowerCase() + (oe.className && typeof oe.className === 'string' ? '.' + String(oe.className).trim().split(/\\s+/).join('.') : ''),\n          right: +orr.right.toFixed(1), w: +orr.width.toFixed(1)\n        });\n      }\n    }\n    out.overflowEls = ovf.slice(0, 20);\n  }\n\n  // ---- 8. 字号分布 ----\n  var fsBag = {};\n  for (var zi = 0; zi < all.length; zi++) {\n    var ze = all[zi];\n    var zr = ze.getBoundingClientRect();\n    if (zr.width < 2 || zr.height < 2) { continue; }\n    var zt = false;\n    for (var zk = 0; zk < ze.childNodes.length; zk++) {\n      if (ze.childNodes[zk].nodeType === 3 && ze.childNodes[zk].textContent.trim()) { zt = true; break; }\n    }\n    if (!zt) { continue; }\n    var zfs = cs(ze, 'font-size');\n    fsBag[zfs] = (fsBag[zfs] || 0) + 1;\n  }\n  out.fsBag = fsBag;\n\n  // ---- 9. 间距节奏：常见 margin/padding 值 ----\n  var gapBag = {};\n  for (var gi = 0; gi < all.length; gi++) {\n    var ge = all[gi];\n    var gr = ge.getBoundingClientRect();\n    if (gr.width < 2 || gr.height < 2) { continue; }\n    var gcs = window.getComputedStyle(ge);\n    ['margin-top', 'margin-bottom', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach(function (prop) {\n      var v = gcs.getPropertyValue(prop);\n      if (v && v !== '0px' && v !== 'auto' && v.indexOf('normal') < 0) {\n        gapBag[prop + ':' + v] = (gapBag[prop + ':' + v] || 0) + 1;\n      }\n    });\n  }\n  out.gapBag = gapBag;\n\n  // ---- 10. 圆角 / 阴影使用 ----\n  var rBag = {}, shBag = {};\n  for (var ri = 0; ri < all.length; ri++) {\n    var re = all[ri];\n    var rrr = re.getBoundingClientRect();\n    if (rrr.width < 2 || rrr.height < 2) { continue; }\n    var rcs = window.getComputedStyle(re);\n    var rad = rcs.getPropertyValue('border-radius');\n    if (rad && rad !== '0px') { rBag[rad] = (rBag[rad] || 0) + 1; }\n    var bsh = rcs.getPropertyValue('box-shadow');\n    if (bsh && bsh !== 'none') { shBag[bsh] = (shBag[bsh] || 0) + 1; }\n  }\n  out.radiusBag = rBag;\n  out.shadowBag = shBag;\n\n  return out;\n}",
+  "viewports": {
+   "desktop": {
+    "textTotal": 55,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 380,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 338,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 165,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 746,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 746,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 61
+    },
+    "docH": 900,
+    "docW": 1440,
+    "viewW": 1440,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": 0,
+    "fsBag": {
+     "15px": 3,
+     "11.5px": 3,
+     "11px": 3,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "19px": 4
+    },
+    "gapBag": {
+     "padding-top:22px": 2,
+     "padding-bottom:22px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "margin-top:2px": 2,
+     "margin-bottom:6px": 1,
+     "padding-top:9px": 12,
+     "padding-bottom:9px": 12,
+     "padding-left:11px": 8,
+     "padding-right:11px": 8,
+     "margin-top:367.828px": 1,
+     "padding-top:14px": 3,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 5,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-bottom:40px": 1,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "padding-top:2px": 1,
+     "padding-bottom:2px": 1,
+     "padding-left:9px": 1,
+     "padding-right:9px": 1,
+     "margin-top:4px": 2,
+     "padding-top:10px": 4,
+     "padding-bottom:10px": 4,
+     "padding-left:12px": 9,
+     "padding-right:12px": 9,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:10px": 3,
+     "padding-right:10px": 3,
+     "margin-top:3px": 3,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "margin-bottom:14px": 1,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 3,
+     "padding-right:14px": 3,
+     "margin-bottom:18px": 1,
+     "margin-bottom:5px": 5,
+     "padding-top:12px": 1,
+     "padding-left:18px": 1,
+     "padding-right:18px": 1
+    },
+    "radiusBag": {
+     "12px": 4,
+     "8px": 25,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "shadowBag": {}
+   },
+   "laptop": {
+    "textTotal": 43,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 1033,
+      "h": 423.9
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 991,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 241.8,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1039.2
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 1033,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 49
+    },
+    "docH": 1170,
+    "docW": 1085,
+    "viewW": 1100,
+    "viewH": 800,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 2,
+     "padding-right:26px": 2,
+     "margin-top:1px": 5,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:22px": 1,
+     "padding-bottom:40px": 1,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "padding-top:2px": 1,
+     "padding-bottom:2px": 1,
+     "padding-left:9px": 1,
+     "padding-right:9px": 1,
+     "margin-top:4px": 2,
+     "padding-top:10px": 4,
+     "padding-bottom:10px": 4,
+     "padding-left:12px": 9,
+     "padding-right:12px": 9,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:10px": 3,
+     "padding-right:10px": 3,
+     "margin-top:3px": 3,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "margin-bottom:14px": 1,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 3,
+     "padding-right:14px": 3,
+     "margin-bottom:18px": 1,
+     "margin-top:2px": 1,
+     "margin-bottom:5px": 5,
+     "padding-top:9px": 5,
+     "padding-bottom:9px": 5,
+     "padding-top:12px": 1,
+     "padding-left:16px": 1,
+     "padding-right:16px": 1,
+     "padding-left:18px": 1,
+     "padding-right:18px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "shadowBag": {}
+   },
+   "tablet": {
+    "textTotal": 43,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 773,
+      "h": 495.7
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 731,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 361.5,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1326
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 773,
+      "h": 816.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 49
+    },
+    "docH": 1450,
+    "docW": 805,
+    "viewW": 820,
+    "viewH": 1000,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 5,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:16px": 1,
+     "padding-bottom:40px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "padding-top:2px": 1,
+     "padding-bottom:2px": 1,
+     "padding-left:9px": 1,
+     "padding-right:9px": 1,
+     "margin-top:4px": 2,
+     "padding-top:10px": 4,
+     "padding-bottom:10px": 4,
+     "padding-left:12px": 9,
+     "padding-right:12px": 9,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:10px": 3,
+     "padding-right:10px": 3,
+     "margin-top:3px": 3,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "margin-bottom:14px": 1,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 3,
+     "padding-right:14px": 3,
+     "margin-bottom:18px": 1,
+     "margin-top:2px": 1,
+     "margin-bottom:5px": 5,
+     "padding-top:9px": 5,
+     "padding-bottom:9px": 5,
+     "padding-top:12px": 1,
+     "padding-left:18px": 1,
+     "padding-right:18px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "shadowBag": {}
+   },
+   "phone": {
+    "textTotal": 43,
+    "contrastFails": [],
+    "contrastFailCount": 0,
+    "smallTargets": [
+     {
+      "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+      "w": 67.5,
+      "h": 30.8,
+      "txt": "退出"
+     }
+    ],
+    "smallTargetCount": 1,
+    "hexBag": {},
+    "rgbaBag": {},
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 513,
+      "h": 495.7
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 471,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 231.5,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1326
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 513,
+      "h": 816.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     }
+    ],
+    "fontBag": {
+     "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"PingFang SC\", Roboto, Arial, sans-serif": 49
+    },
+    "docH": 1450,
+    "docW": 545,
+    "viewW": 560,
+    "viewH": 900,
+    "hOverflow": false,
+    "hOverflowPx": -15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "gapBag": {
+     "padding-top:14px": 2,
+     "padding-bottom:14px": 2,
+     "padding-left:26px": 1,
+     "padding-right:26px": 1,
+     "margin-top:1px": 5,
+     "padding-top:5px": 4,
+     "padding-bottom:5px": 4,
+     "padding-left:11px": 1,
+     "padding-right:11px": 1,
+     "padding-top:16px": 1,
+     "padding-bottom:40px": 1,
+     "padding-left:16px": 2,
+     "padding-right:16px": 2,
+     "padding-top:18px": 3,
+     "padding-bottom:18px": 2,
+     "padding-left:20px": 2,
+     "padding-right:20px": 2,
+     "padding-top:2px": 1,
+     "padding-bottom:2px": 1,
+     "padding-left:9px": 1,
+     "padding-right:9px": 1,
+     "margin-top:4px": 2,
+     "padding-top:10px": 4,
+     "padding-bottom:10px": 4,
+     "padding-left:12px": 9,
+     "padding-right:12px": 9,
+     "padding-top:8px": 4,
+     "padding-bottom:8px": 4,
+     "padding-left:10px": 3,
+     "padding-right:10px": 3,
+     "margin-top:3px": 3,
+     "padding-left:6px": 2,
+     "padding-right:6px": 2,
+     "margin-bottom:14px": 1,
+     "padding-top:3px": 1,
+     "padding-bottom:3px": 1,
+     "padding-left:3px": 1,
+     "padding-right:3px": 1,
+     "padding-left:14px": 3,
+     "padding-right:14px": 3,
+     "margin-bottom:18px": 1,
+     "margin-top:2px": 1,
+     "margin-bottom:5px": 5,
+     "padding-top:9px": 5,
+     "padding-bottom:9px": 5,
+     "padding-top:12px": 1,
+     "padding-left:18px": 1,
+     "padding-right:18px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "shadowBag": {}
+   }
+  }
+ }
+}

@@ -18,6 +18,15 @@ public interface KnowledgeService {
     PageResult<KnowledgeArticle> articlePage(String category, String keyword, Integer status,
                                              int pageNum, int pageSize);
 
+    /**
+     * 带排序的文章分页（供前端点击列头切换升降序）。
+     *
+     * @param sortName  前端列名（实现层走白名单，非法值回退默认排序）
+     * @param sortOrder 排序方向（desc / asc）
+     */
+    PageResult<KnowledgeArticle> articlePage(String category, String keyword, Integer status,
+                                             int pageNum, int pageSize, String sortName, String sortOrder);
+
     /** 文章详情（自动累计阅读量，并补齐标签） */
     KnowledgeArticle articleDetail(Long id);
 
@@ -45,6 +54,15 @@ public interface KnowledgeService {
     Map<String, Object> submitQuiz(Map<Long, String> answers);
 
     PageResult<QuizQuestion> quizPage(String keyword, String category, int pageNum, int pageSize);
+
+    /**
+     * 带排序的题库分页（供前端点击列头切换升降序）。
+     *
+     * @param sortName  前端列名（实现层走白名单，非法值回退默认排序）
+     * @param sortOrder 排序方向（desc / asc）
+     */
+    PageResult<QuizQuestion> quizPage(String keyword, String category, int pageNum, int pageSize,
+                                       String sortName, String sortOrder);
 
     QuizQuestion saveQuiz(QuizQuestion question);
 

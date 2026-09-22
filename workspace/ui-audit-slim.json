@@ -1,0 +1,3798 @@
+{
+ "home": {
+  "file": "pages/home.html",
+  "desc": "首页/工作台卡片流",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 1230,
+    "docW": 1425,
+    "hOverflow": false,
+    "contrastFailCount": 42,
+    "smallTargetCount": 7,
+    "fsBag": {
+     "15px": 6,
+     "11.5px": 15,
+     "11px": 1,
+     "13.5px": 17,
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "26px": 4,
+     "14.5px": 5
+    },
+    "radiusBag": {
+     "12px": 13,
+     "8px": 24,
+     "999px": 4
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 1125,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 1125,
+      "h": 125
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 270.8,
+      "h": 125
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 513.5,
+      "h": 361
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 1381,
+    "docW": 1085,
+    "hOverflow": false,
+    "contrastFailCount": 38,
+    "smallTargetCount": 7,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 1033,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 1033,
+      "h": 256.4
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 509.5,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 467.5,
+      "h": 361
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 2056,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 38,
+    "smallTargetCount": 7,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 773,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 773,
+      "h": 526.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 773,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 731,
+      "h": 341
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 2256,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 38,
+    "smallTargetCount": 7,
+    "fsBag": {
+     "17px": 1,
+     "12px": 5,
+     "13px": 1,
+     "12.5px": 26,
+     "15px": 4,
+     "13.5px": 10,
+     "23px": 4,
+     "14.5px": 5,
+     "11.5px": 13
+    },
+    "radiusBag": {
+     "8px": 17,
+     "12px": 12,
+     "999px": 4
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 7,
+      "w": 513,
+      "h": 76.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 3,
+      "w": 513,
+      "h": 526.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 513,
+      "h": 121.2
+     },
+     {
+      "cls": ".zf-list",
+      "count": 2,
+      "w": 471,
+      "h": 361
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "今天也要保护好自己的合法权益",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "今天也要保护好自己的合法权益",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "我的问答",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "审查合同",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "生成文书",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "我的收藏",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "五大智能能力，覆盖职场法律全场景",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-feature__desc",
+    "txt": "用自然语言描述问题，系统检索法规库给出结构化建议，并",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-feature__desc",
+    "txt": "提交案情经过，依据类案统计推演胜诉概率与赔偿金额区间",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-feature__desc",
+    "txt": "粘贴劳动合同全文，逐条扫描风险条款并生成风险体检报告",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-feature__desc",
+    "txt": "选择文书模板，填写关键信息，一键生成格式规范的文书",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-feature__desc",
+    "txt": "体系化了解劳动法常识，支持全文检索与知识自测",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "你最近的咨询记录",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "【初步结论】公司未提前通知即解除劳动关系，属于违法解",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "1天前",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "【初步结论】加班费基数一般按劳动合同约定的工资标准确",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "3天前",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "【初步结论】试用期上限与合同期限挂钩：三年以上或无固",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "6天前",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "【初步结论】应休未休年假可按日工资收入的 300% ",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "9天前",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "职场高频法律问题速览",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "关键看公司是否能证明「不符合录用条件」。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "2018",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "一般一年时效，拖欠工资在劳动关系存续期间不受限制。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "1197",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "应按实际出勤结算，拖欠即违法。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "1435",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "从用工满一个月的次日起算，最多可主张11个月。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "1893",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-list__text",
+    "txt": "未支付补偿金满三个月的，劳动者可以请求解除。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-list__meta",
+    "txt": "876",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "首页",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-btn.zf-btn--primary",
+    "txt": "开始法律咨询",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-feature__more",
+    "txt": "进入",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-feature__more",
+    "txt": "进入",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-feature__more",
+    "txt": "进入",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   },
+   {
+    "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 74,
+    "h": 30.8,
+    "txt": "全部记录"
+   },
+   {
+    "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+    "w": 97.7,
+    "h": 21.3,
+    "txt": "引用2条法规"
+   },
+   {
+    "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+    "w": 97.7,
+    "h": 21.3,
+    "txt": "引用1条法规"
+   },
+   {
+    "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+    "w": 97.7,
+    "h": 21.3,
+    "txt": "引用1条法规"
+   },
+   {
+    "sel": "button.zf-badge.zf-badge--primary.zf-home-refs",
+    "w": 97.7,
+    "h": 21.3,
+    "txt": "引用1条法规"
+   },
+   {
+    "sel": "a.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 74,
+    "h": 30.8,
+    "txt": "更多文章"
+   }
+  ]
+ },
+ "court": {
+  "file": "pages/court.html",
+  "desc": "模拟法庭（左输入右结果）",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 924,
+    "docW": 1425,
+    "hOverflow": false,
+    "contrastFailCount": 13,
+    "smallTargetCount": 6,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 10,
+     "11px": 1,
+     "13.5px": 10,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18
+    },
+    "radiusBag": {
+     "12px": 3,
+     "8px": 13,
+     "999px": 16
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 380,
+      "h": 621.6
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1125,
+      "h": 794
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 380,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 1057,
+    "docW": 1085,
+    "hOverflow": false,
+    "contrastFailCount": 9,
+    "smallTargetCount": 6,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 1033,
+      "h": 450
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 927
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1139,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 9,
+    "smallTargetCount": 6,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 773,
+      "h": 561.9
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1038.9
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 1159,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 9,
+    "smallTargetCount": 6,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 18,
+     "15px": 2,
+     "11.5px": 8,
+     "13.5px": 3
+    },
+    "radiusBag": {
+     "8px": 6,
+     "999px": 16,
+     "12px": 2
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 513,
+      "h": 561.9
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1058.5
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-note",
+    "txt": "推演口径：以案件类型为基准胜率，按证据完整度加权修正",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(247, 248, 250)",
+    "ratio": 3.18,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "用类案大数据帮你预判胜算",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "写清时间、金额、证据，系统依据类案统计给出胜诉概率与",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-form-hint",
+    "txt": "描述越具体，推演越准确",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-form-hint",
+    "txt": "已输入 0 字",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-form-actions__tip",
+    "txt": "模拟推演，不构成法律意见",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "填写左侧案情，这里会生成胜诉概率与赔偿区间",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "AI小法庭",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tabs__tab.zf-tabs__tab--active",
+    "txt": "填写案情",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--primary",
+    "txt": "开始推演",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 92.5,
+    "h": 30.8,
+    "txt": "填充示例"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 68,
+    "h": 25.3,
+    "txt": "拖欠工资"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 68,
+    "h": 25.3,
+    "txt": "违法辞退"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 56.5,
+    "h": 25.3,
+    "txt": "加班费"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 68,
+    "h": 25.3,
+    "txt": "社保补缴"
+   }
+  ]
+ },
+ "contract": {
+  "file": "pages/contract-review.html",
+  "desc": "合同审查",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 940,
+    "docW": 1425,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 8,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 14,
+     "11px": 2,
+     "13.5px": 12,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15
+    },
+    "radiusBag": {
+     "12px": 4,
+     "8px": 17,
+     "999px": 10,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 380,
+      "h": 756
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 338,
+      "h": 77
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1125,
+      "h": 810
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 380,
+      "h": 40
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 1156,
+    "docW": 1085,
+    "hOverflow": false,
+    "contrastFailCount": 13,
+    "smallTargetCount": 8,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 10
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 1033,
+      "h": 630
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 999,
+      "h": 74
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1025.6
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1411,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 15,
+    "smallTargetCount": 8,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 12
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 773,
+      "h": 915.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 731,
+      "h": 163.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1310.8
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 1464,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 15,
+    "smallTargetCount": 8,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 15,
+     "11px": 1,
+     "15px": 2,
+     "13.5px": 5,
+     "11.5px": 12
+    },
+    "radiusBag": {
+     "8px": 10,
+     "999px": 10,
+     "12px": 3,
+     "50%": 1,
+     "8px 0px 0px 8px": 1,
+     "0px 8px 8px 0px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 3,
+      "w": 513,
+      "h": 915.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 2,
+      "w": 471,
+      "h": 163.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1363.6
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-note",
+    "txt": "审查口径：以《劳动合同法》及配套司法解释为基准， 扫",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(247, 248, 250)",
+    "ratio": 3.18,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-upload__hint",
+    "txt": "支持 docx / pdf / txt，≤10MB，",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(250, 252, 255)",
+    "ratio": 3.29,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "逐条扫描风险条款，守护签约安全",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "逐条扫描风险条款，生成风险体检报告",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span",
+    "txt": "或手动填写以下信息",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-subtitle",
+    "txt": "合同基本信息",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-subtitle",
+    "txt": "当事人与签订时间",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-subtitle",
+    "txt": "合同正文",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-form-hint",
+    "txt": "保留完整条款文本，识别效果更佳",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-form-hint",
+    "txt": "已输入 0 字",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-form-actions__tip",
+    "txt": "内容仅用于本次风险分析",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "提交后在这里生成风险体检报告",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-upload__link",
+    "txt": "点击选择",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(250, 252, 255)",
+    "ratio": 3.47,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "合同智能审查",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tabs__tab.zf-tabs__tab--active",
+    "txt": "上传审查",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--primary",
+    "txt": "开始审查",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 117.5,
+    "h": 30.8,
+    "txt": "填充示例合同"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 79.5,
+    "h": 25.3,
+    "txt": "试用期超标"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 79.5,
+    "h": 25.3,
+    "txt": "违约金过高"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 102.5,
+    "h": 25.3,
+    "txt": "竞业限制无补偿"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 68,
+    "h": 25.3,
+    "txt": "社保未缴"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 79.5,
+    "h": 25.3,
+    "txt": "加班无补偿"
+   },
+   {
+    "sel": "span.zf-tag",
+    "w": 91,
+    "h": 25.3,
+    "txt": "单方解除条件"
+   }
+  ]
+ },
+ "doc": {
+  "file": "pages/doc-drafting.html",
+  "desc": "法律文书起草（左模板右页签）",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 900,
+    "docW": 1440,
+    "hOverflow": false,
+    "contrastFailCount": 23,
+    "smallTargetCount": 2,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 8,
+     "11px": 1,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "14.5px": 3,
+     "14px": 1
+    },
+    "radiusBag": {
+     "12px": 6,
+     "8px": 10,
+     "999px": 7
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 380,
+      "h": 612.9
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 338,
+      "h": 478.2
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 612.9
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 746,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 746,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 1149,
+    "docW": 1085,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 2,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 1033,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 991,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 1033,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1143,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 2,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 773,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 731,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 773,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 1143,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 2,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 4,
+     "12.5px": 14,
+     "15px": 2,
+     "11.5px": 6,
+     "14.5px": 3,
+     "14px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 3,
+     "12px": 5,
+     "999px": 7
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 513,
+      "h": 554.8
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 471,
+      "h": 420
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1039
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 513,
+      "h": 470.3
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     },
+     {
+      "cls": ".zf-empty",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "选模板、填信息，规范文书一键生成",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "选一个模板，填写关键信息，一键生成规范文书",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__cat",
+    "txt": "劳动维权",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-tpl__desc",
+    "txt": "向劳动人事争议仲裁委员会申请仲裁时提交的正式文书。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-tpl__meta",
+    "txt": "需填写 6 项",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__cat",
+    "txt": "劳动维权",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-tpl__desc",
+    "txt": "劳动者单方通知用人单位解除劳动合同的书面通知。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-tpl__meta",
+    "txt": "需填写 4 项",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__cat",
+    "txt": "工资福利",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-tpl__desc",
+    "txt": "就未足额支付的加班工资向用人单位提出书面主张。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-tpl__meta",
+    "txt": "需填写 3 项",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "先从左侧选择一个文书模板",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div",
+    "txt": "还没有选择模板",
+    "fs": 14,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "法律文书起草",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tag.zf-tag--active",
+    "txt": "全部",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__action",
+    "txt": "使用此模板",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__action",
+    "txt": "使用此模板",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-tpl__action",
+    "txt": "使用此模板",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(66, 133, 244)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tabs__tab.zf-tabs__tab--active",
+    "txt": "填写信息",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--primary",
+    "txt": "生成文书",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 92.5,
+    "h": 30.8,
+    "txt": "重选模板"
+   }
+  ]
+ },
+ "kn": {
+  "file": "pages/knowledge.html",
+  "desc": "法律知识库（筛选+网格）",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 900,
+    "docW": 1440,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "15px": 4,
+     "11.5px": 7,
+     "11px": 1,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "14.5px": 5
+    },
+    "radiusBag": {
+     "12px": 8,
+     "8px": 11,
+     "999px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 1140,
+      "h": 504.6
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 1098,
+      "h": 365.6
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 800,
+    "docW": 1100,
+    "hOverflow": false,
+    "contrastFailCount": 15,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 1048,
+      "h": 504.6
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 1006,
+      "h": 365.6
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1016,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 15,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 773,
+      "h": 773.5
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 731,
+      "h": 618.7
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 1016,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 15,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 3,
+     "13px": 1,
+     "12.5px": 7,
+     "15px": 2,
+     "14.5px": 5,
+     "11.5px": 5,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 4,
+     "12px": 7,
+     "999px": 1
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 2,
+      "w": 513,
+      "h": 773.5
+     },
+     {
+      "cls": ".zf-art-grid",
+      "count": 1,
+      "w": 471,
+      "h": 618.7
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "读懂劳动法，少走弯路",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "体系化了解劳动法常识，支持分类筛选与全文检索",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-art__summary",
+    "txt": "关键看公司是否能证明「不符合录用条件」。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-art__meta",
+    "txt": "2018 阅读 · 12 赞",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-art__summary",
+    "txt": "一般一年时效，拖欠工资在劳动关系存续期间不受限制。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-art__meta",
+    "txt": "1197 阅读 · 8 赞",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-art__summary",
+    "txt": "应按实际出勤结算，拖欠即违法。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-art__meta",
+    "txt": "1435 阅读 · 5 赞",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-art__summary",
+    "txt": "从用工满一个月的次日起算，最多可主张11个月。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-art__meta",
+    "txt": "1893 阅读 · 15 赞",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-art__summary",
+    "txt": "未支付补偿金满三个月的，劳动者可以请求解除。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-art__meta",
+    "txt": "876 阅读 · 3 赞",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "随机抽 10 题，检验你的劳动法掌握程度",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "普法知识广场",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tag.zf-tag--active",
+    "txt": "全部",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--primary",
+    "txt": "开始自测",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   }
+  ]
+ },
+ "qa": {
+  "file": "pages/qa.html",
+  "desc": "法律问答",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 900,
+    "docW": 1440,
+    "hOverflow": false,
+    "contrastFailCount": 26,
+    "smallTargetCount": 15,
+    "fsBag": {
+     "15px": 2,
+     "11.5px": 20,
+     "11px": 1,
+     "13.5px": 23,
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1
+    },
+    "radiusBag": {
+     "12px": 3,
+     "8px": 14,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 800,
+    "docW": 1100,
+    "hOverflow": false,
+    "contrastFailCount": 22,
+    "smallTargetCount": 15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1000,
+    "docW": 820,
+    "hOverflow": false,
+    "contrastFailCount": 22,
+    "smallTargetCount": 15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 25,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 900,
+    "docW": 560,
+    "hOverflow": false,
+    "contrastFailCount": 22,
+    "smallTargetCount": 15,
+    "fsBag": {
+     "17px": 1,
+     "12px": 1,
+     "13px": 5,
+     "12.5px": 24,
+     "14px": 1,
+     "11.5px": 18,
+     "13.5px": 16
+    },
+    "radiusBag": {
+     "8px": 7,
+     "12px": 2,
+     "50%": 11,
+     "12px 4px 12px 12px": 4,
+     "4px 12px 12px": 4,
+     "0px 8px 8px 0px": 5,
+     "999px": 12
+    },
+    "blocks": [
+     {
+      "cls": ".zf-law",
+      "count": 5,
+      "w": 297.8,
+      "h": 157.1
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__meta",
+    "txt": "9天前 · 休息休假",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(250, 251, 253)",
+    "ratio": 3.26,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__meta",
+    "txt": "6天前 · 劳动合同",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(250, 251, 253)",
+    "ratio": 3.26,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__meta",
+    "txt": "3天前 · 工资福利",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(250, 251, 253)",
+    "ratio": 3.26,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__meta",
+    "txt": "1天前 · 劳动合同",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(250, 251, 253)",
+    "ratio": 3.26,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "像聊天一样提问，系统给出结论与法条依据",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-chat__sub",
+    "txt": "基于法规库回答，并附上引用法条原文",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-ans__note",
+    "txt": "提示：需先经职工本人同意不安排休假。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "txt": "复制",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "txt": "删除",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "txt": "复制",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "txt": "删除",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-ans__note",
+    "txt": "提示：约定不明时，通常以正常出勤月工资为准。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "txt": "复制",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "txt": "删除",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-ans__note",
+    "txt": "提示：劳动仲裁时效为一年，自知道权利被侵害之日起算。",
+    "fs": 12.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "txt": "复制",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "txt": "删除",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-chat__tip",
+    "txt": "回答由系统依据法规库自动生成，仅供参考，不构成正式法",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "智能法律问答",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__bubble",
+    "txt": "年假没休完可以折现吗？",
+    "fs": 13.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__bubble",
+    "txt": "试用期最长可以约定多久？",
+    "fs": 13.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__bubble",
+    "txt": "加班费的计算基数如何确定？",
+    "fs": 13.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-msg__bubble",
+    "txt": "昨天正常上班今天就让滚蛋，能要赔偿吗？",
+    "fs": 13.5,
+    "fw": "400",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 92.5,
+    "h": 30.8,
+    "txt": "历史对话 0"
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 80,
+    "h": 30.8,
+    "txt": "新对话"
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "复制"
+   },
+   {
+    "sel": "button.zf-msg__act.js-like",
+    "w": 45.7,
+    "h": 25.3,
+    "txt": "1"
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "删除"
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "复制"
+   },
+   {
+    "sel": "button.zf-msg__act.js-like",
+    "w": 45.7,
+    "h": 25.3,
+    "txt": "2"
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "删除"
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "复制"
+   },
+   {
+    "sel": "button.zf-msg__act.js-like",
+    "w": 45.7,
+    "h": 25.3,
+    "txt": "3"
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "删除"
+   },
+   {
+    "sel": "button.zf-msg__act.js-copy",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "复制"
+   },
+   {
+    "sel": "button.zf-msg__act.js-like",
+    "w": 45.7,
+    "h": 25.3,
+    "txt": "6"
+   },
+   {
+    "sel": "button.zf-msg__act.js-del",
+    "w": 62.5,
+    "h": 25.3,
+    "txt": "删除"
+   }
+  ]
+ },
+ "pf": {
+  "file": "pages/profile.html",
+  "desc": "个人中心（左概览右页签）",
+  "viewports": {
+   "desktop": {
+    "view": [
+     1440,
+     900
+    ],
+    "docH": 900,
+    "docW": 1440,
+    "hOverflow": false,
+    "contrastFailCount": 23,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "15px": 3,
+     "11.5px": 3,
+     "11px": 3,
+     "13.5px": 8,
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "19px": 4
+    },
+    "radiusBag": {
+     "12px": 4,
+     "8px": 25,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 380,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 338,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 165,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1140,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 746,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 746,
+      "h": 40
+     }
+    ]
+   },
+   "laptop": {
+    "view": [
+     1100,
+     800
+    ],
+    "docH": 1150,
+    "docW": 1085,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 1033,
+      "h": 423.9
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 991,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 241.8,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 1033,
+      "h": 1039.2
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 1033,
+      "h": 601.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 1033,
+      "h": 40
+     }
+    ]
+   },
+   "tablet": {
+    "view": [
+     820,
+     1000
+    ],
+    "docH": 1430,
+    "docW": 805,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 773,
+      "h": 495.7
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 731,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 361.5,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 773,
+      "h": 1326
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 773,
+      "h": 816.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 773,
+      "h": 40
+     }
+    ]
+   },
+   "phone": {
+    "view": [
+     560,
+     900
+    ],
+    "docH": 1430,
+    "docW": 545,
+    "hOverflow": false,
+    "contrastFailCount": 19,
+    "smallTargetCount": 1,
+    "fsBag": {
+     "17px": 1,
+     "12px": 17,
+     "13px": 11,
+     "12.5px": 10,
+     "18px": 1,
+     "11.5px": 1,
+     "19px": 4,
+     "11px": 2,
+     "15px": 1,
+     "13.5px": 1
+    },
+    "radiusBag": {
+     "8px": 18,
+     "12px": 3,
+     "50%": 1,
+     "999px": 7,
+     "4px": 3
+    },
+    "blocks": [
+     {
+      "cls": ".zf-card",
+      "count": 4,
+      "w": 513,
+      "h": 495.7
+     },
+     {
+      "cls": ".zf-grid",
+      "count": 1,
+      "w": 471,
+      "h": 135.6
+     },
+     {
+      "cls": ".zf-stat",
+      "count": 4,
+      "w": 231.5,
+      "h": 63.8
+     },
+     {
+      "cls": ".zf-desk",
+      "count": 1,
+      "w": 513,
+      "h": 1326
+     },
+     {
+      "cls": ".zf-work",
+      "count": 1,
+      "w": 513,
+      "h": 816.3
+     },
+     {
+      "cls": ".zf-list",
+      "count": 1,
+      "w": 0,
+      "h": 0
+     },
+     {
+      "cls": ".zf-tabs",
+      "count": 1,
+      "w": 513,
+      "h": 40
+     }
+    ]
+   }
+  },
+  "contrastFails": [
+   {
+    "sel": "dt",
+    "txt": "账号",
+    "fs": 12,
+    "fw": "700",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(239, 241, 244)",
+    "ratio": 2.99,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "dt",
+    "txt": "邮箱",
+    "fs": 12,
+    "fw": "700",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(239, 241, 244)",
+    "ratio": 2.99,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "dt",
+    "txt": "手机号",
+    "fs": 12,
+    "fw": "700",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(239, 241, 244)",
+    "ratio": 2.99,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "dt",
+    "txt": "最近登录",
+    "fs": 12,
+    "fw": "700",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(239, 241, 244)",
+    "ratio": 2.99,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "dt",
+    "txt": "注册时间",
+    "fs": 12,
+    "fw": "700",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(239, 241, 244)",
+    "ratio": 2.99,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-sidebar__slogan",
+    "txt": "职场新人的智能法律伙伴",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__label",
+    "txt": "功能导航",
+    "fs": 11,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "div.zf-sidebar__foot",
+    "txt": "为职场新人提供基于法规库的智能法律服务课程设计 · ",
+    "fs": 11.5,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(240, 246, 255)",
+    "ratio": 3.11,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-topbar__sub",
+    "txt": "管理你的资料与收藏",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc.zf-profile__uname",
+    "txt": "用户名： ｜ 注册于",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span",
+    "txt": "lisi",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span",
+    "txt": "2026-01-05",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "我的问答",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "审查合同",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "生成文书",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-stat__label",
+    "txt": "我的收藏",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-recent__meta",
+    "txt": "问答 · 劳动合同 · 2026-09-14",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-recent__meta",
+    "txt": "合同 · · 2026-09-15",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "span.zf-recent__meta",
+    "txt": "文书 · 劳动仲裁申请书 · 2026-09-13",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "p.zf-card__desc",
+    "txt": "修改你的基本资料",
+    "fs": 12,
+    "fw": "400",
+    "color": "rgb(127, 141, 159)",
+    "bg": "rgb(255, 255, 255)",
+    "ratio": 3.38,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "a.zf-nav.zf-nav--active",
+    "txt": "个人中心",
+    "fs": 13.5,
+    "fw": "500",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-tabs__tab.zf-tabs__tab--active",
+    "txt": "资料设置",
+    "fs": 12.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   },
+   {
+    "sel": "button.zf-btn.zf-btn--primary",
+    "txt": "保存资料",
+    "fs": 13.5,
+    "fw": "600",
+    "color": "rgb(255, 255, 255)",
+    "bg": "rgb(66, 133, 244)",
+    "ratio": 3.56,
+    "need": 4.5,
+    "pass": false,
+    "large": false
+   }
+  ],
+  "smallTargets": [
+   {
+    "sel": "button.zf-btn.zf-btn--ghost.zf-btn--sm",
+    "w": 67.5,
+    "h": 30.8,
+    "txt": "退出"
+   }
+  ]
+ }
+}

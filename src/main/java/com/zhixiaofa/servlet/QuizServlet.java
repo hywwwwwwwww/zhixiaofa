@@ -67,7 +67,9 @@ public class QuizServlet extends BaseServlet {
             requireAdmin(req);
             return Result.success(service.quizPage(RequestUtil.getString(req, "keyword"),
                     RequestUtil.getString(req, "category"),
-                    RequestUtil.getPageNum(req), RequestUtil.getPageSize(req)));
+                    RequestUtil.getPageNum(req), RequestUtil.getPageSize(req),
+                    // 列头排序：仅作为白名单查表的 key，具体校验在 SqlBuilder.orderBy
+                    RequestUtil.getString(req, "sortName"), RequestUtil.getString(req, "sortOrder")));
         }
         if ("stats".equals(segs[0]) && "GET".equals(method)) {
             requireAdmin(req);

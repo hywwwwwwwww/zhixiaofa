@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
+  <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+  <title>数据看板 - 职小法管理后台</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922k">
+</head>
+<body class="zf-admin-page">
+
+<div class="zf-app">
+  <main class="zf-main">
+    <header class="zf-topbar"></header>
+
+    <section class="zf-content">
+      <!-- 指标卡：来自 overview -->
+      <div class="zf-grid zf-grid--4" id="metric-grid" style="margin-bottom:18px">
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-people"></i></div>
+          <div><p class="zf-stat__label">用户数</p><p class="zf-stat__value" data-stat="userCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-chat-square-text"></i></div>
+          <div><p class="zf-stat__label">问答数</p><p class="zf-stat__value" data-stat="qaCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-file-earmark-check"></i></div>
+          <div><p class="zf-stat__label">合同数</p><p class="zf-stat__value" data-stat="contractCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-bank"></i></div>
+          <div><p class="zf-stat__label">推演数</p><p class="zf-stat__value" data-stat="courtCaseCount">-</p></div></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
+          <div><p class="zf-stat__label">文书数</p><p class="zf-stat__value" data-stat="docCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-collection"></i></div>
+          <div><p class="zf-stat__label">模板数</p><p class="zf-stat__value" data-stat="templateCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-journal-text"></i></div>
+          <div><p class="zf-stat__label">文章数</p><p class="zf-stat__value" data-stat="articleCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-book"></i></div>
+          <div><p class="zf-stat__label">法条数</p><p class="zf-stat__value" data-stat="lawCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-patch-question"></i></div>
+          <div><p class="zf-stat__label">答题数</p><p class="zf-stat__value" data-stat="quizCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--danger"><div class="zf-stat__icon"><i class="bi bi-exclamation-triangle"></i></div>
+          <div><p class="zf-stat__label">风险点数</p><p class="zf-stat__value" data-stat="riskCount">-</p></div></div>
+        <div class="zf-card zf-stat zf-stat--ops"><div class="zf-stat__icon"><i class="bi bi-activity"></i></div>
+          <div><p class="zf-stat__label">日志数</p><p class="zf-stat__value" data-stat="logCount">-</p></div></div>
+      </div>
+
+      <!-- 趋势折线（含周期筛选） -->
+      <div class="zf-card zf-card--hero" style="margin-bottom:18px">
+        <div class="zf-card__head">
+          <div><h3 class="zf-card__title">业务趋势</h3>
+            <p class="zf-card__desc">业务量取自左轴，请求量取自右轴（虚线）</p></div>
+          <div class="zf-filter-bar">
+            <div class="zf-filter-bar__item">
+              <label class="zf-filter-bar__label" for="trend-days">统计周期</label>
+              <select id="trend-days" class="form-select form-select-sm">
+                <option value="7">近 7 天</option>
+                <option value="14" selected>近 14 天</option>
+                <option value="30">近 30 天</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="trend-chart" class="zf-chart"></div>
+      </div>
+
+      <!-- 三个饼图 -->
+      <div class="zf-grid zf-grid--3" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">问答分类分布</h3></div>
+          <div id="pie-qa" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">合同风险等级分布</h3></div>
+          <div id="pie-risk" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">案件类型分布</h3></div>
+          <div id="pie-case" class="zf-chart zf-chart--sm"></div></div>
+      </div>
+
+      <!-- 两个柱状图 -->
+      <div class="zf-grid zf-grid--2" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">文章阅读量 Top10</h3></div>
+          <div id="bar-articles" class="zf-chart zf-chart--sm"></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">被引用法条 Top10</h3></div>
+          <div id="bar-laws" class="zf-chart zf-chart--sm"></div></div>
+      </div>
+
+      <!-- 排行榜列表 -->
+      <div class="zf-grid zf-grid--3" style="margin-bottom:18px">
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">热门问题</h3></div>
+          <div id="rank-hot" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">高频风险条款</h3></div>
+          <div id="rank-risk" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+        <div class="zf-card"><div class="zf-card__head"><h3 class="zf-card__title">模板使用排行</h3></div>
+          <div id="rank-template" class="zf-rank-list"><div class="zf-loading">加载中…</div></div></div>
+      </div>
+
+      <!-- 连接池 + 慢接口 -->
+      <div class="zf-grid zf-grid--2">
+        <div class="zf-card">
+          <div class="zf-card__head"><div><h3 class="zf-card__title">自研连接池监控</h3>
+            <p class="zf-card__desc">数据源连接池实时状态</p></div></div>
+          <div id="pool-card"><div class="zf-loading">加载中…</div></div>
+        </div>
+        <div class="zf-card">
+          <div class="zf-card__head"><h3 class="zf-card__title">慢接口 Top（平均耗时 ms）</h3></div>
+          <div id="bar-slow" class="zf-chart zf-chart--sm"></div>
+        </div>
+      </div>
+
+      <!-- 管理快捷入口：仅指向管理模块 -->
+      <div class="zf-card zf-card--plain" style="margin-bottom:18px">
+        <div class="zf-card__head"><div><h3 class="zf-card__title">管理快捷入口</h3>
+          <p class="zf-card__desc">快速跳转至各后台管理模块</p></div></div>
+        <div class="zf-grid zf-grid--4" id="quick-links">
+          <a class="zf-card zf-quick" href="users.html"><div class="zf-quick__icon"><i class="bi bi-people"></i></div>
+            <div><p class="zf-quick__title">用户管理</p><p class="zf-quick__desc">账号与角色</p></div></a>
+          <a class="zf-card zf-quick" href="qa.html"><div class="zf-quick__icon"><i class="bi bi-chat-square-text"></i></div>
+            <div><p class="zf-quick__title">问答管理</p><p class="zf-quick__desc">咨询与回答维护</p></div></a>
+          <a class="zf-card zf-quick" href="contracts.html"><div class="zf-quick__icon"><i class="bi bi-file-earmark-check"></i></div>
+            <div><p class="zf-quick__title">合同管理</p><p class="zf-quick__desc">审查与风险</p></div></a>
+          <a class="zf-card zf-quick" href="laws.html"><div class="zf-quick__icon"><i class="bi bi-book"></i></div>
+            <div><p class="zf-quick__title">法律管理</p><p class="zf-quick__desc">法律法规库</p></div></a>
+          <a class="zf-card zf-quick" href="knowledge.html"><div class="zf-quick__icon"><i class="bi bi-journal-text"></i></div>
+            <div><p class="zf-quick__title">文章管理</p><p class="zf-quick__desc">普法文章维护</p></div></a>
+          <a class="zf-card zf-quick" href="doc-templates.html"><div class="zf-quick__icon"><i class="bi bi-collection"></i></div>
+            <div><p class="zf-quick__title">模板管理</p><p class="zf-quick__desc">文书模板</p></div></a>
+          <a class="zf-card zf-quick" href="quiz.html"><div class="zf-quick__icon"><i class="bi bi-patch-question"></i></div>
+            <div><p class="zf-quick__title">题库管理</p><p class="zf-quick__desc">自测题维护</p></div></a>
+          <a class="zf-card zf-quick" href="logs.html"><div class="zf-quick__icon"><i class="bi bi-activity"></i></div>
+            <div><p class="zf-quick__title">日志监控</p><p class="zf-quick__desc">操作与接口</p></div></a>
+        </div>
+      </div>
+
+      <div class="zf-admin-version">职小法 · 管理后台 v2.0</div>
+    </section>
+  </main>
+</div>
+
+<script src="../vendor/jquery/jquery.min.js"></script>
+<script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="../vendor/echarts/echarts.min.js"></script>
+<script src="../js/common.js?v=20260922k"></script>
+<script src="admin-common.js?v=20260922k"></script>
+<script>
+/**
+ * @file index.html —— 后台数据看板
+ * @description 拉取运营总览、趋势、分布、排行、连接池与慢接口数据，
+ *              用 ECharts 渲染折线/饼图/柱状图，并在窗口变化时自适应 resize。
+ *              本页使用管理端共享外壳 ZF.initAdminPage 渲染导航与顶栏。
+ */
+(function ($, ZF) {
+  'use strict';
+
+  /* ---------------- 图表视觉规范 ----------------
+   * ECharts 的配置里**不能写 CSS 变量**，所以这里的色值是与 app.css 令牌等值的字面量：
+   *   #4285f4 = --zf-primary   #ef4444 = --zf-danger   #ebebeb = --zf-border
+   *   #0e1115 = --zf-ink        #5f6b7a = --zf-ink-3
+   * 配色策略：主色 + 同族浅阶 + 类比色；**红只留给「慢 / 风险」语义**，不在折线里用。
+   * ---------------------------------------------------------------- */
+  var C_PRIMARY = '#4285f4';
+  var C_DANGER = '#ef4444';
+  var C_INK = '#0e1115';
+  var C_INK3 = '#5f6b7a';
+  var C_BORDER = '#ebebeb';
+  /** 折线多序列：主蓝 → 青 → 绿 → 紫 → 琥珀（业务量），末位中性灰留给「请求量」。
+   *  请求量是技术指标、且走右轴，用中性灰 + 虚线，不与 5 条业务线抢视觉。 */
+  var LINE_COLORS = ['#4285f4', '#00bcd4', '#34a853', '#9334e6', '#fbbc05', '#94a3b8'];
+  /** 饼图定性分类：主色 + 同族浅阶 + 类比色（类别无名次，故用定性调色板） */
+  var PIE_COLORS = ['#4285f4', '#5b9bff', '#00bcd4', '#34a853', '#9334e6', '#607d8b', '#fbbc05', '#ff7043'];
+  /** 等宽数字字体（与 --zf-font-mono 等值），保证数值列对齐、不抖 */
+  var MONO = 'Consolas, "Cascadia Mono", monospace';
+
+  /** 统一的 tooltip 外观（白底 + 浅描边 + 圆角 + 轻阴影） */
+  function tip(extra) {
+    var base = {
+      confine: true,
+      backgroundColor: '#fff',
+      borderColor: C_BORDER,
+      borderWidth: 1,
+      padding: [8, 12],
+      textStyle: { color: C_INK, fontSize: 12, fontFamily: MONO },
+      extraCssText: 'box-shadow:0 4px 14px rgba(14,17,21,.08);border-radius:8px;'
+    };
+    var k;
+    for (k in extra) {
+      if (Object.prototype.hasOwnProperty.call(extra, k)) { base[k] = extra[k]; }
+    }
+    return base;
+  }
+
+  /** 数值轴：去掉轴线与刻度，只留浅色分隔线 */
+  function valueAxis() {
+    return {
+      type: 'value',
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { fontSize: 12, color: C_INK3, fontFamily: MONO },
+      splitLine: { lineStyle: { color: C_BORDER } }
+    };
+  }
+
+  /** 类目轴（横向柱图的 y 轴）：去掉轴线/刻度/分隔线，标签用等宽数字 */
+  function catAxis(cats) {
+    return {
+      type: 'category', data: cats,
+      axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+      axisLabel: { fontSize: 12, color: C_INK3, fontFamily: MONO }
+    };
+  }
+
+  /** 趋势图实例（模块级，便于切换周期时复用并重绘） */
+  var trendChart = null;
+
+  /**
+   * 本地文本截断，避免依赖未声明的工具方法。
+   * @param {*} s 原始文本
+   * @param {number} n 最大长度
+   * @returns {string} 截断后的文本
+   */
+  function truncate(s, n) {
+    s = String(s == null ? '' : s);
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  /** 入口：校验管理员身份并渲染管理端外壳，完成后加载各模块 */
+  ZF.initAdminPage({ active: 'dashboard', title: '数据看板', sub: '全平台运营指标与接口健康度监控' })
+    .then(function () { loadAll(); })
+    .catch(function () { /* initAdminPage 内部已统一提示 */ });
+
+  /** 加载全部看板模块 */
+  function loadAll() {
+    loadOverview();
+    loadTrend(parseInt($('#trend-days').val(), 10) || 14);
+    loadDistributions();
+    loadRankings();
+    loadPool();
+    loadSlowApis();
+    bindTrendFilter();
+  }
+
+  /** 绑定趋势周期筛选下拉，切换后重新拉取 trend 并重绘 */
+  function bindTrendFilter() {
+    $('#trend-days').off('change.trend').on('change.trend', function () {
+      loadTrend(parseInt($(this).val(), 10) || 14);
+    });
+  }
+
+  /** 填充指标卡 */
+  function loadOverview() {
+    ZF.get('/admin/stats/overview').then(function (d) {
+      d = d || {};
+      ['userCount', 'qaCount', 'contractCount', 'courtCaseCount', 'docCount', 'templateCount',
+        'articleCount', 'lawCount', 'quizCount', 'riskCount', 'logCount']
+        .forEach(function (k) {
+          var $el = $('[data-stat=' + k + ']');
+          if ($el.length) { $el.text(ZF.money(d[k] || 0)); }
+        });
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染趋势折线图。
+   * 首次加载时初始化并登记实例；切换周期时复用实例并通过 setOption 重绘，
+   * 避免容器上重复 init 导致布局错乱；初始化后补一次 resize。
+   * @param {number} days 统计天数（7/14/30）
+   */
+  function loadTrend(days) {
+    days = days || 14;
+    var $box = $('#trend-chart');
+    if (!trendChart) { ZF.renderLoading($box, '加载趋势…'); }
+    ZF.get('/admin/stats/trend', { days: days }).then(function (res) {
+      res = res || {};
+      var series = res.series || {};
+      /* ★ 数据对齐（本轮修的真实缺陷）：
+       *   接口里各序列的日期点并不一致 —— 实测 labels/users/qa/... 只有 2 天，
+       *   而 requests 有 7 天。原实现各按自身数组顺序取值，于是
+       *   ① x 轴只有最短序列那么长（2 个点，折线几乎无意义）
+       *   ② 同一天的数值互相错位
+       *   改为取所有序列日期的**并集**并排序，每条序列按日期查表补齐（缺失留 null）。 */
+      var dateSeen = {}, allDates = [], mapByKey = {};
+      Object.keys(series).forEach(function (k) {
+        var arr = series[k];
+        if (k === 'labels' || !arr || !arr.length) { return; }
+        var m = {};
+        arr.forEach(function (p) {
+          if (!p || !p.label) { return; }
+          m[p.label] = p.value;
+          if (!dateSeen[p.label]) { dateSeen[p.label] = 1; allDates.push(p.label); }
+        });
+        mapByKey[k] = m;
+      });
+      allDates.sort();
+      var x = allDates;
+      if (!trendChart) {
+        if (!x.length) { ZF.renderEmpty($box, '暂无趋势数据'); return; }
+        trendChart = ZF.registerChart(echarts.init($box[0]));
+      } else {
+        // 已存在实例：用 title.subtext 承载空态，避免重写容器 DOM
+        if (!x.length) {
+          trendChart.setOption({
+            title: { show: true, text: '近 ' + days + ' 天业务趋势', left: 'center', top: 'center',
+              subtext: '暂无趋势数据', textStyle: { color: '#999', fontSize: 14 },
+              subtextStyle: { color: '#bbb' } },
+            xAxis: { show: false }, yAxis: { show: false }, series: []
+          }, true);
+          return;
+        }
+      }
+      /* ★ 双 Y 轴（本轮修的真实缺陷）：
+       *   实测「请求量」1~1352（千级），而用户/问答/合同/文书/案件都是 1~3（个位数），
+       *   量级差约 3 个数量级。同一根 Y 轴下 4~5 条业务线会全部压在 y=0 上，完全看不出变化。
+       *   ⇒ 左轴承载业务量（个位数，minInterval:1 保证刻度取整），右轴承载请求量。
+       *   注意接口还返回了 cases（案件）序列，原 defs 漏了它，一并补上。 */
+      var defs = [
+        { name: '用户', key: 'users' }, { name: '问答', key: 'qa' },
+        { name: '合同', key: 'contracts' }, { name: '文书', key: 'docs' },
+        { name: '案件', key: 'cases' },
+        { name: '请求量（右轴）', key: 'requests', axis: 1 }
+      ];
+      var dataSeries = defs.map(function (def, i) {
+        var m = mapByKey[def.key] || {};
+        var isRight = (def.axis === 1);
+        // 用**本序列的非空点数**（而不是 x 轴总点数）决定是否画数据点：
+        // 业务量在演示库里只有 2 天有数据，其余日期补 null；若按 x 轴点数（十几）判断，
+        // 这 2 个孤立值既无相邻点连线、又不显示 symbol ⇒ 整条线彻底看不见。
+        var nonNull = 0;
+        for (var q = 0; q < x.length; q++) {
+          if (Object.prototype.hasOwnProperty.call(m, x[q])) { nonNull++; }
+        }
+        return {
+          name: def.name, type: 'line', smooth: true,
+          showSymbol: nonNull <= 20,
+          symbol: 'circle', symbolSize: 6,
+          lineStyle: { width: 2, type: isRight ? 'dashed' : 'solid' },
+          yAxisIndex: isRight ? 1 : 0,
+          emphasis: { focus: 'series' },
+          itemStyle: { color: LINE_COLORS[i] },
+          connectNulls: false,
+          data: x.map(function (d) {
+            return Object.prototype.hasOwnProperty.call(m, d) ? m[d] : null;
+          })
+        };
+      });
+      trendChart.setOption({
+        title: { show: false },
+        color: LINE_COLORS,
+        tooltip: tip({ trigger: 'axis' }),
+        legend: { data: defs.map(function (d) { return d.name; }), bottom: 4,
+          itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 12, color: C_INK3 } },
+        grid: { left: 48, right: 60, top: 18, bottom: 52 },
+        xAxis: { type: 'category', data: x, boundaryGap: false,
+          axisLine: { lineStyle: { color: C_BORDER } }, axisTick: { show: false },
+          axisLabel: { fontSize: 12, color: C_INK3 } },
+        yAxis: [
+          // 左轴：业务量（个位数）
+          (function () { var a = valueAxis(); a.minInterval = 1; return a; })(),
+          // 右轴：请求量（千级）。不画分隔线，否则与左轴的分隔线交错成一堆横线。
+          (function () {
+            var a = valueAxis();
+            a.splitLine = { show: false };
+            a.axisLabel.formatter = function (v) { return ZF.money(v); };
+            return a;
+          })()
+        ],
+        series: dataSeries
+      }, true);
+      trendChart.resize();
+    }).catch(function () {
+      if (!trendChart) { ZF.renderEmpty($box, '趋势加载失败'); }
+    });
+  }
+
+  /** 渲染分布饼图（qa / 合同风险 / 案件类型） */
+  function loadDistributions() {
+    ZF.get('/admin/stats/distributions').then(function (res) {
+      res = res || {};
+      renderPie('#pie-qa', res.qaCategory, '暂无问答分类数据');
+      renderPie('#pie-risk', res.contractRisk, '暂无风险等级数据');
+      renderPie('#pie-case', res.caseType, '暂无案件类型数据');
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染单个饼图（容器可见后再 init）。
+   * @param {string} selector 容器选择器
+   * @param {Array} arr [{label,value}]
+   * @param {string} emptyText 空态文案
+   */
+  function renderPie(selector, arr, emptyText) {
+    var $box = $(selector);
+    arr = arr || [];
+    if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
+    var data = arr.map(function (d) { return { name: d.label, value: d.value }; });
+    var chart = ZF.registerChart(echarts.init($box[0]));
+    chart.setOption({
+      color: PIE_COLORS,
+      tooltip: tip({ trigger: 'item', formatter: '{b}：{c}（{d}%）' }),
+      legend: { type: 'scroll', orient: 'horizontal', bottom: 0,
+        itemWidth: 10, itemHeight: 10, itemGap: 10,
+        textStyle: { fontSize: 11, color: C_INK3 } },
+      series: [{
+        type: 'pie', radius: ['40%', '66%'], center: ['50%', '46%'],
+        avoidLabelOverlap: true,
+        label: { fontSize: 11, color: C_INK3, fontFamily: MONO, formatter: '{d}%' },
+        labelLine: { length: 8, length2: 6 },
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        data: data
+      }]
+    });
+    chart.resize();
+  }
+
+  /** 渲染排行柱状图与排行榜列表 */
+  function loadRankings() {
+    ZF.get('/admin/stats/rankings').then(function (res) {
+      res = res || {};
+      renderBar('#bar-articles', res.articleViews, '暂无文章阅读数据');
+      renderBar('#bar-laws', res.topLaws, '暂无法条引用数据');
+      renderRankList('#rank-hot', res.hotQuestions);
+      renderRankList('#rank-risk', res.riskClauses);
+      renderRankList('#rank-template', res.templateUsage);
+    }).catch(function () { /* 统一提示 */ });
+  }
+
+  /**
+   * 渲染横向柱状图（TopN）。
+   * @param {string} selector 容器
+   * @param {Array} arr [{label,value}]
+   * @param {string} emptyText 空态文案
+   */
+  function renderBar(selector, arr, emptyText) {
+    var $box = $(selector);
+    arr = (arr || []).slice(0, 10);
+    if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
+    // 横向柱状：y 轴为类目（倒序使最大值在最上）
+    var cats = arr.map(function (d) { return truncate(d.label, 12); }).reverse();
+    var vals = arr.map(function (d) { return d.value; }).reverse();
+    var chart = ZF.registerChart(echarts.init($box[0]));
+    chart.setOption({
+      color: [C_PRIMARY],
+      tooltip: tip({ trigger: 'axis', axisPointer: { type: 'shadow' } }),
+      grid: { left: 8, right: 36, top: 10, bottom: 10, containLabel: true },
+      xAxis: valueAxis(),
+      yAxis: catAxis(cats),
+      series: [{ type: 'bar', data: vals, barWidth: '56%',
+        itemStyle: { color: C_PRIMARY, borderRadius: [0, 4, 4, 0] },
+        label: { show: true, position: 'right', fontSize: 11, color: C_INK3,
+          fontFamily: MONO, formatter: '{c}' } }]
+    });
+    chart.resize();
+  }
+
+  /**
+   * 渲染排行榜列表（带名次与计数，文本经 ZF.escape 转义）。
+   * @param {string} selector 容器
+   * @param {Array} arr [{label,value}]
+   */
+  function renderRankList(selector, arr) {
+    var $box = $(selector);
+    arr = arr || [];
+    if (!arr.length) { ZF.renderEmpty($box, '暂无数据'); return; }
+    var html = ['<ol class="zf-rank">'];
+    arr.slice(0, 8).forEach(function (d, i) {
+      html.push('<li class="zf-rank__item">');
+      html.push('<span class="zf-rank__no zf-rank__no--' + (i < 3 ? 'top' : 'normal') + '">' + (i + 1) + '</span>');
+      html.push('<span class="zf-rank__label">' + ZF.escape(d.label) + '</span>');
+      html.push('<span class="zf-rank__value">' + ZF.escape(String(d.value)) + '</span>');
+      html.push('</li>');
+    });
+    html.push('</ol>');
+    $box.html(html.join(''));
+  }
+
+  /** 渲染连接池监控卡 */
+  function loadPool() {
+    var $box = $('#pool-card');
+    ZF.get('/admin/stats/pool').then(function (d) {
+      if (!d) { ZF.renderEmpty($box, '暂无数据'); return; }
+      var items = [
+        { label: '最小空闲', value: d.minIdle },
+        { label: '最大连接', value: d.maxTotal },
+        { label: '已创建', value: d.created },
+        { label: '空闲', value: d.idle },
+        { label: '借出', value: d.borrowed },
+        { label: '默认页大小', value: d.pageDefaultSize },
+        { label: '最大页大小', value: d.pageMaxSize }
+      ];
+      var html = ['<div class="zf-pool">'];
+      items.forEach(function (it) {
+        html.push('<div class="zf-pool__item"><p class="zf-pool__label">' + ZF.escape(it.label) +
+          '</p><p class="zf-pool__value">' + ZF.escape(String(it.value)) + '</p></div>');
+      });
+      html.push('</div>');
+      html.push('<div class="zf-pool__url"><i class="bi bi-link-45deg"></i>JDBC：' +
+        ZF.escape(d.jdbcUrl || '-') + '</div>');
+      $box.html(html.join(''));
+    }).catch(function () { ZF.renderEmpty($box, '连接池加载失败'); });
+  }
+
+  /** 渲染慢接口柱状图 */
+  function loadSlowApis() {
+    var $box = $('#bar-slow');
+    ZF.renderLoading($box, '加载…');
+    ZF.get('/admin/stats/slow-apis', { limit: 8 }).then(function (arr) {
+      arr = arr || [];
+      if (!arr.length) { ZF.renderEmpty($box, '暂无慢接口数据'); return; }
+      var cats = arr.map(function (d) { return truncate(d.label, 18); }).reverse();
+      var vals = arr.map(function (d) { return d.value; }).reverse();
+      var chart = ZF.registerChart(echarts.init($box[0]));
+      chart.setOption({
+        color: [C_DANGER],
+        tooltip: tip({ trigger: 'axis', axisPointer: { type: 'shadow' },
+          valueFormatter: function (v) { return v + ' ms'; } }),
+        grid: { left: 8, right: 44, top: 10, bottom: 10, containLabel: true },
+        xAxis: (function () { var a = valueAxis(); a.axisLabel.formatter = '{value}ms'; return a; })(),
+        yAxis: catAxis(cats),
+        series: [{ type: 'bar', data: vals, barWidth: '56%',
+          itemStyle: { color: C_DANGER, borderRadius: [0, 4, 4, 0] },
+          label: { show: true, position: 'right', fontSize: 11, color: C_INK3,
+            fontFamily: MONO, formatter: '{c} ms' } }]
+      });
+      chart.resize();
+    }).catch(function () { ZF.renderEmpty($box, '慢接口加载失败'); });
+  }
+})(jQuery, window.ZF);
+</script>
+</body>
+</html>

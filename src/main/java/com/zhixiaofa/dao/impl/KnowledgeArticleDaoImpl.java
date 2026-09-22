@@ -100,16 +100,34 @@ public class KnowledgeArticleDaoImpl implements KnowledgeArticleDao {
 
     /* ---------------- 业务查询 / 统计 ---------------- */
 
+    /** 文章列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "id",
+            "publishedAt", "published_at",
+            "viewCount", "view_count",
+            "likeCount", "like_count",
+            "createdAt", "created_at");
+
+    /** 默认排序：按发布时间倒序（最新在前） */
+    private static final String DEFAULT_ORDER = "published_at DESC, id DESC";
+
     @Override
     public java.util.List<KnowledgeArticle> findByCondition(String keyword, String category, Integer status, int offset, int limit) {
-        // 文章分页（分类 + 全文检索）
+        return findByCondition(keyword, category, status, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<KnowledgeArticle> findByCondition(String keyword, String category, Integer status,
+                                                            int offset, int limit, String sortName, String sortOrder) {
+        // 文章分页（分类 + 全文检索 + 可选排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andMatch("title, summary, content", keyword)
                         .andEq("category", category)
                         .andEq("status", status);
                 return JdbcExecutor.queryList(null,
                         "SELECT * FROM knowledge_article WHERE 1=1" + sb.where()
-                                + " ORDER BY published_at DESC, id DESC LIMIT ?, ?",
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER, sb.with(offset, limit));
     }
 

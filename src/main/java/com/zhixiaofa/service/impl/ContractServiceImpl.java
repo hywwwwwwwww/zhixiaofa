@@ -146,6 +146,12 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public PageResult<Contract> page(String keyword, String riskLevel, Integer status, int pageNum, int pageSize) {
+        return page(keyword, riskLevel, status, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<Contract> page(String keyword, String riskLevel, Integer status, int pageNum, int pageSize,
+                                     String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = clamp(pageSize);
         long total = contractDao.countByCondition(keyword, riskLevel, status);
@@ -153,7 +159,7 @@ public class ContractServiceImpl implements ContractService {
             return PageResult.empty(pageNum, pageSize);
         }
         return PageResult.of(contractDao.findByCondition(keyword, riskLevel, status,
-                (pageNum - 1) * pageSize, pageSize), total, pageNum, pageSize);
+                (pageNum - 1) * pageSize, pageSize, sortName, sortOrder), total, pageNum, pageSize);
     }
 
     @Override

@@ -47,9 +47,11 @@ public class LogServlet extends BaseServlet {
             return Result.success("已清理 " + removed + " 条日志", removed);
         }
         if (StringUtil.isEmpty(action) && "GET".equals(method)) {
+            // 列头排序：仅作为白名单查表的 key，具体校验在 SqlBuilder.orderBy
             return Result.success(service.page(RequestUtil.getString(req, "keyword"),
                     RequestUtil.getString(req, "method"),
-                    RequestUtil.getPageNum(req), RequestUtil.getPageSize(req)));
+                    RequestUtil.getPageNum(req), RequestUtil.getPageSize(req),
+                    RequestUtil.getString(req, "sortName"), RequestUtil.getString(req, "sortOrder")));
         }
         throw new BizException(ResultCode.METHOD_NOT_ALLOWED, "不支持的请求方法: " + method + " /" + action);
     }

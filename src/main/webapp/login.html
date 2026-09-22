@@ -6,7 +6,7 @@
   <title>登录 / 注册 - 职小法</title>
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -134,7 +134,7 @@
 
 <script src="vendor/jquery/jquery.min.js"></script>
 <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="js/common.js"></script>
+<script src="js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file 登录 / 注册页交互
@@ -168,9 +168,10 @@
     ZF.post('/auth/login', {
       username: $.trim($form.find('[name=username]').val()),
       password: $form.find('[name=password]').val()
-    }).then(function () {
+    }).then(function (user) {
       ZF.toast('登录成功', 'success');
-      setTimeout(function () { ZF.redirectLogin(); }, 500);
+      // 管理员进后台管理，普通用户进前台首页（见 ZF.goAfterLogin）
+      setTimeout(function () { ZF.goAfterLogin(user); }, 500);
     }).catch(function () {
       ZF.btnLoading($btn, false);
     });
@@ -210,18 +211,18 @@
     ZF.btnLoading($btn, true, '注册中…');
     ZF.post('/auth/register', payload).then(function () {
       return ZF.post('/auth/login', { username: payload.username, password: payload.password });
-    }).then(function () {
+    }).then(function (user) {
       ZF.toast('注册成功，正在进入系统', 'success');
-      setTimeout(function () { ZF.redirectLogin(); }, 600);
+      setTimeout(function () { ZF.goAfterLogin(user); }, 600);
     }).catch(function () {
       ZF.btnLoading($btn, false);
     });
   });
 
-  // 已登录则直接进首页
+  // 已登录则直接按角色进入对应首页（管理员 → 后台管理）
   ZF.currentUser().then(function (user) {
     if (user) {
-      window.location.href = ZF.CTX + '/pages/home.html';
+      window.location.href = ZF.homeFor(user);
     }
   });
 })(jQuery, window.ZF);

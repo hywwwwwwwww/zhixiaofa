@@ -13,8 +13,8 @@ import java.util.List;
  */
 public interface LawArticleService {
 
-    /** 分页检索：关键词走 ngram 全文索引，可选分类筛选 */
-    PageResult<LawArticle> page(String keyword, String category, int pageNum, int pageSize);
+    /** 分页检索：关键词走 ngram 全文索引，可选分类 / 法规名筛选 */
+    PageResult<LawArticle> page(String keyword, String category, String lawName, int pageNum, int pageSize);
 
     LawArticle getById(Long id);
 
@@ -23,6 +23,16 @@ public interface LawArticleService {
 
     /** 前台下拉用的分类列表 */
     List<String> listCategories();
+
+    /** 库中全部法规名称（去重），供「法律管理」页选择法律 */
+    List<String> listLawNames();
+
+    /**
+     * 按法律分组重算「法律内序号」：每部法律从第 1 条编到第 N 条。
+     *
+     * @return 处理的法条总数
+     */
+    int recomputeSeq();
 
     LawArticle create(LawArticle article);
 

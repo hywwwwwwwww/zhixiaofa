@@ -206,6 +206,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageResult<SysUser> page(String keyword, String role, Integer status, int pageNum, int pageSize) {
+        return page(keyword, role, status, pageNum, pageSize, null, null);
+    }
+
+    @Override
+    public PageResult<SysUser> page(String keyword, String role, Integer status, int pageNum, int pageSize,
+                                    String sortName, String sortOrder) {
         pageNum = Math.max(1, pageNum);
         pageSize = pageSize < 1 ? 10 : Math.min(pageSize, 100);
         int offset = (pageNum - 1) * pageSize;
@@ -213,7 +219,7 @@ public class UserServiceImpl implements UserService {
         if (total == 0) {
             return PageResult.empty(pageNum, pageSize);
         }
-        return PageResult.of(userDao.findByCondition(keyword, role, status, offset, pageSize), total, pageNum, pageSize);
+        return PageResult.of(userDao.findByCondition(keyword, role, status, offset, pageSize, sortName, sortOrder), total, pageNum, pageSize);
     }
 
     @Override

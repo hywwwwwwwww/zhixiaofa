@@ -104,6 +104,15 @@ public class SysUserDaoImpl implements SysUserDao {
 
     /* ---------------- 业务查询 / 统计 ---------------- */
 
+    /** 用户列表可排序的列：前端列名 → 真实列名（白名单，防止 SQL 注入） */
+    private static final java.util.Map<String, String> SORTABLE = java.util.Map.of(
+            "id", "id",
+            "createdAt", "created_at",
+            "lastLoginAt", "last_login_at");
+
+    /** 默认排序：按 id 倒序（最新注册在前） */
+    private static final String DEFAULT_ORDER = "id DESC";
+
     @Override
     public SysUser findByUsername(String username) {
         // 按登录名查询，用于登录与唯一性校验
@@ -136,13 +145,21 @@ public class SysUserDaoImpl implements SysUserDao {
 
     @Override
     public java.util.List<SysUser> findByCondition(String keyword, String role, Integer status, int offset, int limit) {
-        // 后台用户列表分页（关键词 / 角色 / 状态 组合查询）
+        return findByCondition(keyword, role, status, offset, limit, null, null);
+    }
+
+    @Override
+    public java.util.List<SysUser> findByCondition(String keyword, String role, Integer status,
+                                                    int offset, int limit, String sortName, String sortOrder) {
+        // 后台用户列表分页（关键词 / 角色 / 状态 组合查询 + 可选列头排序）
         SqlBuilder sb = SqlBuilder.of()
                         .andLike("username, nickname, email, phone", keyword)
                         .andEq("role", role)
                         .andEq("status", status);
                 return JdbcExecutor.queryList(null,
-                        "SELECT * FROM sys_user WHERE 1=1" + sb.where() + " ORDER BY id DESC LIMIT ?, ?",
+                        "SELECT * FROM sys_user WHERE 1=1" + sb.where()
+                                + SqlBuilder.orderBy(sortName, sortOrder, SORTABLE, DEFAULT_ORDER)
+                                + " LIMIT ?, ?",
                         MAPPER, sb.with(offset, limit));
     }
 

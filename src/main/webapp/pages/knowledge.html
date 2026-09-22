@@ -6,7 +6,7 @@
   <title>普法知识广场 - 职小法</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
 <body>
 
@@ -14,20 +14,20 @@
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
-    <section class="zf-content">
+    <section class="zf-content zf-content--kn">
       <!-- 文章区 -->
-      <div class="zf-card" style="margin-bottom:16px">
+      <div class="zf-card">
         <div class="zf-card__head">
           <div>
             <h3 class="zf-card__title">普法文章</h3>
             <p class="zf-card__desc">体系化了解劳动法常识，支持分类筛选与全文检索</p>
           </div>
-          <div style="display:flex;gap:8px;width:320px;max-width:46%">
-            <input class="zf-form-control" type="text" id="kw" placeholder="搜索关键词…">
-            <button class="zf-btn zf-btn--primary" id="kw-search"><i class="bi bi-search"></i></button>
+          <div class="zf-card__search">
+            <input class="zf-form-control" type="search" id="kw" placeholder="搜索关键词…" aria-label="搜索普法文章">
+            <button class="zf-btn zf-btn--primary" id="kw-search" aria-label="搜索"><i class="bi bi-search"></i></button>
           </div>
         </div>
-        <div id="cat-filter" class="zf-form-hint" style="margin-bottom:12px"></div>
+        <div id="cat-filter" class="zf-chips zf-chips--filter" role="group" aria-label="文章分类"></div>
         <div id="article-list"></div>
         <div id="article-pager"></div>
       </div>
@@ -51,7 +51,7 @@
 </div>
 
 <!-- 文章详情弹窗 -->
-<div class="modal fade" id="article-modal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="article-modal" tabindex="-1" aria-hidden="true" aria-labelledby="article-modal-title">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -63,7 +63,7 @@
         <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-like">
           <i class="bi bi-hand-thumbs-up"></i>点赞 <span id="article-like-count">0</span>
         </button>
-        <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-fav">
+        <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-fav" aria-pressed="false" aria-label="收藏">
           <i class="bi bi-star"></i><span id="article-fav-text">收藏</span>
         </button>
         <button class="zf-btn zf-btn--primary" data-bs-dismiss="modal">关闭</button>
@@ -74,7 +74,7 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
 <script>
 /**
  * @file knowledge.html —— 普法知识广场
@@ -99,6 +99,7 @@
   ZF.initPage({ active: 'knowledge', title: '普法知识广场', sub: '读懂劳动法，少走弯路' })
     .then(function () {
       bindSearch();
+      bindCatFilter();
       bindArticleModal();
       bindQuiz();
       loadArticles(1);
@@ -115,34 +116,52 @@
     });
   }
 
-  /** 渲染分类筛选按钮 */
+  /** 渲染分类筛选（.zf-chips 胶囊，与 AI 小法庭 / 文书起草页同一套语言） */
   function renderCatFilter() {
     var cats = Object.keys(catSet);
-    var html = ['<button class="zf-btn zf-btn--sm ' + (currentCat === '' ? 'zf-btn--primary' : 'zf-btn--ghost') +
-      ' js-cat" data-cat="">全部</button>'];
+    var items = ['<button type="button" class="zf-tag' + (currentCat === '' ? ' zf-tag--active' : '') +
+      '" data-cat="" aria-pressed="' + (currentCat === '' ? 'true' : 'false') + '">全部</button>'];
     cats.forEach(function (c) {
-      html.push('<button class="zf-btn zf-btn--sm ' + (currentCat === c ? 'zf-btn--primary' : 'zf-btn--ghost') +
-        ' js-cat" data-cat="' + ZF.escape(c) + '">' + ZF.escape(c) + '</button>');
+      var on = (currentCat === c);
+      items.push('<button type="button" class="zf-tag' + (on ? ' zf-tag--active' : '') +
+        '" data-cat="' + ZF.escape(c) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        ZF.escape(c) + '</button>');
     });
-    $('#cat-filter').html(html.join(' '));
-    $('#cat-filter').off('click.zfcat').on('click.zfcat', '.js-cat', function () {
-      currentCat = $(this).data('cat');
+    $('#cat-filter').html(items.join(''));
+  }
+
+  /** 分类筛选事件（#cat-filter 容器常驻，绑定一次即可） */
+  function bindCatFilter() {
+    $('#cat-filter').on('click', '.zf-tag', function () {
+      currentCat = $(this).attr('data-cat') || '';
       renderCatFilter();
       loadArticles(1);
+    }).on('keydown', '.zf-tag', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        $(this).trigger('click');
+      }
     });
   }
 
   /**
    * 加载文章分页列表。
+   * 宽屏两列卡片网格 —— 原单列每行 987px 里标题只占 162px（84% 是空白），
+   * 改两列后同样的内容高度约减半。
    * @param {number} pageNum 页码
    */
   function loadArticles(pageNum) {
     artPage = pageNum || 1;
     var $box = $('#article-list');
-    ZF.renderLoading($box, '加载文章…');
+    if (!$box.find('.zf-art').length) {
+      ZF.renderLoading($box, '加载文章…');
+      $box.find('.zf-loading').attr('role', 'status');   // common.js 的 renderLoading 没带
+    }
+    $box.attr('aria-busy', 'true');
     ZF.get('/knowledge', {
       category: currentCat, keyword: keyword, pageNum: artPage, pageSize: 8
     }).then(function (page) {
+      $box.removeAttr('aria-busy');
       // 收集分类用于筛选
       (page.list || []).forEach(function (a) { if (a.category) { catSet[a.category] = true; } });
       renderCatFilter();
@@ -151,40 +170,50 @@
         $('#article-pager').empty();
         return;
       }
-      var html = ['<div class="zf-list">'];
+      var html = ['<div class="zf-art-grid" aria-label="普法文章列表">'];
       page.list.forEach(function (a) {
+        // 标签用中性灰 .zf-badge：一屏十几块淡蓝会重演"一片蓝"，
+        // 分类本身不是"当前位置"，不该占用强调色
         var tags = (a.tags || []).map(function (t) {
-          return '<span class="zf-badge zf-badge--primary">' + ZF.escape(t) + '</span>';
-        }).join(' ');
-        html.push('<div class="zf-list__item" data-id="' + a.id + '">');
-        html.push('<div class="zf-list__main">');
-        html.push('<p class="zf-list__title js-open" style="cursor:pointer">' + ZF.escape(a.title) + '</p>');
-        html.push('<p class="zf-list__text">' + ZF.escape(a.summary || '') + '</p>');
-        if (tags) { html.push('<div style="margin-top:6px">' + tags + '</div>'); }
-        html.push('</div>');
-        html.push('<div class="zf-list__meta" style="text-align:right">');
-        html.push('<i class="bi bi-person"></i> ' + ZF.escape(a.author || '职小法') + '<br>');
-        html.push('<i class="bi bi-eye"></i> ' + (a.viewCount || 0) + ' 阅读<br>');
-        html.push('<i class="bi bi-hand-thumbs-up"></i> ' + (a.likeCount || 0) + ' 赞');
+          return '<span class="zf-badge">' + ZF.escape(t) + '</span>';
+        }).join('');
+        html.push('<div class="zf-art" role="button" tabindex="0" data-id="' + a.id +
+          '" aria-label="打开文章：' + ZF.escape(a.title) + '">');
+        html.push('<p class="zf-art__title">' + ZF.escape(a.title) + '</p>');
+        html.push('<p class="zf-art__summary">' + ZF.escape(a.summary || '') + '</p>');
+        html.push('<div class="zf-art__foot">');
+        html.push('<div class="zf-art__tags">' + tags + '</div>');
+        // 作者是恒定的"职小法编辑部"，卡片上省略（弹窗里仍展示），只留可比较的阅读/赞
+        html.push('<div class="zf-art__meta">' + (a.viewCount || 0) + ' 阅读 · ' + (a.likeCount || 0) + ' 赞</div>');
         html.push('</div></div>');
       });
       html.push('</div>');
       $box.html(html.join(''));
       ZF.renderPager('#article-pager', page, function (p) { loadArticles(p); });
     }).catch(function () {
+      $box.removeAttr('aria-busy');
       ZF.renderEmpty($box, '加载失败，请刷新重试');
     });
   }
 
   /** 文章弹窗：打开、点赞、收藏 */
   function bindArticleModal() {
-    // 点击标题打开详情（同时后端累计阅读量）
-    $('#article-list').on('click', '.js-open', function () {
-      var id = $(this).closest('.zf-list__item').data('id');
+    /** 打开某篇文章详情（同时后端累计阅读量） */
+    function openArticle(id) {
       ZF.get('/knowledge/' + id).then(function (a) {
         currentArticle = a;
         showArticle(a);
       }).catch(function () { /* 统一提示 */ });
+    }
+
+    // 整卡可点（卡片是 role=button，内部不再放可聚焦元素，键盘只 Tab 一次）
+    $('#article-list').on('click', '.zf-art', function () {
+      openArticle($(this).attr('data-id'));
+    }).on('keydown', '.zf-art', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openArticle($(this).attr('data-id'));
+      }
     });
 
     // 点赞
@@ -218,10 +247,10 @@
   function showArticle(a) {
     $('#article-modal-title').text(a.title || '文章详情');
     var tags = (a.tags || []).map(function (t) {
-      return '<span class="zf-badge zf-badge--primary">' + ZF.escape(t) + '</span>';
-    }).join(' ');
-    var body = '<div class="zf-doc" style="max-height:none">' + ZF.escape(a.content || '') + '</div>';
-    if (tags) { body = '<div style="margin-bottom:10px">' + tags + '</div>' + body; }
+      return '<span class="zf-badge">' + ZF.escape(t) + '</span>';
+    }).join('');
+    var body = '<div class="zf-doc zf-doc--plain zf-doc--prose">' + ZF.escape(a.content || '') + '</div>';
+    if (tags) { body = '<div class="zf-doc-tags">' + tags + '</div>' + body; }
     $('#article-modal-body').html(body);
     $('#article-like-count').text(a.likeCount || 0);
     $('#article-like').prop('disabled', false);
@@ -237,10 +266,13 @@
    * @param {boolean} faved 是否已收藏
    */
   function setFavState(faved) {
+    var $fav = $('#article-fav');
+    $fav.attr('aria-pressed', faved ? 'true' : 'false');
+    $fav.attr('aria-label', faved ? '取消收藏' : '收藏');
     if (faved) {
-      $('#article-fav').html('<i class="bi bi-star-fill"></i><span id="article-fav-text">已收藏</span>');
+      $fav.html('<i class="bi bi-star-fill"></i><span id="article-fav-text">已收藏</span>');
     } else {
-      $('#article-fav').html('<i class="bi bi-star"></i><span id="article-fav-text">收藏</span>');
+      $fav.html('<i class="bi bi-star"></i><span id="article-fav-text">收藏</span>');
     }
   }
 
@@ -278,7 +310,7 @@
     qs.forEach(function (q, i) {
       html.push('<div class="zf-quiz-q" data-id="' + q.id + '">');
       html.push('<p class="zf-quiz-q__title">' + (i + 1) + '. ' + ZF.escape(q.question) +
-        ' <span class="zf-badge zf-badge--primary">' + ZF.escape(q.category || '') + '</span></p>');
+        ' <span class="zf-badge">' + ZF.escape(q.category || '') + '</span></p>');
       opts.forEach(function (op) {
         var text = q['option' + op];
         if (text === undefined || text === null || text === '') { return; }
@@ -289,7 +321,7 @@
       });
       html.push('</div>');
     });
-    html.push('<div style="text-align:right;margin-top:10px">');
+    html.push('<div class="zf-actions-end">');
     html.push('<button class="zf-btn zf-btn--primary" id="quiz-submit"><i class="bi bi-check2-circle"></i>交卷</button>');
     html.push('</div>');
     $('#quiz-card').html(html.join(''));
@@ -325,12 +357,12 @@
    * @param {Object} res 提交返回 { total, rightCount, wrongCount, score, level, details[] }
    */
   function renderQuizResult(res) {
-    var html = ['<div class="zf-card" style="background:var(--zf-primary-light);border:none;margin-bottom:14px">'];
-    html.push('<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">');
-    html.push('<div><span class="zf-form-label" style="margin:0">得分</span><strong style="font-size:24px;color:var(--zf-primary-ink)">' + (res.score || 0) + '</strong></div>');
-    html.push('<div><span class="zf-form-label" style="margin:0">等级</span><br>' + ZF.escape(res.level || '-') + '</div>');
-    html.push('<div><span class="zf-form-label" style="margin:0">正确 / 错误</span><br>' + (res.rightCount || 0) + ' / ' + (res.wrongCount || 0) + '</div>');
-    html.push('<div><span class="zf-form-label" style="margin:0">总题数</span><br>' + (res.total || 0) + '</div>');
+    var html = ['<div class="zf-quiz-score">'];
+    html.push('<div class="zf-quiz-score__row">');
+    html.push('<div><span class="zf-quiz-score__label">得分</span><strong class="zf-quiz-score__value">' + (res.score || 0) + '</strong></div>');
+    html.push('<div><span class="zf-quiz-score__label">等级</span><span class="zf-quiz-score__text">' + ZF.escape(res.level || '-') + '</span></div>');
+    html.push('<div><span class="zf-quiz-score__label">正确 / 错误</span><span class="zf-quiz-score__text">' + (res.rightCount || 0) + ' / ' + (res.wrongCount || 0) + '</span></div>');
+    html.push('<div><span class="zf-quiz-score__label">总题数</span><span class="zf-quiz-score__text">' + (res.total || 0) + '</span></div>');
     html.push('</div></div>');
     html.push('<p class="zf-subtitle">逐题解析</p>');
 
@@ -355,7 +387,7 @@
       html.push('<p class="zf-quiz-explain"><strong>' + mark + '</strong><br>' + ZF.nl2br(d.explanation || '') + '</p>');
       html.push('</div>');
     });
-    html.push('<div style="text-align:right;margin-top:10px">');
+    html.push('<div class="zf-actions-end">');
     html.push('<button class="zf-btn zf-btn--primary" id="quiz-retry"><i class="bi bi-arrow-repeat"></i>再来一次</button>');
     html.push('</div>');
     $('#quiz-card').html(html.join(''));

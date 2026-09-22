@@ -3,40 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>用户管理 - 职小法后台</title>
+  <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
+  <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+  <title>用户管理 - 职小法管理后台</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
-<body>
+<body class="zf-admin-page">
 
 <div class="zf-app">
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
     <section class="zf-content">
-      <div id="admin-nav"></div>
-
       <div class="zf-card">
-        <div class="zf-card__head"><div><h3 class="zf-card__title">用户管理</h3>
-          <p class="zf-card__desc">查看、筛选与维护平台用户</p></div></div>
-
         <!-- 筛选条 -->
-        <div class="zf-filter">
-          <input class="zf-form-control" type="text" id="f-keyword" placeholder="用户名 / 昵称 / 邮箱 / 手机">
-          <select class="zf-form-control" id="f-role">
-            <option value="">全部角色</option>
-            <option value="USER">普通用户</option>
-            <option value="ADMIN">管理员</option>
-          </select>
-          <select class="zf-form-control" id="f-status">
-            <option value="">全部状态</option>
-            <option value="1">已启用</option>
-            <option value="0">已禁用</option>
-          </select>
-          <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
-          <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+        <div class="zf-filter-bar" id="user-filter">
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">关键词</span>
+            <input class="zf-form-control" type="text" data-filter="keyword" placeholder="用户名 / 昵称 / 手机">
+          </div>
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">角色</span>
+            <select class="zf-form-control" data-filter="role">
+              <option value="">全部</option>
+              <option value="USER">普通用户</option>
+              <option value="ADMIN">管理员</option>
+            </select>
+          </div>
+          <div class="zf-filter-bar__item">
+            <span class="zf-filter-bar__label">状态</span>
+            <select class="zf-form-control" data-filter="status">
+              <option value="">全部</option>
+              <option value="1">已启用</option>
+              <option value="0">已禁用</option>
+            </select>
+          </div>
+          <div class="zf-filter-bar__actions">
+            <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
+            <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+          </div>
+        </div>
+
+        <!-- 工具栏 + 结果计数 -->
+        <div class="zf-toolbar">
+          <span class="zf-toolbar__count" id="user-count">共 0 个账号</span>
+          <span class="zf-toolbar__spacer"></span>
         </div>
 
         <table id="user-table" class="zf-table"></table>
@@ -57,10 +71,10 @@
         <div class="modal-body">
           <input type="hidden" name="id">
           <div class="zf-field">
-            <label class="zf-form-label" for="u-username">用户名 <span style="color:var(--zf-danger)">*</span></label>
-            <input class="zf-form-control" type="text" name="username" id="u-username" maxlength="20">
+            <label class="zf-form-label" for="u-username">用户名</label>
+            <input class="zf-form-control" type="text" name="username" id="u-username" maxlength="20" readonly>
             <div class="zf-form-error"></div>
-            <div class="zf-form-hint">4~20 位，以字母开头，可含字母、数字、下划线</div>
+            <div class="zf-form-hint">登录账号，不可修改</div>
           </div>
           <div class="zf-field">
             <label class="zf-form-label" for="u-nickname">昵称</label>
@@ -112,7 +126,7 @@
             <label class="zf-form-label" for="u-newpwd">新密码 <span style="color:var(--zf-danger)">*</span></label>
             <input class="zf-form-control" type="password" name="newPassword" id="u-newpwd" maxlength="40">
             <div class="zf-form-error"></div>
-            <div class="zf-form-hint">至少 6 位</div>
+            <div class="zf-form-hint">6~32 位，须同时包含字母和数字</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -128,14 +142,15 @@
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
-<script src="../js/common.js"></script>
-<script src="admin-common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
+<script src="admin-common.js?v=20260922n"></script>
 <script>
 /**
  * @file users.html —— 用户管理
  * @description Bootstrap Table 分页展示用户，支持关键词/角色/状态筛选；
  *              编辑资料（含用户名、邮箱、手机号前端校验）、切换启停、调整角色、
  *              重置密码、删除，危险操作均二次确认。
+ *              页面外壳（左侧管理导航 + 顶部栏）由 ZF.initAdminPage 统一渲染。
  */
 (function ($, ZF) {
   'use strict';
@@ -143,60 +158,73 @@
   /** 当前正在编辑/操作的用户行 */
   var current = null;
 
-  ZF.initPage({ active: 'users', title: '用户管理', sub: '查看与维护平台用户', needAdmin: true })
+  ZF.initAdminPage({ active: 'users', title: '用户管理', sub: '全平台用户账号、角色与登录状态维护' })
     .then(function () {
-      ZF.renderAdminNav('users');
       initTable();
       bindFilters();
       bindUserForm();
       bindPwdForm();
     });
 
-  /** 转义或返回占位符 */
-  function escOrDash(v) { return v ? ZF.escape(v) : '<span style="color:var(--zf-ink-3)">-</span>'; }
+  /** 转义并统一空值为占位符 */
+  function dashEscape(v) { return ZF.escape(ZF.orDash(v)); }
 
-  /** 操作列按钮 */
+  /** 联系方式：邮箱 + 手机合并展示 */
+  function contactFormatter(value, row) {
+    var email = row.email ? ZF.escape(row.email) : '—';
+    var phone = row.phone ? ZF.escape(row.phone) : '—';
+    return '<div>邮箱：' + email + '</div><div>手机：' + phone + '</div>';
+  }
+
+  /** 城市/岗位合并展示 */
+  function cityJobFormatter(value, row) {
+    var c = row.city ? ZF.escape(row.city) : '';
+    var j = row.jobTitle ? ZF.escape(row.jobTitle) : '';
+    return (c || j) ? (c + (j ? ' / ' + j : '')) : '<span class="zf-badge zf-badge--mid">—</span>';
+  }
+
+  /** 操作列按钮（用 .zf-actions 包裹，禁止换行） */
   function operateFormatter(value, row) {
     var statusBtn = row.status === 1
-      ? '<button class="zf-btn zf-btn--ghost zf-btn--sm js-toggle-status"><i class="bi bi-pause-circle"></i>禁用</button>'
-      : '<button class="zf-btn zf-btn--ghost zf-btn--sm js-toggle-status"><i class="bi bi-play-circle"></i>启用</button>';
+      ? '<button class="zf-btn zf-btn--icon zf-btn--ghost js-toggle-status" title="禁用" aria-label="禁用"><i class="bi bi-pause-circle"></i></button>'
+      : '<button class="zf-btn zf-btn--icon zf-btn--ghost js-toggle-status" title="启用" aria-label="启用"><i class="bi bi-play-circle"></i></button>';
     var roleBtn = row.role === 'ADMIN'
-      ? '<button class="zf-btn zf-btn--ghost zf-btn--sm js-toggle-role"><i class="bi bi-person-dash"></i>取消管理员</button>'
-      : '<button class="zf-btn zf-btn--ghost zf-btn--sm js-toggle-role"><i class="bi bi-person-check"></i>设为管理员</button>';
-    return [
-      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-edit"><i class="bi bi-pencil"></i>编辑</button>',
-      statusBtn,
-      roleBtn,
-      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-reset-pwd"><i class="bi bi-key"></i>重置密码</button>',
-      '<button class="zf-btn zf-btn--danger zf-btn--sm js-delete"><i class="bi bi-trash"></i>删除</button>'
-    ].join(' ');
+      ? '<button class="zf-btn zf-btn--icon zf-btn--ghost js-toggle-role" title="取消管理员" aria-label="取消管理员"><i class="bi bi-person-dash"></i></button>'
+      : '<button class="zf-btn zf-btn--icon zf-btn--ghost js-toggle-role" title="设为管理员" aria-label="设为管理员"><i class="bi bi-person-check"></i></button>';
+    return '<div class="zf-actions">' +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-edit" title="编辑" aria-label="编辑"><i class="bi bi-pencil"></i></button>' +
+      statusBtn +
+      roleBtn +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-reset-pwd" title="重置密码" aria-label="重置密码"><i class="bi bi-key"></i></button>' +
+      '<button class="zf-btn zf-btn--icon zf-btn--danger js-delete" title="删除" aria-label="删除"><i class="bi bi-trash"></i></button>' +
+      '</div>';
   }
 
   /** 初始化表格 */
   function initTable() {
     ZF.initAdminTable('#user-table', '/users', {
       pageSize: 10,
-      queryParams: function () {
-        return {
-          keyword: $.trim($('#f-keyword').val()),
-          role: $('#f-role').val(),
-          status: $('#f-status').val()
-        };
-      },
+      // 初始排序：按 id 倒序（与后端默认一致，点列头可切换）
+      sortName: 'id',
+      sortOrder: 'desc',
+      queryParams: function () { return ZF.filterParams('#user-filter'); },
       columns: [
-        { field: 'id', title: 'ID', width: 64 },
+        { field: 'id', title: 'ID', width: 64, sortable: true },
         { field: 'username', title: '用户名', formatter: function (v) { return ZF.escape(v); } },
-        { field: 'nickname', title: '昵称', formatter: escOrDash },
-        { field: 'email', title: '邮箱', formatter: escOrDash },
-        { field: 'phone', title: '手机号', formatter: escOrDash },
+        { field: 'nickname', title: '昵称', width: 104, formatter: dashEscape },
+        { field: 'contact', title: '联系方式', width: 118, formatter: contactFormatter },
         { field: 'role', title: '角色', formatter: function (v) { return ZF.roleBadge(v); } },
         { field: 'status', title: '状态', formatter: function (v) { return ZF.statusBadge(v); } },
-        { field: 'city', title: '城市', formatter: escOrDash },
-        { field: 'jobTitle', title: '岗位', formatter: escOrDash },
-        { field: 'lastLoginAt', title: '最近登录', formatter: function (v) { return ZF.dt(v); } },
-        { field: 'createdAt', title: '注册时间', formatter: function (v) { return ZF.dt(v); } },
+        { field: 'cityJob', title: '城市/岗位', width: 108, formatter: cityJobFormatter },
+        { field: 'createdAt', title: '注册时间', sortable: true, formatter: function (v) { return ZF.dt(v); } },
+        { field: 'lastLoginAt', title: '最近登录', sortable: true, formatter: function (v) { return ZF.dt(v); } },
         { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
       ]
+    });
+
+    /** 加载完成后更新顶部结果计数 */
+    $('#user-table').on('load-success.bs.table', function (e, data) {
+      $('#user-count').text('共 ' + ((data && data.total) || 0) + ' 个账号');
     });
   }
 
@@ -213,10 +241,12 @@
   function bindFilters() {
     $('#search-btn').on('click', function () { ZF.refreshTable('#user-table'); });
     $('#reset-btn').on('click', function () {
-      $('#f-keyword').val(''); $('#f-role').val(''); $('#f-status').val('');
+      $('#user-filter').find('[data-filter]').val('');
       ZF.refreshTable('#user-table');
     });
-    $('#f-keyword').on('keydown', function (e) { if (e.key === 'Enter') { ZF.refreshTable('#user-table'); } });
+    $('#user-filter [data-filter="keyword"]').on('keydown', function (e) {
+      if (e.key === 'Enter') { ZF.refreshTable('#user-table'); }
+    });
   }
 
   /** 打开编辑模态框并回填 */
@@ -231,7 +261,7 @@
     $f.find('[name=phone]').val(row.phone || '');
     $f.find('[name=city]').val(row.city || '');
     $f.find('[name=jobTitle]').val(row.jobTitle || '');
-    new bootstrap.Modal($('#userModal')[0]).show();
+    bootstrap.Modal.getOrCreateInstance($('#userModal')[0]).show();
   }
 
   /** 保存编辑 */
@@ -240,18 +270,16 @@
       e.preventDefault();
       var $form = $(this);
       ZF.clearValidate($form);
-      // 用户名：4~20 位，字母开头；邮箱与手机号格式校验
+      // 用户名是登录账号、只读且不提交，故不校验；只校验邮箱与手机号格式
       if (!ZF.validate($form, {
-        username: { required: true, pattern: /^[a-zA-Z][a-zA-Z0-9_]{3,19}$/, message: '4~20 位，字母开头' },
         email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' },
-        phone: { pattern: /^\d{6,20}$/, message: '手机号格式不正确' }
+        phone: { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }
       })) {
         return;
       }
       var $btn = $('#user-save');
       ZF.btnLoading($btn, true, '保存中…');
       ZF.put('/users/' + current.id, {
-        username: $.trim($form.find('[name=username]').val()),
         nickname: $.trim($form.find('[name=nickname]').val()),
         email: $.trim($form.find('[name=email]').val()),
         phone: $.trim($form.find('[name=phone]').val()),
@@ -259,7 +287,7 @@
         jobTitle: $.trim($form.find('[name=jobTitle]').val())
       }).then(function () {
         ZF.toast('资料已保存', 'success');
-        bootstrap.Modal.getInstance($('#userModal')[0]).hide();
+        bootstrap.Modal.getOrCreateInstance($('#userModal')[0]).hide();
         $('#user-table').bootstrapTable('refresh');
       }).catch(function () { /* 统一提示 */ }).then(function () {
         ZF.btnLoading($btn, false);
@@ -300,7 +328,7 @@
     ZF.clearValidate($f);
     $f.find('[name=id]').val(row.id);
     $f.find('[name=newPassword]').val('');
-    new bootstrap.Modal($('#pwdModal')[0]).show();
+    bootstrap.Modal.getOrCreateInstance($('#pwdModal')[0]).show();
   }
 
   /** 提交重置密码 */
@@ -309,7 +337,9 @@
       e.preventDefault();
       var $form = $(this);
       ZF.clearValidate($form);
-      if (!ZF.validate($form, { newPassword: { required: true, min: 6, message: '密码至少 6 位' } })) {
+      if (!ZF.validate($form, {
+        newPassword: { required: true, pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,32}$/, message: '6~32 位，须含字母和数字' }
+      })) {
         return;
       }
       ZF.confirm('确定将该用户的密码重置为所填值吗？').then(function (ok) {
@@ -320,7 +350,7 @@
           newPassword: $form.find('[name=newPassword]').val()
         }).then(function () {
           ZF.toast('密码已重置', 'success');
-          bootstrap.Modal.getInstance($('#pwdModal')[0]).hide();
+          bootstrap.Modal.getOrCreateInstance($('#pwdModal')[0]).hide();
         }).catch(function () { /* 统一提示 */ }).then(function () {
           ZF.btnLoading($btn, false);
         });

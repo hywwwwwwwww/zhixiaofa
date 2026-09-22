@@ -70,6 +70,21 @@ public interface ContractDao {
     java.util.List<Contract> findByCondition(String keyword, String riskLevel, Integer status, int offset, int limit);
 
     /**
+     * 后台合同分页（可排序）
+     *
+     * @param keyword 参数
+     * @param riskLevel 参数
+     * @param status 参数
+     * @param offset 参数
+     * @param limit 参数
+     * @param sortName 前端列名，实现类内部走白名单映射，非法值自动回退默认排序
+     * @param sortOrder 排序方向（desc / asc）
+     * @return 查询结果
+     */
+    java.util.List<Contract> findByCondition(String keyword, String riskLevel, Integer status,
+                                             int offset, int limit, String sortName, String sortOrder);
+
+    /**
      * 后台合同条件计数
      *
      * @param keyword 参数

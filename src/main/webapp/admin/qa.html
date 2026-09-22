@@ -3,35 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>问答管理 - 职小法后台</title>
+  <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
+  <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+  <title>问答管理 - 职小法管理后台</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
-  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../css/app.css?v=20260922n">
 </head>
-<body>
+<body class="zf-admin-page">
 
 <div class="zf-app">
   <main class="zf-main">
     <header class="zf-topbar"></header>
 
     <section class="zf-content">
-      <div id="admin-nav"></div>
-
       <div class="zf-card">
-        <div class="zf-card__head"><div><h3 class="zf-card__title">问答记录管理</h3>
-          <p class="zf-card__desc">查看用户咨询、补充回答、管理风险词条</p></div></div>
+        <!-- 筛选条：关键词 / 分类 / 状态 + 查询重置 -->
+        <div class="zf-filter-bar" id="qa-filter">
+          <div class="zf-filter-bar__item">
+            <label class="zf-filter-bar__label" for="f-keyword">关键词</label>
+            <input class="zf-form-control" type="text" id="f-keyword" data-filter="keyword" placeholder="问题 / 回答关键词">
+          </div>
+          <div class="zf-filter-bar__item">
+            <label class="zf-filter-bar__label" for="f-category">分类</label>
+            <select class="zf-form-control" id="f-category" data-filter="category">
+              <option value="">全部分类</option>
+              <option value="劳动合同">劳动合同</option>
+              <option value="劳动报酬">劳动报酬</option>
+              <option value="工作时间与休息休假">工作时间与休息休假</option>
+              <option value="社会保险">社会保险</option>
+              <option value="解除与终止">解除与终止</option>
+              <option value="保密与竞业限制">保密与竞业限制</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="zf-filter-bar__item">
+            <label class="zf-filter-bar__label" for="f-status">状态</label>
+            <select class="zf-form-control" id="f-status" data-filter="status">
+              <option value="">全部状态</option>
+              <option value="0">待回答</option>
+              <option value="1">已回答</option>
+            </select>
+          </div>
+          <div class="zf-filter-bar__actions">
+            <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
+            <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+          </div>
+        </div>
 
-        <div class="zf-filter">
-          <input class="zf-form-control" type="text" id="f-keyword" placeholder="提问人 / 问题关键词">
-          <input class="zf-form-control" type="text" id="f-category" placeholder="分类">
-          <select class="zf-form-control" id="f-status">
-            <option value="">全部状态</option>
-            <option value="1">已回答</option>
-            <option value="0">未回答</option>
-          </select>
-          <button class="zf-btn zf-btn--primary" id="search-btn"><i class="bi bi-search"></i>查询</button>
-          <button class="zf-btn zf-btn--ghost" id="reset-btn"><i class="bi bi-arrow-clockwise"></i>重置</button>
+        <!-- 顶部计数 -->
+        <div class="zf-toolbar">
+          <span class="zf-toolbar__count" id="qa-count">共 0 条咨询记录</span>
         </div>
 
         <table id="qa-table" class="zf-table"></table>
@@ -57,12 +80,12 @@
   </div>
 </div>
 
-<!-- 编辑回答模态框 -->
+<!-- 补充 / 修改回答模态框 -->
 <div class="modal fade" id="answerModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">编辑回答</h5>
+        <h5 class="modal-title">补充 / 修改回答</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form id="answer-form" novalidate>
@@ -75,7 +98,9 @@
           <div class="zf-field">
             <label class="zf-form-label" for="a-answer">回答内容</label>
             <textarea class="zf-form-control" name="answer" id="a-answer" rows="10" placeholder="输入或补充回答内容…"></textarea>
+            <p class="zf-form-error"></p>
           </div>
+          <p class="zf-court-sub"><i class="bi bi-info-circle"></i> 提交后该条状态将变更为「已回答」。</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="zf-btn zf-btn--ghost" data-bs-dismiss="modal">取消</button>
@@ -90,67 +115,43 @@
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
-<script src="../js/common.js"></script>
-<script src="admin-common.js"></script>
+<script src="../js/common.js?v=20260922n"></script>
+<script src="admin-common.js?v=20260922n"></script>
 <script>
 /**
- * @file qa.html —— 问答记录管理
- * @description 分页展示用户问答，支持关键词/分类/状态筛选；
- *              查看详情（含引用法条）、补充或修改回答、删除。
+ * @file qa.html —— 问答管理
+ * @description 分页展示全平台法律咨询，支持关键词 / 分类 / 状态筛选；
+ *              查看详情（含引用法条）、补充或修改回答、删除问答记录。
+ *              本页仅含管理动作，不提供用户端「我要咨询」入口。
  */
 (function ($, ZF) {
   'use strict';
 
-  /** 当前操作行 */
+  /** 当前操作行（详情 / 编辑回答共用） */
   var current = null;
 
-  ZF.initPage({ active: 'qa', title: '问答管理', sub: '用户咨询与回答维护', needAdmin: true })
+  ZF.initAdminPage({ active: 'qa', title: '问答管理', sub: '全平台法律咨询记录与回答质量维护' })
     .then(function () {
-      ZF.renderAdminNav('qa');
       initTable();
       bindFilters();
       bindDetail();
       bindAnswerForm();
     });
 
-  /** 问答状态徽标：1 已回答 / 0 未回答 */
-  function qaStatusBadge(status) {
-    return status === 1 || status === '1'
-      ? '<span class="zf-badge zf-badge--ok">已回答</span>'
-      : '<span class="zf-badge zf-badge--mid">未回答</span>';
+  /** 详情网格的一项（标签 + 值，值已转义） */
+  function detailItem(label, value) {
+    return '<div class="zf-detail-grid__item">' +
+      '<span class="zf-detail-grid__label">' + ZF.escape(label) + '</span>' +
+      '<span class="zf-detail-grid__value">' + value + '</span></div>';
   }
 
-  /** 操作列 */
-  function operateFormatter(value, row) {
-    return [
-      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-detail"><i class="bi bi-eye"></i>详情</button>',
-      '<button class="zf-btn zf-btn--ghost zf-btn--sm js-edit"><i class="bi bi-pencil"></i>回答</button>',
-      '<button class="zf-btn zf-btn--danger zf-btn--sm js-delete"><i class="bi bi-trash"></i>删除</button>'
-    ].join(' ');
-  }
-
-  /** 初始化表格 */
-  function initTable() {
-    ZF.initAdminTable('#qa-table', '/qa', {
-      pageSize: 10,
-      queryParams: function () {
-        return {
-          keyword: $.trim($('#f-keyword').val()),
-          category: $.trim($('#f-category').val()),
-          status: $('#f-status').val()
-        };
-      },
-      columns: [
-        { field: 'id', title: 'ID', width: 64 },
-        { field: 'userNickname', title: '提问人', formatter: function (v) { return ZF.escape(v || '匿名'); } },
-        { field: 'question', title: '问题', formatter: function (v) { return ZF.escape(ZF.truncate(v, 40)); } },
-        { field: 'category', title: '分类', formatter: function (v) { return v ? ZF.escape(v) : '<span style="color:var(--zf-ink-3)">-</span>'; } },
-        { field: 'status', title: '状态', formatter: qaStatusBadge },
-        { field: 'likeCount', title: '点赞', formatter: function (v) { return ZF.escape(String(v || 0)); } },
-        { field: 'createdAt', title: '时间', formatter: function (v) { return ZF.dt(v); } },
-        { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
-      ]
-    });
+  /** 操作列：查看详情 / 补充回答 / 删除（不换行） */
+  function operateFormatter() {
+    return '<div class="zf-actions">' +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-detail" title="详情" aria-label="详情"><i class="bi bi-eye"></i></button>' +
+      '<button class="zf-btn zf-btn--icon zf-btn--ghost js-edit" title="回答" aria-label="回答"><i class="bi bi-pencil"></i></button>' +
+      '<button class="zf-btn zf-btn--icon zf-btn--danger js-delete" title="删除" aria-label="删除"><i class="bi bi-trash"></i></button>' +
+      '</div>';
   }
 
   /** 操作事件 */
@@ -160,14 +161,39 @@
     'click .js-delete': function (e, v, row) { removeQa(row); }
   };
 
-  /** 绑定筛选 */
+  /** 初始化表格 */
+  function initTable() {
+    ZF.initAdminTable('#qa-table', '/qa', {
+      pageSize: 10,
+      // 初始排序：按 ID 倒序（与后端默认一致，点列头可切换）
+      sortName: 'id',
+      sortOrder: 'desc',
+      queryParams: function () { return ZF.filterParams('#qa-filter'); },
+      columns: [
+        { field: 'id', title: 'ID', width: 64, sortable: true },
+        { field: 'userNickname', title: '提问人', formatter: function (v) { return ZF.escape(v || '匿名'); } },
+        { field: 'question', title: '问题', formatter: function (v) { return ZF.escape(ZF.truncate(v, 40)); } },
+        { field: 'category', title: '分类', formatter: function (v) { return v ? ZF.escape(v) : '-'; } },
+        { field: 'status', title: '状态', formatter: ZF.qaStatusBadge },
+        { field: 'likeCount', title: '点赞', sortable: true, formatter: function (v) { return ZF.escape(String(v || 0)); } },
+        { field: 'createdAt', title: '提问时间', sortable: true, formatter: ZF.dt },
+        { field: 'operate', title: '操作', formatter: operateFormatter, events: operateEvents }
+      ]
+    });
+    // 加载成功后用后端返回的总数刷新顶部计数
+    $('#qa-table').on('load-success.bs.table', function (e, data) {
+      $('#qa-count').text('共 ' + ((data && data.total) || 0) + ' 条咨询记录');
+    });
+  }
+
+  /** 绑定筛选（查询 / 重置 / 回车） */
   function bindFilters() {
     $('#search-btn').on('click', function () { ZF.refreshTable('#qa-table'); });
     $('#reset-btn').on('click', function () {
-      $('#f-keyword').val(''); $('#f-category').val(''); $('#f-status').val('');
+      $('#qa-filter').find('[data-filter]').val('');
       ZF.refreshTable('#qa-table');
     });
-    $('#f-keyword, #f-category').on('keydown', function (e) {
+    $('#qa-filter').on('keydown', 'input', function (e) {
       if (e.key === 'Enter') { ZF.refreshTable('#qa-table'); }
     });
   }
@@ -177,35 +203,46 @@
     current = row;
     var $body = $('#detail-body');
     ZF.renderLoading($body, '加载详情…');
-    new bootstrap.Modal($('#detailModal')[0]).show();
+    bootstrap.Modal.getOrCreateInstance($('#detailModal')[0]).show();
     ZF.get('/qa/' + row.id).then(function (d) {
       d = d || row;
-      var html = ['<div class="zf-bubble zf-bubble--q">' + ZF.escape(d.question || '') + '</div>'];
-      html.push('<div class="zf-bubble zf-bubble--a">' + (d.answer ? ZF.nl2br(d.answer) : '<span style="color:var(--zf-ink-3)">暂无回答</span>') + '</div>');
+      var html = '<div class="zf-detail-grid">';
+      html += detailItem('提问人', ZF.escape(d.userNickname || d.userId || '匿名'));
+      html += detailItem('提问时间', ZF.dt(d.createdAt));
+      html += detailItem('分类', d.category ? ZF.escape(d.category) : '-');
+      html += detailItem('点赞数', ZF.escape(String(d.likeCount || 0)));
+      html += '</div>';
+
+      html += '<p class="zf-subtitle" style="margin-top:16px">问题</p>';
+      html += '<div class="zf-bubble zf-bubble--q">' + ZF.escape(d.question || '') + '</div>';
+      html += '<p class="zf-subtitle" style="margin-top:12px">回答</p>';
+      html += '<div class="zf-bubble zf-bubble--a">' +
+        (d.answer ? ZF.escape(d.answer) : '<span style="color:var(--zf-ink-3)">暂无回答</span>') + '</div>';
+
       var refs = d.references || [];
-      html.push('<p class="zf-subtitle" style="margin-top:14px">引用法条（' + refs.length + '）</p>');
+      html += '<p class="zf-subtitle" style="margin-top:16px">引用法条（' + refs.length + '）</p>';
       if (!refs.length) {
-        html.push('<p style="color:var(--zf-ink-3);font-size:12.5px">无引用法条</p>');
+        html += '<p style="color:var(--zf-ink-3);font-size:12.5px">无引用法条</p>';
       } else {
         refs.forEach(function (r) {
-          html.push('<div class="zf-law">');
-          html.push('<div class="zf-law__name">' + ZF.escape(r.lawName || '') +
-            (r.articleNo ? ' ' + ZF.escape(r.articleNo) : '') + '</div>');
-          if (r.content) { html.push('<div class="zf-law__text">' + ZF.escape(r.content) + '</div>'); }
-          html.push('</div>');
+          html += '<div class="zf-law">';
+          html += '<div class="zf-law__name">' + ZF.escape(r.lawName || '') +
+            (r.articleNo ? ' ' + ZF.escape(r.articleNo) : '') + '</div>';
+          if (r.content) { html += '<div class="zf-law__text">' + ZF.escape(r.content) + '</div>'; }
+          html += '</div>';
         });
       }
-      $body.html(html.join(''));
+      $body.html(html);
     }).catch(function () {
       ZF.renderEmpty($body, '详情加载失败');
     });
   }
 
-  /** 详情弹窗内「编辑回答」按钮 */
+  /** 详情弹窗内「补充/修改回答」按钮 */
   function bindDetail() {
     $('#detail-edit').on('click', function () {
       if (current) {
-        bootstrap.Modal.getInstance($('#detailModal')[0]).hide();
+        bootstrap.Modal.getOrCreateInstance($('#detailModal')[0]).hide();
         openAnswer(current);
       }
     });
@@ -216,43 +253,42 @@
     current = row;
     var $f = $('#answer-form');
     ZF.clearValidate($f);
+    $f.find('.zf-form-error').text('');
     $f.find('[name=id]').val(row.id);
     $('#answer-question').text(row.question || '');
-    // 若已有详情缓存则直接用，否则再拉一次取最新回答
+    // 优先用详情接口取最新回答，失败则回退到列表行数据
     ZF.get('/qa/' + row.id, null, { silent: true }).then(function (d) {
       $('#a-answer').val((d && d.answer) || '');
     }).catch(function () {
       $('#a-answer').val(row.answer || '');
     });
-    new bootstrap.Modal($('#answerModal')[0]).show();
+    bootstrap.Modal.getOrCreateInstance($('#answerModal')[0]).show();
   }
 
-  /** 保存回答 */
+  /** 保存回答（按钮进入 loading 态） */
   function bindAnswerForm() {
     $('#answer-form').on('submit', function (e) {
       e.preventDefault();
       var $form = $(this);
-      ZF.clearValidate($form);
-      if (!$.trim($form.find('[name=answer]').val())) {
-        $form.find('[name=answer]').closest('.zf-field').addClass('zf-field--invalid')
-          .find('.zf-form-error').text('回答内容不能为空');
+      var $input = $form.find('[name=answer]');
+      if (!$.trim($input.val())) {
+        $form.find('.zf-form-error').text('回答内容不能为空');
         return;
       }
       var $btn = $('#answer-save');
       ZF.btnLoading($btn, true, '保存中…');
-      ZF.put('/qa/' + current.id + '/answer', {
-        answer: $.trim($form.find('[name=answer]').val())
-      }).then(function () {
-        ZF.toast('回答已保存', 'success');
-        bootstrap.Modal.getInstance($('#answerModal')[0]).hide();
-        $('#qa-table').bootstrapTable('refresh');
-      }).catch(function () { /* 统一提示 */ }).then(function () {
-        ZF.btnLoading($btn, false);
-      });
+      ZF.put('/qa/' + current.id + '/answer', { answer: $.trim($input.val()) })
+        .then(function () {
+          ZF.toast('回答已保存，状态已变更为已回答', 'success');
+          bootstrap.Modal.getOrCreateInstance($('#answerModal')[0]).hide();
+          $('#qa-table').bootstrapTable('refresh');
+        })
+        .catch(function () { /* 统一提示 */ })
+        .then(function () { ZF.btnLoading($btn, false); });
     });
   }
 
-  /** 删除问答 */
+  /** 删除问答（先二次确认） */
   function removeQa(row) {
     ZF.confirm('确定删除该问答记录吗？此操作不可恢复。').then(function (ok) {
       if (!ok) { return; }
