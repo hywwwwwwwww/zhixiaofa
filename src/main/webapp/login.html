@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>登录 / 注册 - 职小法</title>
-  <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260922n">
+  <link rel="stylesheet" href="css/app.css?v=20261021e">
 </head>
-<body>
+<body class="zf-theme-ink">
 
 <div class="zf-auth">
   <!-- 左侧品牌区 -->
@@ -20,6 +22,10 @@
         面向初入职场的年轻人，把复杂的劳动法规变成听得懂、用得上的建议：
         问一句就能拿到带法条依据的回答，上传合同自动体检，选个模板就能生成规范文书。
       </p>
+      <figure class="zf-auth__quote">
+        <blockquote>劳动者就业，不因民族、种族、性别、宗教信仰不同而受歧视。</blockquote>
+        <figcaption>《中华人民共和国劳动法》第十二条</figcaption>
+      </figure>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;margin-top:10px">
       <div class="zf-auth__feature">
@@ -58,26 +64,62 @@
       <div class="zf-auth__tabs">
         <button class="zf-auth__tab zf-auth__tab--active" data-panel="login">登录</button>
         <button class="zf-auth__tab" data-panel="register">注册</button>
+        <button class="zf-auth__tab" data-panel="forgot">找回密码</button>
       </div>
 
       <!-- 登录表单 -->
       <form class="zf-auth__panel zf-auth__panel--active" id="panel-login" autocomplete="off">
         <div class="zf-field">
           <label class="zf-form-label" for="login-username">用户名</label>
-          <input class="zf-form-control" id="login-username" name="username" placeholder="请输入用户名">
+          <input class="zf-form-control" id="login-username" name="username" placeholder="用户名或邮箱" autocomplete="username">
           <div class="zf-form-error"></div>
         </div>
         <div class="zf-field">
           <label class="zf-form-label" for="login-password">密码</label>
-          <input class="zf-form-control" id="login-password" name="password" type="password" placeholder="请输入密码">
+          <div class="zf-pwd-wrap">
+            <input class="zf-form-control" id="login-password" name="password" type="password" placeholder="请输入密码">
+            <button class="zf-pwd-toggle" type="button" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+          </div>
           <div class="zf-form-error"></div>
         </div>
         <button class="zf-btn zf-btn--primary zf-btn--block" type="submit" id="btn-login">
           <i class="bi bi-box-arrow-in-right"></i>登录
         </button>
         <div class="zf-auth__switch">
-          体验账号：<code>zhangsan / 123456</code>　管理员：<code>admin / admin123</code>
+          <a href="javascript:;" id="link-forgot">忘记密码？</a>
         </div>
+      </form>
+
+      <!-- 找回密码：两步走「发码 → 凭码设新密码」放在同一个面板里，
+           分两个面板只是让用户多点一次「下一步」，没有换来任何信息。
+           有效期等文案以邮件里的为准，这里不重复写数字，避免和后端常量对不上。 -->
+      <form class="zf-auth__panel" id="panel-forgot" autocomplete="off">
+        <div class="zf-field">
+          <label class="zf-form-label" for="fg-email">注册邮箱</label>
+          <input class="zf-form-control" id="fg-email" name="email" placeholder="账号绑定的邮箱">
+          <div class="zf-form-error"></div>
+        </div>
+        <button class="zf-btn zf-btn--block" type="button" id="btn-fg-send">
+          <i class="bi bi-envelope-arrow-up"></i>发送验证码
+        </button>
+        <div class="zf-field">
+          <label class="zf-form-label" for="fg-code">邮箱验证码</label>
+          <input class="zf-form-control" id="fg-code" name="verifyCode" maxlength="6"
+                 inputmode="numeric" autocomplete="one-time-code" placeholder="6 位数字">
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-field">
+          <label class="zf-form-label" for="fg-password">新密码</label>
+          <div class="zf-pwd-wrap">
+            <input class="zf-form-control" id="fg-password" name="newPassword" type="password"
+                   placeholder="6~32 位，需含字母和数字">
+            <button class="zf-pwd-toggle" type="button" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+          </div>
+          <div class="zf-form-error"></div>
+        </div>
+        <button class="zf-btn zf-btn--primary zf-btn--block" type="submit" id="btn-fg-reset">
+          <i class="bi bi-key"></i>重置密码
+        </button>
       </form>
 
       <!-- 注册表单 -->
@@ -90,23 +132,39 @@
         </div>
         <div class="zf-field">
           <label class="zf-form-label" for="reg-password">密码</label>
-          <input class="zf-form-control" id="reg-password" name="password" type="password" placeholder="6~32 位，需含字母和数字">
+          <div class="zf-pwd-wrap">
+            <input class="zf-form-control" id="reg-password" name="password" type="password" placeholder="6~32 位，需含字母和数字">
+            <button class="zf-pwd-toggle" type="button" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+          </div>
           <div class="zf-form-error"></div>
         </div>
         <div class="zf-field">
-          <label class="zf-form-label" for="reg-nickname">昵称</label>
-          <input class="zf-form-control" id="reg-nickname" name="nickname" placeholder="显示在个人中心">
+          <label class="zf-form-label" for="reg-email">邮箱（必填）</label>
+          <input class="zf-form-control" id="reg-email" name="email" placeholder="用于验证与登录" autocomplete="email">
+          <div class="zf-form-hint">需验证；验证后可直接用邮箱登录</div>
           <div class="zf-form-error"></div>
         </div>
+        <!-- 邮箱是必填项，所以验证码行常驻。验证码校验在后端是「注册」场景，
+             与找回密码共用一张 email_verify_code 表、靠 scene 区分互不干扰 -->
+        <div class="zf-field" id="reg-code-field">
+          <label class="zf-form-label" for="reg-code">邮箱验证码</label>
+          <div style="display:flex;gap:8px">
+            <input class="zf-form-control" id="reg-code" name="verifyCode" maxlength="6"
+                   inputmode="numeric" autocomplete="one-time-code" placeholder="6 位数字"
+                   style="flex:1 1 auto;min-width:0">
+            <button class="zf-btn" type="button" id="btn-reg-send" style="flex:0 0 auto">发送验证码</button>
+          </div>
+          <div class="zf-form-error"></div>
+        </div>
+        <div class="zf-auth__optional">以下选填，可跳过</div>
         <div class="zf-grid zf-grid--2" style="gap:12px">
           <div class="zf-field">
-            <label class="zf-form-label" for="reg-email">邮箱</label>
-            <input class="zf-form-control" id="reg-email" name="email" placeholder="选填">
-            <div class="zf-form-error"></div>
+            <label class="zf-form-label" for="reg-nickname">昵称</label>
+            <input class="zf-form-control" id="reg-nickname" name="nickname" placeholder="默认用用户名">
           </div>
           <div class="zf-field">
             <label class="zf-form-label" for="reg-phone">手机号</label>
-            <input class="zf-form-control" id="reg-phone" name="phone" placeholder="选填">
+            <input class="zf-form-control" id="reg-phone" name="phone" placeholder="可留空">
             <div class="zf-form-error"></div>
           </div>
         </div>
@@ -125,16 +183,16 @@
         </button>
       </form>
 
-      <div class="zf-auth__switch" style="margin-top:24px">
-        <a href="pages/home.html">先逛逛首页 <i class="bi bi-chevron-right"></i></a>
-      </div>
+      <!-- 「先逛逛首页」已移除：它指向 pages/home.html，而那页走 ZF.requireLogin，
+           未登录会被立刻弹回 login.html —— 用户点了等于什么都没发生，还多一次跳转。
+           登录后再看首页才是正常路径。 -->
     </div>
   </section>
 </div>
 
 <script src="vendor/jquery/jquery.min.js"></script>
 <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="js/common.js?v=20260922n"></script>
+<script src="js/common.js?v=20261021e"></script>
 <script>
 /**
  * @file 登录 / 注册页交互
@@ -142,7 +200,11 @@
 (function ($, ZF) {
   'use strict';
 
-  /** 切换登录 / 注册面板 */
+  /** 邮箱与密码的校验规则，注册和找回密码两处共用同一份，避免两份漂移 */
+  var EMAIL_RE = /^[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}$/;
+  var PWD_RE = /^(?=.*[A-Za-z])(?=.*\d).{6,32}$/;
+
+  /** 切换登录 / 注册 / 找回密码面板 */
   $('.zf-auth__tab').on('click', function () {
     var panel = $(this).data('panel');
     $('.zf-auth__tab').removeClass('zf-auth__tab--active');
@@ -152,12 +214,21 @@
     ZF.clearValidate($('form'));
   });
 
+  /** 密码可见性切换：三个密码框共用一份事件委托，图标与输入类型一起换 */
+  $(document).on('click', '.zf-pwd-toggle', function () {
+    var $input = $(this).closest('.zf-pwd-wrap').find('input');
+    var show = $input.attr('type') === 'password';
+    $input.attr('type', show ? 'text' : 'password');
+    $(this).find('i').attr('class', show ? 'bi bi-eye-slash' : 'bi bi-eye');
+    $(this).attr('aria-label', show ? '隐藏密码' : '显示密码');
+  });
+
   /** 登录提交 */
   $('#panel-login').on('submit', function (e) {
     e.preventDefault();
     var $form = $(this);
     var ok = ZF.validate($form, {
-      username: { required: true, message: '请输入用户名' },
+      username: { required: true, message: '请输入用户名或邮箱' },
       password: { required: true, message: '请输入密码' }
     });
     if (!ok) {
@@ -181,7 +252,8 @@
   $('#panel-register').on('submit', function (e) {
     e.preventDefault();
     var $form = $(this);
-    var ok = ZF.validate($form, {
+    var regEmail = $.trim($form.find('[name=email]').val());
+    var rules = {
       username: {
         required: true, min: 4, max: 20,
         pattern: /^[A-Za-z][A-Za-z0-9_]{3,19}$/,
@@ -189,12 +261,15 @@
       },
       password: {
         required: true, min: 6, max: 32,
-        pattern: /^(?=.*[A-Za-z])(?=.*\d).{6,32}$/,
+        pattern: PWD_RE,
         message: '需 6~32 位且同时含字母和数字'
       },
-      email: { pattern: /^[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}$/, message: '邮箱格式不正确' },
-      phone: { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }
-    });
+      email: { required: true, pattern: EMAIL_RE, message: '请输入正确的邮箱地址' },
+      phone: { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' },
+      // 邮箱必填 ⇒ 验证码必填：先「发送验证码」再回填，后端按 REGISTER 场景校验
+      verifyCode: { required: true, pattern: /^\d{6}$/, message: '请输入 6 位数字邮箱验证码' }
+    };
+    var ok = ZF.validate($form, rules);
     if (!ok) {
       return;
     }
@@ -205,7 +280,8 @@
       email: $.trim($form.find('[name=email]').val()),
       phone: $.trim($form.find('[name=phone]').val()),
       city: $.trim($form.find('[name=city]').val()),
-      jobTitle: $.trim($form.find('[name=jobTitle]').val())
+      jobTitle: $.trim($form.find('[name=jobTitle]').val()),
+      verifyCode: $.trim($form.find('[name=verifyCode]').val())
     };
     var $btn = $('#btn-register');
     ZF.btnLoading($btn, true, '注册中…');
@@ -214,6 +290,175 @@
     }).then(function (user) {
       ZF.toast('注册成功，正在进入系统', 'success');
       setTimeout(function () { ZF.goAfterLogin(user); }, 600);
+    }).catch(function () {
+      ZF.btnLoading($btn, false);
+    });
+  });
+
+  /* ==================================================================
+   *  邮箱注册：填了邮箱 → 出现「验证码」行 → 发码 → 注册时后端校验。
+   *  邮件未启用（开发模式）时后端把验证码直接随返回值下发，这里自动回填 ——
+   *  否则注册会被 SMTP 配置卡死；启用邮件后 devCode 恒为空、走真实邮件。
+   * ================================================================== */
+
+  var $regSend = $('#btn-reg-send');
+  var regSendOrigin = $regSend.html();
+  var regTimer = null;
+
+  // 邮箱改为必填后，验证码行不再按输入显隐、常驻显示。
+  // （历史教训留档：[hidden] 属性配 .toggle(true) 是无效的 —— toggle 只清 display，
+  //  UA 样式表的 [hidden]{display:none} 仍生效，必须用 .prop('hidden', …)。）
+
+  /** 与找回密码的发码按钮同一套倒计时（后端限流也是同一套参数） */
+  function startRegCooldown() {
+    var left = SEND_INTERVAL;
+    function tick() {
+      if (left <= 0) {
+        window.clearInterval(regTimer);
+        regTimer = null;
+        $regSend.prop('disabled', false).html(regSendOrigin);
+        return;
+      }
+      $regSend.text('已发送，' + left + ' 秒后可重发');
+      left -= 1;
+    }
+    tick();
+    if (regTimer) {
+      window.clearInterval(regTimer);
+    }
+    regTimer = window.setInterval(tick, 1000);
+  }
+
+  function sendRegCode() {
+    var email = $.trim($('#panel-register [name=email]').val());
+    if (!EMAIL_RE.test(email)) {
+      ZF.toast('请先填写正确的邮箱地址', 'warn');
+      $('#reg-email').trigger('focus');
+      return;
+    }
+    ZF.btnLoading($regSend, true, '发送中…');
+    ZF.post('/auth/send-register-code', { email: email }).then(function (data) {
+      ZF.btnLoading($regSend, false);
+      if (data && data.devCode) {
+        // 开发模式：验证码已随响应返回，直接填进输入框，注册链路照常走
+        $('#reg-code').val(data.devCode);
+        ZF.toast('邮件服务未启用（开发模式），验证码已自动填入', 'info');
+      } else {
+        ZF.toast('验证码已发送到该邮箱，请查收（也看一眼垃圾箱）', 'success');
+      }
+      startRegCooldown();
+      $('#reg-code').trigger('focus');
+    }).catch(function () {
+      ZF.btnLoading($regSend, false);
+    });
+  }
+
+  $regSend.on('click', sendRegCode);
+  // 邮箱框里按回车是「发码」，不是提交整张表单
+  $('#reg-email').on('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendRegCode();
+    }
+  });
+
+  /* ==================================================================
+   *  找回密码：发邮箱验证码 → 填验证码 + 新密码 → 重置
+   * ================================================================== */
+
+  /** 与后端 CODE_INTERVAL_SECONDS 同一个值；改后端记得改这里 */
+  var SEND_INTERVAL = 60;
+  var $fgSend = $('#btn-fg-send');
+  var fgSendOrigin = $fgSend.html();
+  var fgTimer = null;
+
+  /**
+   * 重发按钮进入倒计时。
+   *
+   * <p>做成前端禁用而不是让用户反复点了吃后端的「发送过于频繁」：
+   * 后端那道口是防脚本的，前端这道是给人看的。</p>
+   */
+  function startFgCooldown() {
+    var left = SEND_INTERVAL;
+    function tick() {
+      if (left <= 0) {
+        window.clearInterval(fgTimer);
+        fgTimer = null;
+        $fgSend.prop('disabled', false).html(fgSendOrigin);
+        return;
+      }
+      $fgSend.text('已发送，' + left + ' 秒后可重发');
+      left -= 1;
+    }
+    tick();
+    if (fgTimer) {
+      window.clearInterval(fgTimer);
+    }
+    fgTimer = window.setInterval(tick, 1000);
+  }
+
+  function sendResetCode() {
+    var $form = $('#panel-forgot');
+    var ok = ZF.validate($form, {
+      email: { required: true, pattern: EMAIL_RE, message: '邮箱格式不正确' }
+    });
+    if (!ok) {
+      return;
+    }
+    ZF.btnLoading($fgSend, true, '发送中…');
+    ZF.post('/auth/forgot-password', {
+      email: $.trim($form.find('[name=email]').val())
+    }).then(function () {
+      ZF.btnLoading($fgSend, false);
+      ZF.toast('验证码已发送到该邮箱，请查收（也看一眼垃圾箱）', 'success');
+      startFgCooldown();
+      $('#fg-code').trigger('focus');
+    }).catch(function () {
+      ZF.btnLoading($fgSend, false);
+    });
+  }
+
+  $fgSend.on('click', sendResetCode);
+
+  // 登录面板上那句「忘记密码？」只是把用户送到第三个面板，不另做一套逻辑
+  $('#link-forgot').on('click', function () {
+    $('.zf-auth__tab[data-panel=forgot]').trigger('click');
+  });
+
+  // 邮箱框里按回车应当是「发码」，而不是提交整张表单、被要求先填验证码
+  $('#fg-email').on('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendResetCode();
+    }
+  });
+
+  $('#panel-forgot').on('submit', function (e) {
+    e.preventDefault();
+    var $form = $(this);
+    var ok = ZF.validate($form, {
+      verifyCode: { required: true, pattern: /^\d{6}$/, message: '请输入 6 位数字验证码' },
+      newPassword: { required: true, min: 6, max: 32, pattern: PWD_RE, message: '需 6~32 位且同时含字母和数字' }
+    });
+    if (!ok) {
+      return;
+    }
+    var $btn = $('#btn-fg-reset');
+    ZF.btnLoading($btn, true, '重置中…');
+    ZF.post('/auth/reset-password', {
+      email: $.trim($form.find('[name=email]').val()),
+      verifyCode: $.trim($form.find('[name=verifyCode]').val()),
+      newPassword: $form.find('[name=newPassword]').val()
+    }).then(function () {
+      ZF.btnLoading($btn, false);
+      ZF.toast('密码已重置，请用新密码登录', 'success');
+      if (fgTimer) {
+        window.clearInterval(fgTimer);
+        fgTimer = null;
+        $fgSend.prop('disabled', false).html(fgSendOrigin);
+      }
+      $('.zf-auth__tab[data-panel=login]').trigger('click');
+      $('#login-username').trigger('focus');
     }).catch(function () {
       ZF.btnLoading($btn, false);
     });

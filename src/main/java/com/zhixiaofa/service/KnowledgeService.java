@@ -32,6 +32,22 @@ public interface KnowledgeService {
 
     void likeArticle(Long id);
 
+    /**
+     * 生成文章「AI 导读」。
+     *
+     * <p>遵循全站 AI 接入的通用原则——<b>结构归本地，表述归模型</b>：
+     * 文章的小节结构是现成的（本地即可提取），模型只负责把要点讲得更顺。
+     * 返回结构：{@code {mode: "AI" | "本地", guide: 文本}}——
+     * mode 告诉前端这份导读是谁写的（AI 或本地结构提取），前端据此展示来源徽标。</p>
+     *
+     * <p>AI 未启用或调用失败时<b>不抛异常</b>，降级返回本地导读：
+     * 文章导读是增强功能，不该因为模型挂了而不可用。</p>
+     *
+     * @param id 文章 id
+     * @return {@code {mode, guide}}
+     */
+    java.util.Map<String, String> articleGuide(Long id);
+
     KnowledgeArticle saveArticle(KnowledgeArticle article, List<String> tags);
 
     KnowledgeArticle updateArticle(Long id, KnowledgeArticle article, List<String> tags);

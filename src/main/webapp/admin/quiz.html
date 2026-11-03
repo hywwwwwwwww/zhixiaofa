@@ -6,12 +6,14 @@
   <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
   <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
   <title>题库管理 - 职小法管理后台</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body class="zf-admin-page">
+<body class="zf-admin-page zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -155,8 +157,8 @@
 <script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
 <script src="../vendor/echarts/echarts.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
-<script src="admin-common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
+<script src="admin-common.js?v=20261021e"></script>
 <script>
 /**
  * @file quiz.html —— 题库管理
@@ -174,15 +176,16 @@
    *   #0e1115 = --zf-ink        #5f6b7a = --zf-ink-3
    * 配色策略：主色 + 同族浅阶 + 类比色；**红只留给「慢 / 风险」语义**。
    * ---------------------------------------------------------------- */
-  var C_PRIMARY = '#4285f4';
-  var C_DANGER = '#ef4444';
+  var C_PRIMARY = '#1f3a5f';
+  var C_DANGER = '#b0342a';
   var C_INK = '#0e1115';
   var C_INK3 = '#5f6b7a';
   var C_BORDER = '#ebebeb';
   /** 等宽数字字体（与 --zf-font-mono 等值），保证数值列对齐、不抖 */
   var MONO = 'Consolas, "Cascadia Mono", monospace';
   /** 定性分类调色板：主色 + 同族浅阶 + 类比色 */
-  var PIE_COLORS = ['#4285f4', '#5b9bff', '#00bcd4', '#34a853', '#9334e6', '#607d8b', '#fbbc05', '#ff7043'];
+  /* 饼图：靛的 8 阶明度梯度（与 index 同一套） */
+  var PIE_COLORS = ['#1f3a5f', '#2f5480', '#416b99', '#5b87b0', '#7ba3c6', '#9fbdd8', '#c3d5e6', '#8a94a3'];
 
   /** 统一的 tooltip 外观（白底 + 浅描边 + 圆角 + 轻阴影） */
   function tip(extra) {

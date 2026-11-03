@@ -6,6 +6,7 @@ import com.zhixiaofa.dao.CourtCaseDao;
 import com.zhixiaofa.dao.impl.CourtCaseDaoImpl;
 import com.zhixiaofa.exception.BizException;
 import com.zhixiaofa.model.CourtCase;
+import com.zhixiaofa.util.AiConfig;
 import com.zhixiaofa.service.CourtCaseService;
 import com.zhixiaofa.util.DateUtil;
 import com.zhixiaofa.util.StringUtil;
@@ -100,7 +101,7 @@ public class CourtCaseServiceImpl implements CourtCaseService {
         c.setCompensationMin(range[0]);
         c.setCompensationMax(range[1]);
         c.setSimilarCount(similar);
-        c.setResultSummary(buildSummary(caseType, probability, range, similar));
+        c.setResultSummary(buildSummary(desc, caseType, probability, range, similar));
         c.setCreatedAt(DateUtil.now());
 
         Long id = caseDao.insert(c);
@@ -259,7 +260,59 @@ public class CourtCaseServiceImpl implements CourtCaseService {
         return new BigDecimal("6000");
     }
 
-    private String buildSummary(String caseType, BigDecimal probability, BigDecimal[] range, int similar) {
+    /**
+     * 生成推演结论。
+     *
+     * <p><b>职责划分（这条不能破）</b>：胜诉概率、赔偿区间、同类案件数都是
+     * {@link #calcProbability} / {@link #calcCompensation} <b>算出来的</b>，
+     * 是「可解释、可复现」的数值 —— 模型只负责**把这些数字讲成人话**，
+     * 提示词里明令不得改动任何数字。数值归算法、表述归模型。</p>
+     */
+    private String buildSummary(String description, String caseType, BigDecimal probability,
+                                BigDecimal[] range, int similar) {
+        if (AiConfig.isEnabled()) {
+            try {
+                return LlmClient.chat(COURT_SYSTEM_PROMPT,
+                        buildCourtUserMessage(description, caseType, probability, range, similar));
+            } catch (Exception e) {
+                log.warn("模型生成推演结论失败，降级为规则拼装: {}", e.getMessage());
+            }
+        }
+        return buildSummaryByRule(caseType, probability, range, similar);
+    }
+
+    /** 系统提示词。⚠️ 三段式小节名是硬约束：前端会把【…】渲染成小节标题 */
+    private static final String COURT_SYSTEM_PROMPT =
+            "你是「职小法」的劳动争议推演助手，面向不懂法的普通劳动者。必须遵守：\n"
+          + "1. **绝对不得改动用户消息里给出的任何数字**（胜诉概率、赔偿区间、同类案件数）——\n"
+          + "   那些是系统按类案数据算出来的，你只负责用它们成文，不得重算、不得四舍五入成别的值。\n"
+          + "2. 严格按三段式输出，小节名用中文方括号包裹且不得增删改：\n"
+          + "   【推演结论】\n【维权路径】\n【举证提示】\n"
+          + "3. 【推演结论】结合案情说清「这类争议通常怎么认、用户主张是否站得住」，2~4 句。\n"
+          + "4. 【维权路径】写成「协商 → 劳动监察投诉 → 劳动仲裁 → 起诉」的递进链条，并点明时效。\n"
+          + "5. 【举证提示】列出 3~5 项对本类案件最关键的证据，说明各自能证明什么。\n"
+          + "6. 简体中文，平实，不写客套话，不用任何 Markdown 符号。";
+
+    private String buildCourtUserMessage(String description, String caseType, BigDecimal probability,
+                                         BigDecimal[] range, int similar) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("【案情描述】\n").append(description).append("\n\n");
+        sb.append("【系统判定】\n");
+        sb.append("案件类型：").append(caseType).append("\n");
+        sb.append("同类案件数：").append(similar).append(" 件\n");
+        sb.append("预估胜诉概率：").append(probability).append("%\n");
+        if (range[1].compareTo(BigDecimal.ZERO) > 0) {
+            sb.append("参考赔偿区间：").append(range[0].stripTrailingZeros().toPlainString())
+              .append(" ~ ").append(range[1].stripTrailingZeros().toPlainString()).append(" 元\n");
+        } else {
+            sb.append("参考赔偿区间：本类案件通常支持补缴而非金钱赔偿\n");
+        }
+        sb.append("\n请据此输出三段式推演结论，数字必须与上面完全一致。");
+        return sb.toString();
+    }
+
+    /** 原来的规则拼装，作为降级路径保留 */
+    private String buildSummaryByRule(String caseType, BigDecimal probability, BigDecimal[] range, int similar) {
         StringBuilder sb = new StringBuilder();
         sb.append("【推演结论】本案属于「").append(caseType).append("」类劳动争议，")
                 .append("系统检索到 ").append(similar).append(" 件同类案件，")

@@ -1,0 +1,48 @@
+# ============================================================================
+#  大模型接入配置 · 外部覆盖文件（示例模板）
+#  ---------------------------------------------------------------------------
+#  用法：
+#    1. 复制本文件并去掉 .example 后缀 → config/ai.properties
+#    2. 按下面的说明填写各项，尤其是 ai.apiKey
+#    3. 本文件优先级高于 classpath 里的 src/main/resources/ai.properties，
+#       无需修改任何 Java 代码；改完需重启应用。
+#
+#  ⚠️ config/ai.properties 已在 .gitignore 中忽略，因为里面有密钥。
+#     本示例文件只保留字段名，**绝不要**把真实 key 写进本文件或提交到仓库。
+#
+#  【怎么拿到 key】
+#    1. 打开 https://platform.sensenova.cn/ ，注册并完成手机号验证
+#    2. 控制台 → API Keys → 创建一枚 sk- 开头的密钥
+#    3. 填到下方 ai.apiKey=
+#
+#  【想换模型】填好 key 之后跑一次 `python tools/ai-check.py`，
+#    它会列出你账号下**实际可用**的模型名，再回填到 ai.model。
+# ============================================================================
+
+# 总开关。false 时完全走原来的规则拼装（检索法条 → 模板成文），功能不受影响。
+ai.enabled=true
+
+# OpenAI 兼容的 baseUrl（以下两个都是 SenseNova 官方入口，任选其一）：
+#   平台版      https://token.sensenova.cn/v1
+#   商汤大装置  https://api.sensenova.cn/compatible-mode/v2
+ai.baseUrl=https://token.sensenova.cn/v1
+
+# 模型名。具体可选值以 tools/ai-check.py 列出的为准。
+ai.model=sensenova-6.8-flash-lite
+
+# ★ 在这里填入你的密钥（sk- 开头）。留空则 AI 功能自动降级为规则拼装。
+ai.apiKey=
+
+# 单次请求超时（毫秒）。模型写长回答时较慢，法律问答给了较宽松的值。
+ai.timeoutMs=60000
+
+# 采样温度。法律场景要稳，用低温度减少发挥。
+ai.temperature=0.3
+
+# 单次回复的最大 token。结构化回答（结论/依据/建议）大约需要 800~1500。
+ai.maxTokens=1600
+
+# 是否允许模型补全文书模板里**用户留空的**占位符。
+# true 时：只补空字段，且会在文末追加一行「本段由 AI 起草，请核对」；
+#         模板自身的固定条款与法条引用**绝不改动**。
+ai.fillDocPlaceholders=true

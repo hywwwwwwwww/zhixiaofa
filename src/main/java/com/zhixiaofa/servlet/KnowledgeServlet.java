@@ -88,6 +88,10 @@ public class KnowledgeServlet extends BaseServlet {
             service.likeArticle(id);
             return Result.success("点赞成功", null);
         }
+        if ("POST".equals(method) && "guide".equals(segs[1])) {
+            // 生成会调用模型（有成本），且登录态已由 AuthFilter 兜住（POST 不在匿名白名单）
+            return Result.success("导读已生成", service.articleGuide(id));
+        }
         throw new BizException(ResultCode.METHOD_NOT_ALLOWED, "不支持的子资源: " + segs[1]);
     }
 

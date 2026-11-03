@@ -153,7 +153,6 @@ CREATE TABLE `contract` (
     PRIMARY KEY (`id`),
     KEY `idx_contract_user_id` (`user_id`),
     KEY `idx_contract_status`  (`status`),
-    KEY `idx_contract_created` (`created_at`),
     CONSTRAINT `fk_contract_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='合同表';
 
@@ -326,6 +325,32 @@ CREATE TABLE `operation_log` (
     KEY `idx_log_created`  (`created_at`),
     KEY `idx_log_uri`      (`uri`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+
+-- ---------------------------------------------------------------------------
+-- 16. email_verify_code  邮箱验证码表（找回密码）
+--     设计说明：
+--       · 不存验证码明文，只存 SHA-256(salt+码) 摘要，与 sys_user.password 同一套做法；
+--       · 不加指向 sys_user 的外键：这张表的标识是「邮箱」而非用户主键（找回密码时
+--         用户可能压根不存在），且删号不该被历史验证码挡住，所以用普通索引；
+--       · 过期记录由发信时顺带清理（EmailVerifyCodeDao.purgeBefore），表不会无限增长。
+-- ---------------------------------------------------------------------------
+DROP TABLE IF EXISTS `email_verify_code`;
+CREATE TABLE `email_verify_code` (
+    `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `email`      VARCHAR(100) NOT NULL                COMMENT '目标邮箱',
+    `scene`      VARCHAR(30)  NOT NULL DEFAULT 'RESET_PASSWORD' COMMENT '业务场景：RESET_PASSWORD=找回密码 / REGISTER=注册',
+    `code_hash`  CHAR(64)     NOT NULL                COMMENT '验证码摘要(SHA-256(salt+明文))',
+    `salt`       CHAR(32)     NOT NULL                COMMENT '验证码盐值(随机16字节的hex)',
+    `expire_at`  DATETIME     NOT NULL                COMMENT '过期时间',
+    `used`       TINYINT      NOT NULL DEFAULT 0      COMMENT '是否已作废：1=已使用或已达错误上限',
+    `attempts`   INT          NOT NULL DEFAULT 0      COMMENT '校验错误次数',
+    `client_ip`  VARCHAR(64)      NULL                COMMENT '发起请求的客户端IP，用于按IP限流',
+    `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_evc_email_scene_created` (`email`, `scene`, `created_at`),
+    KEY `idx_evc_ip_created`          (`client_ip`, `created_at`),
+    KEY `idx_evc_expire`              (`expire_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='邮箱验证码表';
 
 SET FOREIGN_KEY_CHECKS = 1;
 

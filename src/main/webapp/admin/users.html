@@ -6,12 +6,14 @@
   <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
   <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
   <title>用户管理 - 职小法管理后台</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-table/bootstrap-table.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body class="zf-admin-page">
+<body class="zf-admin-page zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -142,8 +144,8 @@
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table.min.js"></script>
 <script src="../vendor/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
-<script src="admin-common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
+<script src="admin-common.js?v=20261021e"></script>
 <script>
 /**
  * @file users.html —— 用户管理
@@ -173,7 +175,10 @@
   function contactFormatter(value, row) {
     var email = row.email ? ZF.escape(row.email) : '—';
     var phone = row.phone ? ZF.escape(row.phone) : '—';
-    return '<div>邮箱：' + email + '</div><div>手机：' + phone + '</div>';
+    // 邮箱/手机各占一行；长邮箱（如 10 位 QQ 号）折成 3 行会把行高从 60 撑到 80，
+    // 所以单行省略、完整值放 title（悬停可看）
+    return '<div class="zf-user-contact__line" title="' + email + '">邮箱：' + email + '</div>' +
+      '<div class="zf-user-contact__line" title="' + phone + '">手机：' + phone + '</div>';
   }
 
   /** 城市/岗位合并展示 */

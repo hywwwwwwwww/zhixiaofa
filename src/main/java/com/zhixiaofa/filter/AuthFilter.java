@@ -26,7 +26,7 @@ import java.util.List;
  *
  * <p>白名单策略（放在过滤器而不是每个 Servlet 里，避免遗漏）：</p>
  * <ul>
- *   <li>认证类：登录、注册接口匿名可访问；</li>
+ *   <li>认证类：登录、注册、找回密码（发验证码 / 凭码设新密码）接口匿名可访问；</li>
  *   <li>公开只读内容：法条、普法文章、文书模板、知识自测支持匿名 GET，
  *       这样未登录用户也能先浏览内容再决定是否注册。</li>
  * </ul>
@@ -42,7 +42,11 @@ public class AuthFilter implements Filter {
 
     /** 完全匿名的路径前缀 */
     private static final List<String> ANONYMOUS = Arrays.asList(
-            "/api/auth/login", "/api/auth/register");
+            "/api/auth/login", "/api/auth/register",
+            // 注册发码与找回密码同理：调用方必然还没登录，不加进来就会被本过滤器 401 掉
+            "/api/auth/send-register-code",
+            // 找回密码两步都必须在「没登录」的状态下调用，不加进来就会被本过滤器 401 掉
+            "/api/auth/forgot-password", "/api/auth/reset-password");
 
     /** 允许匿名 GET 的路径前缀（公开只读内容） */
     private static final List<String> PUBLIC_GET = Arrays.asList(

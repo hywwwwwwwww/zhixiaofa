@@ -15,7 +15,9 @@ import com.zhixiaofa.model.KnowledgeArticle;
 import com.zhixiaofa.model.KnowledgeTag;
 import com.zhixiaofa.model.QuizQuestion;
 import com.zhixiaofa.service.KnowledgeService;
+import com.zhixiaofa.util.AiConfig;
 import com.zhixiaofa.util.DateUtil;
+import com.zhixiaofa.service.impl.LlmClient;
 import com.zhixiaofa.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +103,82 @@ public class KnowledgeServiceImpl implements KnowledgeService {
             throw new BizException(ResultCode.DATA_NOT_FOUND, "文章不存在");
         }
         articleDao.incrementLike(id);
+    }
+
+    /** 导读提示词：小节名锁死、禁止 Markdown、不新增法律观点（与全站 AI 约定一致） */
+    private static final String GUIDE_SYSTEM_PROMPT =
+            "你是劳动法普法文章的导读助手。用户会给你一篇文章的标题与全文。\n"
+          + "你只负责写「导读」——帮读者在阅读前抓住重点，不重复原文，不新增法律观点。\n"
+          + "硬约束：\n"
+          + "1. 只输出以下三个小节，小节名一字不改：【核心要点】【涉及法条】【阅读建议】\n"
+          + "2. 【核心要点】3 至 5 条，每条一行，只提炼原文已有内容；\n"
+          + "3. 【涉及法条】只列原文中出现的法条名称与条号，原文没有的不要编造；\n"
+          + "4. 【阅读建议】一两句话，说明适合什么情况的读者、建议先读哪部分；\n"
+          + "5. 不要任何 Markdown 符号，不要开场白与结尾客套。";
+
+    @Override
+    public java.util.Map<String, String> articleGuide(Long id) {
+        KnowledgeArticle a = articleDao.findById(id);
+        if (a == null) {
+            throw new BizException(ResultCode.DATA_NOT_FOUND, "文章不存在");
+        }
+        // 本地兜底导读：从文章结构里直接提取小节标题与【提示】段——
+        // 结构归本地（文章写好的骨架是现成的），模型挂了导读功能也不可用性为零。
+        String outline = localOutline(a);
+        if (!AiConfig.isEnabled()) {
+            log.info("AI 导读：模型未启用，返回本地结构导读: id={}", id);
+            Map<String, String> m = new LinkedHashMap<>();
+            m.put("mode", "本地");
+            m.put("guide", outline);
+            return m;
+        }
+        try {
+            String text = LlmClient.chat(GUIDE_SYSTEM_PROMPT,
+                    "标题：" + a.getTitle() + "\n\n全文：\n" + a.getContent());
+            if (StringUtil.isEmpty(text)) {
+                throw new IllegalStateException("模型返回为空");
+            }
+            Map<String, String> m = new LinkedHashMap<>();
+            m.put("mode", "AI");
+            m.put("guide", text.trim());
+            log.info("AI 导读生成成功: id={}, mode=AI", id);
+            return m;
+        } catch (Exception e) {
+            // 与问答/小法庭同一策略：只 warn 不抛，降级到本地结构导读
+            log.warn("AI 导读生成失败，降级为本地结构导读: id={}, 原因={}", id, e.getMessage());
+            Map<String, String> m = new LinkedHashMap<>();
+            m.put("mode", "本地");
+            m.put("guide", outline);
+            return m;
+        }
+    }
+
+    /**
+     * 本地结构导读：提取「一、二、…」小节标题行与【提示】段。
+     *
+     * @param a 文章
+     * @return 结构化导读文本（保证非空——一文都没有小节时退化为标题句）
+     */
+    private String localOutline(KnowledgeArticle a) {
+        StringBuilder sb = new StringBuilder("【本文结构】\n");
+        boolean any = false;
+        for (String line : (a.getContent() == null ? "" : a.getContent()).split("\n")) {
+            String s = line.trim();
+            if (s.isEmpty()) {
+                continue;
+            }
+            if (s.matches("^(一|二|三|四|五|六|七|八|九|十)、.*$")) {
+                sb.append(s).append("\n");
+                any = true;
+            } else if (s.startsWith("【提示】")) {
+                sb.append(s).append("\n");
+                any = true;
+            }
+        }
+        if (!any) {
+            sb.append("本文围绕「").append(a.getTitle()).append("」展开，请阅读全文了解要点。");
+        }
+        return sb.toString();
     }
 
     @Override

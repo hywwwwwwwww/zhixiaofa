@@ -51,7 +51,8 @@
     {
       group: '系统运维',
       items: [
-        { key: 'logs', text: '日志监控', icon: 'bi-activity', href: 'logs.html' }
+        { key: 'logs', text: '日志监控', icon: 'bi-activity', href: 'logs.html' },
+        { key: 'ai', text: 'AI 设置', icon: 'bi-robot', href: 'ai-settings.html' }
       ]
     }
   ];
@@ -66,6 +67,7 @@
    * @param {Object} user 当前登录管理员
    */
   ZF.renderAdminSidebar = function (key, user) {
+
     if ($('.zf-sidebar').length) {
       return; // 已渲染，避免重复插入
     }
@@ -73,7 +75,7 @@
 
     var html = ['<aside class="zf-sidebar zf-admin-sidebar">'];
     html.push('<div class="zf-sidebar__brand">');
-    html.push('<div class="zf-sidebar__mark">职法</div>');
+    html.push('<div class="zf-sidebar__mark"><img src="' + ZF.CTX + '/favicon.svg?v=20261021c" alt="" width="40" height="40"></div>');
     html.push('<div><h1 class="zf-sidebar__name">职小法 · 管理后台</h1>');
     html.push('<p class="zf-sidebar__slogan">内容与用户运营控制台</p></div></div>');
 
@@ -219,7 +221,11 @@
       '<i class="bi bi-box-arrow-right"></i>退出</button>'
     );
     $top.off('click.zfadminlogout').on('click.zfadminlogout', '#zf-admin-logout', function () {
-      ZF.logout();
+      // ★ 这里原来写的是裸的 ZF.logout()，**没有确认文案** → 点一下立刻退出。
+      //   「换账号登录」那个按钮是有确认的，唯独顶栏这个漏了（两者容易看混）。
+      //   现在 ZF.logout 的默认行为就是确认，这里再把文案显式写出来，
+      //   让「退出必须确认」这件事在调用点也一眼可见。
+      ZF.logout('确定要退出登录吗？');
     });
   };
 

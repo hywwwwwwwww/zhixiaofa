@@ -9,6 +9,9 @@ import com.zhixiaofa.dao.impl.ContractRiskDaoImpl;
 import com.zhixiaofa.exception.BizException;
 import com.zhixiaofa.model.Contract;
 import com.zhixiaofa.model.ContractRisk;
+import com.zhixiaofa.util.AiConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zhixiaofa.service.ContractService;
 import com.zhixiaofa.util.DateUtil;
 import com.zhixiaofa.util.JdbcExecutor;
@@ -95,7 +98,11 @@ public class ContractServiceImpl implements ContractService {
         if (StringUtil.isEmpty(content)) {
             throw new BizException(ResultCode.PARAM_ERROR, "合同正文不能为空");
         }
-        List<ContractRisk> risks = scan(content);
+        // ① 规则扫描：决定「有没有风险 / 什么等级 / 哪一条 / 关联哪条法律」——
+        //    这一步是**可解释、可复现**的，不交给模型。
+        // ② 模型富化：只重写每条风险的「说明」与「建议」，且必须结合合同的**实际条款原文**。
+        //    scan 本身保持纯粹（单测直接依赖它的规则文本），AI 是外面包的一层。
+        List<ContractRisk> risks = enrichByAi(scan(content));
 
         // 事务：合同主表 + 风险点子表一起提交
         return JdbcExecutor.inTransaction(conn -> {
@@ -226,6 +233,125 @@ public class ContractServiceImpl implements ContractService {
             }
         }
         return list;
+    }
+
+    // ------------------------------------------------------------------ 模型富化
+
+    /**
+     * 让模型把每条风险的「说明 / 建议」改写成**针对这份合同实际条款**的话。
+     *
+     * <h4>为什么现在的规则话术不够</h4>
+     * <p>规则表里的 {@code riskDesc} / {@code suggestion} 是**通用话术**：只要命中关键词，
+     * 每份合同看到的说明都一模一样，压根没看用户合同到底怎么写的。
+     * 而 {@link #scan} 其实已经把命中的**条款原文**抓出来了（{@code clauseContent}）——
+     * 把这段原文交给模型，它就能指出「你这份合同第 15 条是怎么写的、具体问题在哪」。</p>
+     *
+     * <h4>职责划分（与问答 / 小法庭一致）</h4>
+     * <p><b>判定归规则，表述归模型</b>：风险等级、条款编号、关联法条全部保留规则结果，
+     * 模型只改两段文字，且在提示词里明令不得改动已给出的法定标准（30%、200%/300%、2 年等）。</p>
+     *
+     * <p>任何一步出问题（未启用 / 调用失败 / 返回不是合法 JSON / 条目对不上）都**原样返回规则话术**，
+     * 也就是回到本次改动之前的行为 —— 审查功能不会因为模型挂了而不可用。</p>
+     *
+     * @param risks 规则扫描结果（会被就地修改）
+     * @return 同一个 list（便于链式调用）
+     */
+    List<ContractRisk> enrichByAi(List<ContractRisk> risks) {
+        if (risks == null || risks.isEmpty() || !AiConfig.isEnabled()) {
+            return risks;
+        }
+        try {
+            String raw = LlmClient.chat(CONTRACT_SYSTEM_PROMPT, buildContractUserMessage(risks));
+            int n = applyAiText(risks, raw);
+            if (n > 0) {
+                log.info("合同审查：{} 条风险点的说明与建议由模型结合合同原文重写（规则判定未改动）", n);
+            }
+            return risks;
+        } catch (Exception e) {
+            // 降级是设计内的退路，只 warn 不抛
+            log.warn("模型重写风险点失败，保留规则话术: {}", e.getMessage());
+            return risks;
+        }
+    }
+
+    /** 系统提示词。⚠️ 「只输出 JSON 数组」是硬约束，调用方按 {@code i} 序号回填 */
+    private static final String CONTRACT_SYSTEM_PROMPT =
+            "你是中国劳动合同风险审查助手。用户上传了一份劳动合同，系统已用规则命中了几处风险条款。\n"
+          + "你只负责**把每处风险讲清楚**；风险等级与条款编号由规则判定，不由你决定，也不得改动。\n"
+          + "硬约束：\n"
+          + "1. 只输出**一个 JSON 数组**，不要任何解释文字，不要用 ``` 代码块包裹。\n"
+          + "2. 每个元素形如 {\"i\": 1, \"desc\": 风险说明, \"suggestion\": 修改建议}；\n"
+          + "   i 必须与下方的「风险点编号」一一对应，不增不减、不打乱。\n"
+          + "3. desc：结合给出的**合同原文字段**说明这处条款为什么有风险（2~3 句），要能让用户对照自己的合同看懂。\n"
+          + "4. suggestion：给出能直接落到合同文字上的修改方案 —— 改成什么表述、补什么条款，不要空泛。\n"
+          + "5. **原说明与原建议里已有的法定标准（如「不低于 30%」「200%、300%」「不超过 2 年」）与法条条号\n"
+          + "   （如《劳动合同法》第三十九条）必须原样保留，不得改动数字、不得新增或更换条号。**\n"
+          + "6. 不要编造合同里没写的内容，不要新增风险点。\n"
+          + "7. 简体中文，平实，不用任何 Markdown 符号。";
+
+    /** 把「风险点编号 + 条款原文 + 原说明原建议」拼成用户消息 */
+    private String buildContractUserMessage(List<ContractRisk> risks) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("【风险点】共 ").append(risks.size()).append(" 处（等级与条款编号由系统判定，不得改动）\n");
+        for (int i = 0; i < risks.size(); i++) {
+            ContractRisk r = risks.get(i);
+            sb.append("\n--- 风险点 ").append(i + 1).append(" ---\n");
+            sb.append("风险等级：").append(r.getRiskLevel()).append("\n");
+            sb.append("条款编号：").append(StringUtil.defaultIfEmpty(r.getClauseNo(), "未标注")).append("\n");
+            sb.append("合同原文：").append(StringUtil.defaultIfEmpty(r.getClauseContent(), "（未截取到原文）")).append("\n");
+            sb.append("系统原说明：").append(r.getRiskDesc()).append("\n");
+            sb.append("系统原建议：").append(r.getSuggestion()).append("\n");
+        }
+        sb.append("\n请按要求输出 JSON 数组。");
+        return sb.toString();
+    }
+
+    /**
+     * 把模型返回的 JSON 数组回填到风险点。
+     *
+     * <p>用 {@code i}（1 起）作为对应关系，**不用条款号** —— 同一份合同里
+     * 「第 6 条」可能被判出两处风险（加班费包干 + 加班审批），用条款号会串。</p>
+     *
+     * @return 成功改写的条数；0 表示这份返回不可用（调用方据此决定要不要打日志）
+     */
+    private int applyAiText(List<ContractRisk> risks, String raw) {
+        if (StringUtil.isEmpty(raw)) {
+            return 0;
+        }
+        // 模型偶尔会在 JSON 前后带一句话，宽进：取第一个 [ 到最后一个 ]
+        int a = raw.indexOf('[');
+        int b = raw.lastIndexOf(']');
+        if (a < 0 || b <= a) {
+            return 0;
+        }
+        JsonNode arr;
+        try {
+            arr = new ObjectMapper().readTree(raw.substring(a, b + 1));
+        } catch (Exception e) {
+            log.warn("模型返回的 JSON 解析失败，保留规则话术: {}", e.getMessage());
+            return 0;
+        }
+        if (arr == null || !arr.isArray()) {
+            return 0;
+        }
+        int n = 0;
+        for (JsonNode node : arr) {
+            int i = node.path("i").asInt(0);
+            if (i < 1 || i > risks.size()) {
+                continue;
+            }
+            ContractRisk r = risks.get(i - 1);
+            String desc = node.path("desc").asText("");
+            String sug = node.path("suggestion").asText("");
+            if (StringUtil.isNotEmpty(desc)) {
+                r.setRiskDesc(desc.trim());
+                n++;
+            }
+            if (StringUtil.isNotEmpty(sug)) {
+                r.setSuggestion(sug.trim());
+            }
+        }
+        return n;
     }
 
     /** 取命中关键词附近的一段原文作为「问题条款」，便于前端定位 */

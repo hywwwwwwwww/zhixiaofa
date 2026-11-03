@@ -177,9 +177,18 @@
   /**
    * 退出登录。
    *
-   * @param {string} [confirmText] 传入时先弹二次确认，用户取消则不退出。
-   *        管理端的「换账号登录」按钮会传入自定义文案（见 admin-common.js）。
-   * @returns {Promise|undefined} 未传确认文案时返回请求 Promise；传了则返回确认链
+   * **默认就会弹二次确认**（`ZF.logout()` 不传参数也确认）。
+   *
+   * <h4>为什么把「确认」做成默认</h4>
+   * <p>「退出登录」是一次不可撤销的动作，任何入口都该先问一句。
+   * 早先的写法是「传了文案才确认」，于是**调用点漏传就等于直接退出** ——
+   * 实测就踩过：管理端顶栏的「退出」按钮漏传文案，点一下立刻退出、没有挽回余地
+   * （同一份文件里另一个「换账号登录」按钮传了，所以看起来像是有的）。
+   * 这类「默认不安全、要靠每个调用点自觉」的 API 一定会再漏，改成默认安全。</p>
+   *
+   * @param {string|boolean} [confirmText] 自定义确认文案；
+   *        显式传 `''` 或 `false` 表示**不确认、直接退出**（留给程序化登出场景）。
+   * @returns {Promise} 确认链或登出请求
    */
   ZF.logout = function (confirmText) {
     function doLogout() {
@@ -188,8 +197,16 @@
         window.location.href = CTX + '/login.html';
       });
     }
-    if (confirmText) {
-      return ZF.confirm(confirmText).then(function (ok) {
+    var ask = null;
+    if (confirmText === '' || confirmText === false) {
+      ask = null;                                  // 显式豁免
+    } else if (typeof confirmText === 'string') {
+      ask = confirmText;                           // 自定义文案
+    } else {
+      ask = '确定要退出登录吗？';                    // ★ 缺省 = 默认文案（安全默认）
+    }
+    if (ask) {
+      return ZF.confirm(ask).then(function (ok) {
         if (ok) {
           return doLogout();
         }
@@ -279,17 +296,67 @@
   };
 
   /**
-   * 二次确认。
-   * @param {string} message 确认文案
+   * 二次确认。**站内弹窗**，不再用浏览器原生的 window.confirm。
+   *
+   * 【为什么换掉原生】
+   *   · 原生弹窗由浏览器渲染，字体/圆角/按钮样式全都改不了，与整站的视觉体系割裂；
+   *   · 它是**阻塞式**的，会冻住整个页面；
+   *   · 无法标注「这是危险操作」（删除类确认本该给确定按钮上朱色）。
+   * 【为什么调用点一行都不用改】
+   *   返回值仍是 Promise<boolean>，签名与原生版完全一致 —— 全站 22 个调用点原样可用。
+   *
+   * @param {string} message 确认文案。**允许含 HTML**：调用方约定自行 ZF.escape
+   *        用户数据后再拼接（与 ZF.toast 一致）；换行符会渲染成 <br>。
+   * @param {Object} [opts] { title, okText, cancelText, danger }
    * @returns {Promise<boolean>}
    */
-  ZF.confirm = function (message) {
+  ZF.confirm = function (message, opts) {
+    opts = opts || {};
     return new Promise(function (resolve) {
-      if (window.confirm(message)) {
-        resolve(true);
-      } else {
-        resolve(false);
+      // 渐进降级：Bootstrap 不可用时退回原生，保证「能确认」这件事不丢
+      if (!window.bootstrap || !window.bootstrap.Modal) {
+        resolve(!!window.confirm(message));
+        return;
       }
+      var settled = false;
+      function finish(ok) {
+        if (settled) { return; }
+        settled = true;
+        resolve(!!ok);
+      }
+
+      var $host = $('<div class="modal fade zf-confirm" tabindex="-1" aria-hidden="true">' +
+        '<div class="modal-dialog modal-dialog-centered zf-confirm__dialog">' +
+        '<div class="modal-content">' +
+        '<div class="modal-header"><h5 class="modal-title"></h5></div>' +
+        '<div class="modal-body"></div>' +
+        '<div class="modal-footer">' +
+        '<button type="button" class="zf-btn zf-btn--ghost" data-act="cancel"></button>' +
+        '<button type="button" class="zf-btn zf-btn--primary" data-act="ok"></button>' +
+        '</div></div></div></div>');
+
+      $host.find('.modal-title').text(opts.title || '请确认');
+      $host.find('.modal-body').html(
+        String(message === null || message === undefined ? '' : message).replace(/\n/g, '<br>')
+      );
+      $host.find('[data-act=cancel]').text(opts.cancelText || '取消');
+      var $ok = $host.find('[data-act=ok]').text(opts.okText || '确定');
+      if (opts.danger) {
+        // 危险操作：确定按钮给朱色（主题里朱只用于风险/警示/删除）
+        $ok.removeClass('zf-btn--primary').addClass('zf-btn--danger');
+      }
+
+      $('body').append($host);
+      var inst = new window.bootstrap.Modal($host[0]);
+
+      $host.on('click', '[data-act=ok]', function () { finish(true); inst.hide(); });
+      $host.on('click', '[data-act=cancel]', function () { finish(false); inst.hide(); });
+      // ESC / 点遮罩 / 任何方式关掉 —— 一律视为取消（对删除类确认是 fail-safe 的方向）
+      $host.on('hidden.bs.modal', function () { finish(false); $host.remove(); });
+      // 焦点落在「确定」上，回车即确认 —— 与原生 window.confirm 的默认行为保持一致，
+      // 避免老用户按回车时预期落空。
+      $host.on('shown.bs.modal', function () { $ok.trigger('focus'); });
+      inst.show();
     });
   };
 
@@ -622,13 +689,14 @@
    * @param {string} activeKey 当前高亮的导航 key
    * @param {Object} [user] 当前用户，传入后底部显示管理员入口
    */
+
   ZF.renderSidebar = function (activeKey, user) {
     if ($('.zf-sidebar').length) {
       return;
     }
     var html = ['<aside class="zf-sidebar">'];
     html.push('<div class="zf-sidebar__brand">');
-    html.push('<div class="zf-sidebar__mark">职法</div>');
+    html.push('<div class="zf-sidebar__mark"><img src="' + CTX + '/favicon.svg?v=20261021c" alt="" width="40" height="40"></div>');
     html.push('<div><h1 class="zf-sidebar__name">职小法</h1>');
     html.push('<p class="zf-sidebar__slogan">职场新人的智能法律伙伴</p></div></div>');
     html.push('<div class="zf-sidebar__label">功能导航</div>');
@@ -643,7 +711,11 @@
         '<i class="bi bi-speedometer2 zf-nav__icon"></i>后台管理</a>');
     }
     html.push('</nav>');
-    html.push('<div class="zf-sidebar__foot">为职场新人提供基于法规库的智能法律服务<br>课程设计 · DAO-Service-Servlet 分层架构</div>');
+    // 侧栏底部**刻意留空**。这里原本挂着「为职场新人提供基于法规库的智能法律服务 /
+    // 课程设计 · DAO-Service-Servlet 分层架构」——
+    //   ①「分层架构」是开发说明，不该出现在面向使用者的界面上；
+    //   ② 上一句与品牌区的 slogan「职场新人的智能法律伙伴」是同一件事说两遍。
+    // 按「每个元素只干一件事」的原则整块移除。
     html.push('</aside>');
     $('.zf-app').prepend(html.join(''));
   };
@@ -671,7 +743,9 @@
       '<i class="bi bi-box-arrow-right"></i>退出</button>'
     );
     $top.off('click.zflogout').on('click.zflogout', '#zf-logout', function () {
-      ZF.logout();
+      // 原来这里没传确认文案 → 点一下直接退出，没有挽回余地。
+      // 管理端一直是有确认的（见 admin-common.js），用户端漏了。
+      ZF.logout('确定要退出登录吗？');
     });
   };
 

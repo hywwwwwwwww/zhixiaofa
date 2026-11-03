@@ -47,6 +47,8 @@
 | 10203 | 当前状态不允许该操作 | 11302 | 没有操作权限 |
 | 10400 | 服务器内部错误 | 11101 | 用户不存在 |
 | 10401 | 数据库操作失败 | 10402 | JSON 解析失败 |
+| 11207 | 验证码发送过于频繁 | 11208 | 验证码不正确或已过期 |
+| 11403 | 邮件服务未启用 | 11404 | 验证码邮件发送失败 |
 
 ### 1.4 分页参数与返回
 
@@ -82,6 +84,8 @@
 |---|---|---|---|
 | POST | `/api/auth/login` | 🟢 | 登录，参数 `username`、`password`；成功后重建 Session 防会话固定攻击 |
 | POST | `/api/auth/register` | 🟢 | 注册，参数 `username,password,nickname,email,phone,city,jobTitle` |
+| POST | `/api/auth/forgot-password` | 🟢 | 找回密码第一步，参数 `email`：把 6 位验证码发信到该邮箱。未绑定了账号的邮箱**也返回成功**（防账号枚举）；同邮箱 60 秒冷却、24 小时 5 条，同 IP 24 小时 10 条 |
+| POST | `/api/auth/reset-password` | 🟢 | 找回密码第二步，参数 `email,verifyCode,newPassword`：验证码 5 分钟有效、一次一用、连错 5 次作废；成功后换盐重写摘要 |
 | POST | `/api/auth/logout` | 🔵 | 退出，销毁会话 |
 | GET | `/api/auth/me` | 🔵 | 当前登录用户（响应不含 `password`/`salt`） |
 | PUT | `/api/auth/profile` | 🔵 | 修改资料，参数 `nickname,email,phone,city,jobTitle,avatar` |

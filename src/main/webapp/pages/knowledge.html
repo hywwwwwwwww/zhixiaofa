@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>普法知识广场 - 职小法</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body>
+<body class="zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -53,13 +55,20 @@
 <!-- 文章详情弹窗 -->
 <div class="modal fade" id="article-modal" tabindex="-1" aria-hidden="true" aria-labelledby="article-modal-title">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content zf-article-modal">
+      <div class="zf-article-progress" id="article-progress" aria-hidden="true"></div>
       <div class="modal-header">
-        <h5 class="modal-title" id="article-modal-title">文章详情</h5>
+        <div class="zf-article-modal__headwrap">
+          <h5 class="modal-title" id="article-modal-title">文章详情</h5>
+          <div class="zf-article-meta" id="article-modal-meta"></div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
       </div>
       <div class="modal-body" id="article-modal-body"></div>
       <div class="modal-footer">
+        <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-guide">
+          <i class="bi bi-stars"></i>AI 导读
+        </button>
         <button class="zf-btn zf-btn--ghost zf-btn--sm" id="article-like">
           <i class="bi bi-hand-thumbs-up"></i>点赞 <span id="article-like-count">0</span>
         </button>
@@ -74,7 +83,7 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
 <script>
 /**
  * @file knowledge.html —— 普法知识广场
@@ -216,6 +225,20 @@
       }
     });
 
+    // AI 导读：POST 会调模型（登录态由 AuthFilter 兜住），结果缓存在 currentArticle._guide
+    $('#article-guide').on('click', function () {
+      if (!currentArticle) { return; }
+      var $btn = $('#article-guide');
+      ZF.btnLoading($btn, true, '生成导读中…');
+      ZF.post('/knowledge/' + currentArticle.id + '/guide').then(function (data) {
+        ZF.btnLoading($btn, false);
+        currentArticle._guide = data;
+        renderGuide(data);
+      }).catch(function () {
+        ZF.btnLoading($btn, false);
+      });
+    });
+
     // 点赞
     $('#article-like').on('click', function () {
       if (!currentArticle) { return; }
@@ -241,17 +264,57 @@
   }
 
   /**
+   * 长文正文渲染：空行分段；「一、二、…」「【…】」开头的段识别为小节标题。
+   * 为什么要分段而不是整体 nl2br：长文动辄两千字，全挤成一坨没法读；
+   * 小节标题给出视觉层级后，读者可以先扫标题再挑感兴趣的段落。
+   * @param {string} content 文章全文
+   * @returns {string} HTML
+   */
+  function articleBodyHtml(content) {
+    // 逐行渲染（不按空行分段——文章内容行间只有单个换行）：
+    // 「一、二、…」「【…】」开头的行识别为小节标题，其余行各自成段，行距由 CSS 下边距控制。
+    var html = [];
+    (content || '').split('\n').forEach(function (line) {
+      var s = $.trim(line);
+      if (!s) { return; }
+      if (/^(一|二|三|四|五|六|七|八|九|十)、/.test(s) || /^【/.test(s)) {
+        html.push('<p class="zf-article__h">' + ZF.escape(s) + '</p>');
+      } else {
+        html.push('<p class="zf-article__p">' + ZF.nl2br(s) + '</p>');
+      }
+    });
+    return html.join('');
+  }
+
+  /**
    * 渲染文章详情到弹窗，并初始化收藏状态。
    * @param {Object} a 文章详情
    */
   function showArticle(a) {
     $('#article-modal-title').text(a.title || '文章详情');
-    var tags = (a.tags || []).map(function (t) {
-      return '<span class="zf-badge">' + ZF.escape(t) + '</span>';
-    }).join('');
-    var body = '<div class="zf-doc zf-doc--plain zf-doc--prose">' + ZF.escape(a.content || '') + '</div>';
-    if (tags) { body = '<div class="zf-doc-tags">' + tags + '</div>' + body; }
+    $('#article-guide-box').remove();
+    if (a._guide) { renderGuide(a._guide); }   // 同一会话里已生成过的导读直接复用
+    // 出处信息行：分类 / 标签 / 作者 / 日期 / 阅读量 —— 这篇东西「是谁、何时发布、被读过多少」
+    // 是真实信息，之前只在卡片上展示，读正文时反而看不到。
+    var meta = [];
+    if (a.category) {
+      meta.push('<span class="zf-badge zf-badge--ok">' + ZF.escape(a.category) + '</span>');
+    }
+    (a.tags || []).forEach(function (t) {
+      meta.push('<span class="zf-badge">' + ZF.escape(t) + '</span>');
+    });
+    if (a.author) {
+      meta.push('<span class="zf-article-meta__item">' + ZF.escape(a.author) + '</span>');
+    }
+    if (a.publishedAt) {
+      meta.push('<span class="zf-article-meta__item">发布于 ' + ZF.escape(String(a.publishedAt).slice(0, 10)) + '</span>');
+    }
+    meta.push('<span class="zf-article-meta__item">' + (a.viewCount || 0) + ' 次阅读</span>');
+    $('#article-modal-meta').html(meta.join(''));
+    var body = '<div class="zf-doc zf-doc--plain zf-doc--prose">' +
+      articleBodyHtml(a.content) + '</div>';
     $('#article-modal-body').html(body);
+    bindArticleProgress();
     $('#article-like-count').text(a.likeCount || 0);
     $('#article-like').prop('disabled', false);
     // 查询是否已收藏
@@ -259,6 +322,43 @@
       .then(function (exists) { setFavState(!!exists); })
       .catch(function () { setFavState(false); });
     new bootstrap.Modal($('#article-modal')[0]).show();
+  }
+
+  /**
+   * 绑定阅读进度线：随正文滚动更新弹窗顶部的墨线宽度。
+   * scroll 事件不冒泡，无法事件委托，所以在每次渲染后直接绑；
+   * 内容不足一屏（scrollHeight==clientHeight）时归零、不显示进度。
+   */
+  function bindArticleProgress() {
+    var $doc = $('#article-modal-body').find('.zf-doc--plain');
+    var $bar = $('#article-progress');
+    $bar.css('width', '0%');
+    if (!$doc.length) { return; }
+    $doc.off('scroll.zfprogress').on('scroll.zfprogress', function () {
+      var max = this.scrollHeight - this.clientHeight;
+      var p = max > 0 ? Math.min(100, Math.round(this.scrollTop / max * 100)) : 0;
+      $bar.css('width', p + '%');
+    });
+  }
+
+  /**
+   * 渲染导读卡（插在正文上方）。
+   * mode=AI 时徽标显示「AI 导读」；mode=本地 显示「结构导读」——
+   * 刻意区分来源：模型写的与本地提取的，用户应当能分辨。
+   * @param {Object} data {mode, guide}
+   */
+  function renderGuide(data) {
+    if (!data || !data.guide) { return; }
+    var isAi = data.mode === 'AI';
+    var head = '<div class="zf-article-guide__head">' +
+      '<span class="zf-badge ' + (isAi ? 'zf-badge--ok' : '') + '">' +
+      (isAi ? 'AI 导读' : '结构导读') + '</span>' +
+      '<span class="zf-article-guide__note">' +
+      (isAi ? '由模型根据全文生成，仅供参考' : '模型未启用，已按文章结构自动提取') +
+      '</span></div>';
+    var box = '<div class="zf-article-guide" id="article-guide-box">' + head +
+      '<div class="zf-doc zf-doc--plain zf-doc--prose">' + articleBodyHtml(data.guide) + '</div></div>';
+    $('#article-modal-body').find('.zf-doc').first().before(box);
   }
 
   /**

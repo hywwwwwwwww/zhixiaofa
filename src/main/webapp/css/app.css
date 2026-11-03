@@ -46,6 +46,8 @@
 
   /* ---------- 中性面 / 线 ---------- */
   --zf-surface-1: #fafbfc;
+  --zf-paper: #f6f7f9;
+  --zf-danger-strong: #d93a3a;
   --zf-surface-2: #fafcff;
   --zf-line-2: #cdd4dd;
   --zf-line-3: #cfd6df;
@@ -56,8 +58,12 @@
 
   /* ---------- 主色透明度三档（原来散落 6 种，收敛为 3） ---------- */
   --zf-primary-a06: rgba(66, 133, 244, .06);
+  --zf-primary-a08: rgba(66, 133, 244, .08);
   --zf-primary-a10: rgba(66, 133, 244, .10);
+  --zf-primary-a14: rgba(66, 133, 244, .14);
   --zf-primary-a16: rgba(66, 133, 244, .16);
+  --zf-primary-a55: rgba(66, 133, 244, .55);
+  --zf-primary-a95: rgba(66, 133, 244, .95);
 
   /* ---------- 间距（4px 栅格）----------
      实测 app.css 里有 22 个不同 padding 值 / 14 个不同 margin 值，主力是
@@ -276,14 +282,13 @@ a:hover { color: var(--zf-primary-ink); }
   overflow-y: auto;
 }
 .zf-sidebar__brand { display: flex; align-items: center; gap: 11px; }
+/* 品牌标记 = 项目图标（天平徽章）：直接引用 favicon.svg，与浏览器标签页同一张图 */
 .zf-sidebar__mark {
   width: 40px; height: 40px; flex: 0 0 40px;
-  border-radius: 12px;
   display: grid; place-items: center;
-  background: var(--zf-primary-strong);
-  color: #fff; font-weight: 700; font-size: 15px;
-  letter-spacing: .5px;
+  background: transparent;
 }
+.zf-sidebar__mark img { display: block; width: 40px; height: 40px; border-radius: 10px; }
 .zf-sidebar__name { margin: 0; font-size: 15px; font-weight: 700; }
 .zf-sidebar__slogan { margin: 2px 0 0; font-size: 11.5px; color: var(--zf-ink-3); }
 .zf-sidebar__label {
@@ -434,7 +439,7 @@ a:hover { color: var(--zf-primary-ink); }
 }
 .zf-form-control:focus {
   outline: none; border-color: var(--zf-primary);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 .zf-form-control::placeholder { color: #a8b2bf; }
 textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65; }
@@ -483,7 +488,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 /* 解析中 / 失败：整块给出色彩状态 */
 .zf-upload--loading { border-color: var(--zf-primary); background: #f2f7ff; cursor: progress; }
 .zf-upload--error { border-color: var(--zf-danger); background: #fffafa; }
-.zf-upload--error .zf-upload__icon { background: #fdeaea; color: var(--zf-danger); }
+.zf-upload--error .zf-upload__icon { background: var(--zf-danger-soft); color: var(--zf-danger); }
 
 /* 解析完成：折叠成一行文件条 */
 .zf-upload--done {
@@ -586,7 +591,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 .zf-datepick__text:read-only { background: #fff; }
 .zf-datepick__text:focus {
   border-color: var(--zf-primary);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 /* 已选日期：按钮转实心蓝底白图标作为"已填写"反馈。
    刻意不用绿色 —— --zf-success 已被上传区的「解析完成」占用，避免跨组件撞义 */
@@ -656,7 +661,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 .zf-btn--ghost { background: transparent; border-color: var(--zf-border); color: var(--zf-ink-2); }
 .zf-btn--ghost:hover { background: var(--zf-muted); }
 .zf-btn--danger { background: var(--zf-danger); color: #fff; }
-.zf-btn--danger:hover { background: #d93a3a; color: #fff; }
+.zf-btn--danger:hover { background: var(--zf-danger-strong); color: #fff; }
 .zf-btn--sm { padding: 5px 11px; font-size: 12.5px; }
 .zf-btn:disabled { opacity: .55; cursor: not-allowed; }
 .zf-btn--block { width: 100%; }
@@ -667,11 +672,11 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   padding: 2px 9px; border-radius: 999px; font-size: 11.5px;
   background: var(--zf-muted); color: var(--zf-ink-2);
 }
-.zf-badge--high { background: #fdeaea; color: #c0392b; }
+.zf-badge--high { background: var(--zf-danger-soft); color: var(--zf-danger-ink); }
 .zf-badge--mid { background: #fef6e0; color: #9a6a00; }
-.zf-badge--low { background: #e8f5ec; color: #1e7a3c; }
+.zf-badge--low { background: var(--zf-success-soft); color: var(--zf-success-ink); }
 .zf-badge--primary { background: var(--zf-primary-light); color: var(--zf-primary-ink); }
-.zf-badge--ok { background: #e8f5ec; color: #1e7a3c; }
+.zf-badge--ok { background: var(--zf-success-soft); color: var(--zf-success-ink); }
 
 /* ---------------------------------------------------------------- 表格 */
 .zf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -740,8 +745,8 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 
 /* 锚点定位后的高亮提示（配合 ZF.scrollToAnchor） */
 @keyframes zf-anchor-flash {
-  0% { outline-color: rgba(66, 133, 244, .95); }
-  100% { outline-color: rgba(66, 133, 244, 0); }
+  0% { outline-color: var(--zf-primary-a95); }
+  100% { outline-color: transparent; }
 }
 .zf-anchor-flash {
   outline: 2px solid var(--zf-primary);
@@ -769,10 +774,10 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 /* ---------------------------------------------------------------- 登录页 */
 .zf-auth { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 100vh; }
 .zf-auth__brand {
-  background: var(--zf-sidebar); padding: 56px 60px;
+  background: var(--zf-sidebar, var(--zf-muted)); padding: 56px 60px;
   display: flex; flex-direction: column; justify-content: center; gap: 22px;
 }
-.zf-auth__brand-title { margin: 0; font-size: 30px; font-weight: 700; }
+.zf-auth__brand-title { margin: 0; font-family: var(--zf-font-head, serif); font-size: 38px; font-weight: 700; letter-spacing: 2px; }
 .zf-auth__brand-sub { margin: 6px 0 0; font-size: 15px; font-weight: 600; color: var(--zf-primary); }
 .zf-auth__brand-desc { margin: 10px 0 0; font-size: 13.5px; color: var(--zf-ink-3); line-height: 1.75; max-width: 430px; }
 .zf-auth__feature { display: flex; gap: 12px; align-items: flex-start; }
@@ -792,6 +797,29 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 .zf-auth__panel { display: none; flex-direction: column; gap: 14px; }
 .zf-auth__panel--active { display: flex; }
 .zf-auth__switch { text-align: center; font-size: 12.5px; color: var(--zf-ink-3); margin-top: 14px; }
+
+/* 法条引用卡：登录页的记忆点。这个产品最有辨识度的东西就是「带出处的法条」——
+   仿宋正文 + 纸面底 + 左侧墨线，与问答页引用法条的卡片是同一套视觉语言。
+   只放一条、不再多，品牌区其余部分保持安静。 */
+.zf-auth__quote { margin: 8px 0 0; padding: 14px 18px; background: var(--zf-paper, var(--zf-muted));
+  border-left: 3px solid var(--zf-primary); border-radius: 0 var(--zf-radius) var(--zf-radius) 0; }
+.zf-auth__quote blockquote { margin: 0; font-family: var(--zf-font-doc, serif); font-size: 13.5px;
+  line-height: 1.9; color: var(--zf-ink-2); }
+.zf-auth__quote figcaption { margin-top: 6px; font-size: 12px; color: var(--zf-ink-4); }
+
+/* 密码可见性切换（登录 / 注册 / 找回密码三处共用） */
+.zf-pwd-wrap { position: relative; }
+.zf-pwd-wrap .zf-form-control { padding-right: 40px; }
+.zf-pwd-toggle { position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  border: none; background: transparent; cursor: pointer; padding: 4px 8px;
+  color: var(--zf-ink-4); font-size: 15px; line-height: 1; border-radius: var(--zf-radius-sm); }
+.zf-pwd-toggle:hover { color: var(--zf-primary); }
+.zf-pwd-toggle:focus-visible { outline: 2px solid var(--zf-primary); outline-offset: 1px; }
+
+/* 注册表单「必填 / 选填」分界线：线是信息（从这里起都可以不填），不是装饰 */
+.zf-auth__optional { display: flex; align-items: center; gap: 10px; margin-top: 2px;
+  font-size: 12px; color: var(--zf-ink-4); }
+.zf-auth__optional::before, .zf-auth__optional::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--zf-border-2); }
 
 /* ---------------------------------------------------------------- 图表 */
 .zf-chart { width: 100%; height: 280px; }
@@ -877,7 +905,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 }
 .zf-chat__hist-search:focus {
   outline: none; border-color: var(--zf-primary);
-  background: #fff; box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  background: #fff; box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 .zf-chat__hist-list {
   flex: 1 1 auto; min-height: 120px; overflow-y: auto;
@@ -931,7 +959,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
    左侧 3px 蓝条用 inset 阴影实现：不占布局、不会让文字横向位移。
    底色取比 --zf-primary-light 更淡一档的蓝，即使将来标记多条也不至于刺眼。 */
 .zf-chat__hist-item--current {
-  background: rgba(66, 133, 244, .10);
+  background: var(--zf-primary-a10);
   box-shadow: inset 3px 0 0 var(--zf-primary);
 }
 .zf-chat__hist-item--current .zf-chat__hist-q { color: var(--zf-primary-ink); font-weight: 600; }
@@ -941,7 +969,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 }
 /* 悬停「当前对话」时保持蓝底（
    :hover 的特异性 (0,2,0) 高于 --current 的 (0,1,0)，不写这条会被灰底盖掉） */
-.zf-chat__hist-item--current:hover { background: rgba(66, 133, 244, .16); }
+.zf-chat__hist-item--current:hover { background: var(--zf-primary-a16); }
 .zf-chat__hist-empty {
   padding: 22px 12px; text-align: center;
   font-size: 12px; color: var(--zf-ink-3);
@@ -954,7 +982,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 /* 跳转后的高亮脉冲：让用户一眼看到跳到哪条了 */
 .zf-pair--flash { animation: zf-pair-flash 1.5s ease-out; }
 @keyframes zf-pair-flash {
-  0%   { background: rgba(66, 133, 244, .16); border-radius: var(--zf-radius); }
+  0%   { background: var(--zf-primary-a16); border-radius: var(--zf-radius); }
   100% { background: transparent; }
 }
 /* 窄屏：面板贴满可用宽度，避免右侧溢出 */
@@ -1064,7 +1092,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   border-radius: 999px; padding: 7px 14px; font-size: 12.5px; cursor: pointer;
   transition: border-color .18s, color .18s, background .18s;
 }
-.zf-quick__item:hover { border-color: var(--zf-primary); color: var(--zf-primary); background: #f7faff; }
+.zf-quick__item:hover { border-color: var(--zf-primary); color: var(--zf-primary); background: var(--zf-primary-a06); }
 
 /* 加载更早 */
 .zf-chat__more { align-self: center; }
@@ -1080,7 +1108,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   border: 1px solid var(--zf-border-2); border-radius: var(--zf-radius-lg); padding: 7px 10px;
   transition: border-color .18s, box-shadow .18s;
 }
-.zf-chat__composer:focus-within { border-color: var(--zf-primary); box-shadow: 0 0 0 3px rgba(66, 133, 244, .14); }
+.zf-chat__composer:focus-within { border-color: var(--zf-primary); box-shadow: 0 0 0 3px var(--zf-primary-a14); }
 .zf-chat__cat {
   flex: 0 0 auto; max-width: 130px; padding: 6px 2px; border: none; outline: none;
   background: transparent; color: var(--zf-ink-3); font-size: 12.5px; cursor: pointer;
@@ -1163,7 +1191,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 }
 .form-control:focus, .form-select:focus {
   border-color: var(--zf-primary);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 .pagination { --bs-pagination-active-bg: var(--zf-primary); --bs-pagination-active-border-color: var(--zf-primary); }
 .modal-content { border-radius: var(--zf-radius-lg); border: 1px solid var(--zf-border); }
@@ -1254,7 +1282,14 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
    所以「填写」面板全高 = 内容高 = 结果卡高（右栏中唯一有内容的卡片），
    于是 left-over 正好让记录面板补到左栏总高，与右栏底边对齐。
    注意 left-over 是定位属性而非尺寸属性，不会反过来拉伸「填写」面板 */
-.zf-desk__history { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+/* ★ top 必须给「页签栏」让位（2026-09-23 修）。
+   原本是 top:0 —— 历史面板从面板顶端一路铺满，**把页签栏整条盖在下面**。
+   实测双列 1440：页签 90~130、历史面板 90~878，页签中心 elementFromPoint 命中
+   zf-card__title ⇒ 切到「推演记录 / 合同档案」后**页签既看不见也点不到**，
+   也就是「没有任何方式回到填写案情 / 上传审查」（用户的原话）。
+   （≤1100px 单列下本规则失效，history 被重置为 static，两者不重叠。）
+   ⚠️ 54px = 页签栏高 40px + 与下方卡片的间距 14px；页签高度若改，这里要同步。 */
+.zf-desk__history { position: absolute; top: 54px; right: 0; bottom: 0; left: 0; }
 
 /* 结果区：贯通两行 + 粘性跟随。左栏（表单+历史）通常更长，
    不加粘性会在结果卡下方留下新的空白；加 max-height 让它自己滚动，
@@ -1314,7 +1349,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   -webkit-tap-highlight-color: transparent;
 }
 /* 未选中 hover：只提亮，不做位移，避免切换时抖动 */
-.zf-tabs__tab:hover { color: var(--zf-primary-ink); background: rgba(66, 133, 244, .08); }
+.zf-tabs__tab:hover { color: var(--zf-primary-ink); background: var(--zf-primary-a08); }
 /* 选中态：系统主色实底 */
 .zf-tabs__tab--active,
 .zf-tabs__tab[aria-selected="true"] { background: var(--zf-primary-strong); color: #fff; }
@@ -1348,7 +1383,10 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 .zf-tabs__panel:focus, [role="tabpanel"]:focus { outline: none; }   /* tabindex=-1 供程序化聚焦，不吃 Tab 序列 */
 
 /* 窄栏里 tab 组横向占满，两个页签平分，更好点 */
-.zf-desk__panel > .zf-tabs { display: flex; }
+/* ★ 安全网：抬到输入卡(z-index:1)与历史面板(z-index:auto)之上。
+   正常情况下 history 已用 top:54px 让位、不会重叠；万一将来页签变高或间距变化又叠上，
+   也保证「页签可点」优先于「卡片标题不被压」—— 回不去的代价远大于遮一点标题。 */
+.zf-desk__panel > .zf-tabs { display: flex; position: relative; z-index: 2; }
 .zf-desk__panel > .zf-tabs .zf-tabs__tab { flex: 1 1 auto; }
 
 /* 窄栏里表单操作条换行：说明占一行，按钮平分一行 */
@@ -1529,6 +1567,21 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
     overflow-y: auto;
   }
   .zf-desk__history > #history-pager { margin-top: 14px; padding-top: 0; }
+  /* ★ 单列布局下把左栏页签栏「粘」在顶栏下方（2026-09-23）。
+     为什么必须粘：单列时结果卡排在左栏**下方**、页面本身要滚动；一旦往下翻列表或表单，
+     页签栏就会滚出视口 —— 实测滚 300px 后 top=-218、elementFromPoint 完全点不到。
+     于是「推演记录 / 合同档案」这个页签状态下，**没有任何办法回到「填写案情 / 上传审查」**
+     （用户原话：无法通过任何方式返回）。粘住之后滚到哪儿都能一键切回另一个页签。
+     ⚠️ top 必须等于顶栏高度。本媒体查询内 `.zf-topbar` 的 padding 是 12px 16px ⇒ 实测高 64px；
+        >1100px 时顶栏是 68px，但那时本规则不生效，所以不需要额外令牌。
+     ⚠️ 祖先链若有 overflow 会让 sticky 静默失效 —— 已确认 .zf-app / .zf-main / .zf-content 都没有。
+     z-index 取 15：低于顶栏的 20，高于卡片（#zf-panel-input 是 z-index:1）。 */
+  .zf-desk__panel > .zf-tabs {
+    position: sticky;
+    top: 64px;
+    z-index: 15;
+  }
+
 }
 @media (max-width: 820px) {
   /* 三列字段在窄屏放不下，退回两列 */
@@ -1586,8 +1639,8 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   margin-bottom: 7px; cursor: pointer; font-size: 13px; transition: border-color .15s, background .15s;
 }
 .zf-quiz-opt:hover { border-color: var(--zf-primary); }
-.zf-quiz-opt--correct { border-color: var(--zf-success); background: #e8f5ec; }
-.zf-quiz-opt--wrong { border-color: var(--zf-danger); background: #fdeaea; }
+.zf-quiz-opt--correct { border-color: var(--zf-success); background: var(--zf-success-soft); }
+.zf-quiz-opt--wrong { border-color: var(--zf-danger); background: var(--zf-danger-soft); }
 .zf-quiz-explain { font-size: 12.5px; color: var(--zf-ink-2); margin-top: 6px; line-height: 1.65; }
 
 /* ============================================================================
@@ -1703,7 +1756,7 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 /* 「当前正在填写的模板」——整列唯一一处强调，与历史面板的 --current 同语言 */
 .zf-desk__tpl .zf-tpl--active {
   border-color: var(--zf-primary);
-  background: rgba(66, 133, 244, .06);
+  background: var(--zf-primary-a06);
   box-shadow: inset 3px 0 0 var(--zf-primary);
 }
 .zf-desk__tpl .zf-tpl__desc {
@@ -1836,6 +1889,58 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
   border: 0; box-shadow: none; background: transparent;
   padding: 0; max-height: 62vh; overflow-y: auto;
 }
+
+/* 普法文章弹窗的长文排版（knowledge.html）：小节标题 + 段落。
+   空行分段由前端 articleBodyHtml split 出来；「一、二、…」「【…】」开头的段识别为小节标题。
+   标题比正文只重一档、不换字体 —— 长文的层级要靠间距与字重，不需要花哨。 */
+.zf-article__h { margin: 22px 0 6px; font-weight: 700; color: var(--zf-ink);
+  font-family: var(--zf-font-head, serif);
+  font-size: 1.16em; letter-spacing: .04em; }
+.zf-article__h:first-child { margin-top: 0; }
+.zf-article__p { margin: 0 0 10px; }
+.zf-article__p:last-child { margin-bottom: 0; }
+
+/* ---- 阅读弹窗（knowledge.html 文章详情）：把 Bootstrap 默认壳改成「阅读界面」---- */
+.zf-article-modal { position: relative; overflow: hidden; }
+.zf-article-modal .modal-title { font-family: var(--zf-font-head, serif);
+  font-size: 21px; font-weight: 700; letter-spacing: .04em; }
+.zf-article-modal .modal-header { border-bottom: 0; padding-bottom: 4px; }
+.zf-article-modal .modal-body { padding: 4px 30px 18px; }
+.zf-article-modal .modal-footer { border-top: 1px solid var(--zf-border); padding: 10px 30px; }
+.zf-article-modal__headwrap { min-width: 0; padding-right: 12px; }
+.zf-article-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 6px; font-size: 12px; color: var(--zf-ink-4); }
+.zf-article-meta .zf-badge { font-size: 11px; }
+
+/* 阅读进度线：贴弹窗顶部、随正文滚动增长的 3px 墨线。
+   只回答一个问题——这篇两三千字的长文，我读到了哪里。 */
+.zf-article-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0;
+  background: var(--zf-primary); z-index: 10; transition: width .12s linear; }
+@media (prefers-reduced-motion: reduce) {
+  .zf-article-progress { transition: none; }
+}
+
+/* AI 导读卡（knowledge.html 文章弹窗）：插在正文上方。
+   ⚠️ 定位是「导览层」而不是第二篇文章——它复用正文的 articleBodyHtml 渲染，
+   但排版必须整体降一档，否则【核心要点】渲染成与正文小节标题一样的大字，
+   导读会占掉近一屏、与正文抢层级（实测踩过，见 401 截图的迭代）。
+   区分手段三件套：靛蓝 6% 洗色底 + 细边框（AI 区 vs 白纸正文）、
+   小节标题改小号无衬线墨蓝（vs 正文衬线大字）、段落间距收紧。 */
+.zf-article-guide { background: var(--zf-primary-a06);
+  border: 1px solid var(--zf-primary-a16); border-left: 3px solid var(--zf-primary);
+  border-radius: 0 var(--zf-radius) var(--zf-radius) 0; padding: 12px 18px; margin-bottom: 16px; }
+.zf-article-guide .zf-doc--plain { max-height: none; }
+.zf-article-guide__head { display: flex; align-items: center; gap: 8px;
+  padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--zf-primary-a16); }
+.zf-article-guide__note { font-size: 12px; color: var(--zf-ink-4); }
+/* 导读内部排版降档：标题 = 小号无衬线加粗墨蓝（明显轻于正文的衬线大标题） */
+.zf-article-guide .zf-article__h { font-family: var(--zf-font-ui, inherit);
+  font-size: 13px; font-weight: 700; color: var(--zf-primary-ink);
+  margin: 12px 0 4px; letter-spacing: .03em; }
+.zf-article-guide .zf-article__h:first-child { margin-top: 0; }
+.zf-article-guide .zf-article__p { font-size: 13.5px; line-height: 1.85;
+  margin: 0 0 6px; color: var(--zf-ink-2); }
+.zf-article-guide .zf-article__p:last-child { margin-bottom: 0; }
 /* 落款/签名行：右对齐（内容里用全角空格堆出来的对齐在比例字体下会错位）
    —— 换成衬线栈后仍是比例字体，这条教训继续成立，必须保留 text-align。
    右侧加 2em 缩进是公文的落款惯例，避免签名紧贴纸面右缘。 */
@@ -2157,18 +2262,17 @@ textarea.zf-form-control { resize: vertical; min-height: 96px; line-height: 1.65
 .zf-fav-list__link { color: var(--zf-ink); text-decoration: none; }
 .zf-fav-list__link:hover { color: var(--zf-primary); text-decoration: underline; }
 
-/* ---------------- 密码字段 ---------------- */
-.zf-field--pwd { position: relative; }
-.zf-field--pwd .zf-form-control { padding-right: 40px; }
-.zf-pwd-toggle {
-  position: absolute; right: 6px; top: 27px;
-  width: 30px; height: 30px; padding: 0;
-  border: 0; background: transparent; cursor: pointer;
-  color: var(--zf-ink-3); border-radius: var(--zf-radius-sm);
-  display: grid; place-items: center; font-size: 14px;
+/* ---------------- 密码强度条 ----------------
+   ⚠️ 密码眼睛的定位统一由 .zf-pwd-wrap + .zf-pwd-toggle 提供（见文件上方「密码可见性切换」）。
+   这里曾有一套 .zf-field--pwd + top:27px 的旧实现，与那套同特异性规则互相覆盖——
+   结果是 top 取 27px、translateY(-50%) 保留，眼睛被抬高半个高度（修改密码页实测错位）。
+   已删除旧实现，所有密码框统一用 .zf-pwd-wrap 包裹。 */
+
+/* 用户管理「联系方式」：邮箱/手机各一行，超长省略（完整值在 title 里）。
+   不加这条时 10 位 QQ 邮箱会把这一列折成 3 行、行高 60→80，表格节奏被打乱。 */
+.zf-user-contact__line {
+  max-width: 15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.zf-pwd-toggle:hover { color: var(--zf-primary); }
-.zf-pwd-toggle:focus-visible { outline: 2px solid var(--zf-primary); outline-offset: 1px; }
 
 /* 密码强度三段条（弱 / 中 / 强） */
 .zf-pwd-strength { display: flex; gap: 5px; margin-top: 8px; }
@@ -2781,9 +2885,7 @@ body.zf-admin-page .zf-nav--active,
 body.zf-admin-page .zf-nav--active:hover {
   background: var(--zf-primary); color: #fff;
 }
-body.zf-admin-page .zf-sidebar__mark {
-  background: var(--zf-primary);
-}
+/* 管理端与用户端共用同一枚朱印（印章不换色） */
 /* ==========================================================================
    ★ 自定义下拉（配合 js/common.js 的 ZF.enhanceSelect）
    —— 原生 <select> 展开后的弹层由浏览器/系统渲染，字体、内边距、选项高亮色
@@ -2810,10 +2912,10 @@ body.zf-admin-page .zf-sidebar__mark {
 .zf-select:hover { border-color: var(--zf-border-2); }
 .zf-select:focus { outline: none; }
 .zf-select:focus-visible {
-  border-color: var(--zf-primary); box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  border-color: var(--zf-primary); box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 .zf-selectwrap--open > .zf-select {
-  border-color: var(--zf-primary); box-shadow: 0 0 0 3px rgba(66, 133, 244, .16);
+  border-color: var(--zf-primary); box-shadow: 0 0 0 3px var(--zf-primary-a16);
 }
 .zf-select--unset > .zf-select__value { color: var(--zf-ink-3); }
 .zf-select__value {
@@ -2888,18 +2990,15 @@ body.zf-admin-page .zf-stat__value {
      质量与运维（风险点红、日志数灰蓝）    → 语义色
    同类指标同色，扫读时能立刻分片。 */
 body.zf-admin-page .zf-stat--danger .zf-stat__icon {
-  background: #fdeaea; color: #c0392b;
+  background: var(--zf-danger-soft); color: var(--zf-danger-ink);
 }
-/* 知识资源类（模板 / 文章 / 法条 / 答题）—— 紫。
-   选紫而非青：青底 #d9f2f6 与主蓝底 #dbeafe 只差 G+8/B-8，屏上几乎分不出（无效区分）；
-   紫与蓝同属冷色、不破坏整体调性，但色相差异足够，扫读时能一眼分片。
-   紫色在项目里已用于折线图（#9334e6），不算引入全新色系。 */
-body.zf-admin-page .zf-stat--knowledge .zf-stat__icon {
-  background: #ede4fd; color: #6b21a8;
-}
-/* 系统运维类（日志数）—— 中性灰蓝，刻意"退后"，不与业务指标争注意力 */
+/* 【2026-09-22 收敛】上一轮给「知识资源」配了紫、给「运维」配了灰蓝，共三组色。
+   新主题的原则是「纸上只有两种墨」——靛写正文、朱盖印，**朱每次出现都必须有语义**。
+   紫没有语义依据，故撤掉：知识资源回到靛（与业务同族），运维保持中性灰
+   （灰不是色相，不违背双墨纪律）。这样 11 张卡里朱只出现在「风险点数」一处，
+   那一点朱反而更跳。 */
 body.zf-admin-page .zf-stat--ops .zf-stat__icon {
-  background: #e6eaf0; color: #475569;
+  background: var(--zf-muted); color: var(--zf-ink-2);
 }
 
 /* -------- 分层：主角卡（业务趋势）是**唯一**带阴影的卡，形成视觉锚点 --------
@@ -2989,7 +3088,7 @@ body.zf-admin-page .zf-rank__item:hover { background: rgba(14, 17, 21, .08); }
 
 /* -------- ① 画布层次 -------- */
 body.zf-admin-page .zf-content {
-  background: #f6f7f9;
+  background: var(--zf-paper);
   padding: 18px 26px 36px;
 }
 /* 侧栏改纯白 + 右侧分隔线：与顶栏一起构成"白色外壳"，内容区的浅灰画布才立得住。
@@ -3145,8 +3244,195 @@ body.zf-admin-page #metric-grid > .zf-stat:nth-child(11) { animation-delay: 400m
 .zf-progress__bar {
   display: block; height: 100%; width: 0;
   background: var(--zf-primary);
-  box-shadow: 0 0 8px rgba(66, 133, 244, .55);
+  box-shadow: 0 0 8px var(--zf-primary-a55);
 }
 
 /* -------- 表格行补齐过渡（原来只有 hover 背景、没有 transition，切换很硬）-------- */
 body.zf-admin-page .zf-table tbody tr { transition: background-color .15s ease-out; }
+
+/* ==========================================================================
+   ★ 主题「靛 · 朱」（作用域：body.zf-theme-ink）
+   --------------------------------------------------------------------------
+   为什么是这两个颜色：中国文书传统里**只有两种墨** —— 蓝黑墨水写正文与签署，
+   朱（印泥红）盖印。这两个色是从主题里长出来的，换成任何一个后台都不成立。
+   现状的 #4285f4（Google 蓝）与 #ef4444（通用红）则是「任何产品都能用」的默认色。
+
+   ⚠️ 顺带修掉一个真实的对比度缺陷（实测）：
+     旧 主色 #4285f4 / 白底 = 3.56  ✗（低于 AA 4.5）
+     旧 危险 #ef4444 / 白底 = 3.76  ✗
+     —— 这正是当初不得不另造一个 --zf-primary-strong 来兜「白字压蓝底」的原因。
+     新 靛 #1f3a5f / 白底 = 11.48 ✓   白字/靛底 = 11.48 ✓（一步到位，无需配对色）
+     新 朱 #b0342a / 白底 = 6.23  ✓
+
+   一次性作用：颜色 / 字体 / 圆角分档。**配色与字体的价值在语义，不在装饰**。
+   ========================================================================== */
+body.zf-theme-ink {
+  /* ---------- 两种墨 ---------- */
+  --zf-primary: #1f3a5f;          /* 靛：蓝黑墨水。标题、链接、主按钮、当前项 */
+  --zf-primary-strong: #142b47;   /* 深靛：实心底 + 白字 */
+  --zf-primary-dark: #142b47;
+  --zf-primary-light: #e8eef5;    /* 靛的极浅底 */
+  --zf-primary-ink: #142b47;
+  --zf-danger: #b0342a;           /* 朱：印泥红。**只用于风险 / 警示 / 删除** */
+  --zf-danger-soft: #f7ebe9;
+  --zf-danger-ink: #8f2820;
+  --zf-success: #2f6f4e;
+  --zf-success-soft: #e9f2ec;
+  --zf-success-ink: #245a3f;
+  --zf-warning-soft: #fbf2df;
+  --zf-warning-ink: #8a5c00;
+
+  /* ---------- 纸与墨（不用纯黑：纸上的墨本就有深浅） ---------- */
+  --zf-ink: #1c2126;
+  --zf-ink-2: #3d4650;
+  --zf-ink-3: #55606b;            /* 白底 6.42 / 纸底 5.88，均 ≥ AA */
+  --zf-ink-4: #7c8794;
+  --zf-border: #dfe3e6;
+  --zf-border-2: #c9cfd4;
+  --zf-muted: #eef0f1;
+  --zf-surface-1: #f7f8f9;
+  --zf-surface-2: #fafbfb;
+  --zf-hover: rgba(28, 33, 38, .05);
+  --zf-hover-2: rgba(28, 33, 38, .08);
+  /* ★ 这一整条「主色透明度阶梯」原来是写死的旧蓝 rgba(66,133,244,…)，主题只换 --zf-primary
+     是覆盖不到的 —— 不补就会在焦点环、浅底高亮、聊天 hover、关键帧里漏出旧的 Google 蓝。
+     2026-09-23 复查时发现原先只补了 a06/a10/a16 三档，而 app.css 里实际用到 a08/a14/a55/a95，
+     于是**输入框焦点环等 17 处仍是旧蓝**（本轮已全部收敛成令牌引用）。**新增透明度必须在这里同步。** */
+  --zf-primary-a06: rgba(31, 58, 95, .06);
+  --zf-primary-a08: rgba(31, 58, 95, .08);
+  --zf-primary-a10: rgba(31, 58, 95, .10);
+  --zf-primary-a14: rgba(31, 58, 95, .14);
+  --zf-primary-a16: rgba(31, 58, 95, .16);
+  --zf-primary-a55: rgba(31, 58, 95, .55);
+  --zf-primary-a95: rgba(31, 58, 95, .95);
+  /* 纸色：管理端画布用 */
+  --zf-paper: #f4f5f6;
+  --zf-danger-strong: #8f2820;
+
+  /* ---------- 字体三档，每档都有出处 ---------- */
+  /* 界面文字：易读优先，不拿读者当实验品（按钮/表格/表单都在这里） */
+  --zf-font-ui: "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  /* 标题：华文中宋 ≈ 公文标题的「小标宋」。宋体标题自带权威感，且不是做 UI 时的第一反应字体 */
+  --zf-font-head: STZhongsong, "华文中宋", SimHei, "Noto Serif SC", "Microsoft YaHei", serif;
+  /* 法条正文 / 文书正文：GB/T 9704《党政机关公文格式》规定公文正文用仿宋。本机已装 simfang.ttf */
+  --zf-font-doc: FangSong, "仿宋", "Noto Serif SC", SimSun, serif;
+
+  /* ---------- 圆角分档（原为 12px 用遍所有层级 —— 那正是「模板感」的来源）----------
+     纸张是直角的；卡片小圆角；控件更小；只有胶囊类才是全圆。 */
+  --zf-radius-lg: 6px;
+  --zf-radius: 4px;
+  --zf-radius-sm: 3px;
+  --zf-radius-start: 4px 0 0 4px;
+  --zf-radius-end: 0 4px 4px 0;
+}
+
+/* 平面卡片不用阴影：纸张靠边界与留白分开，不靠投影。
+   阴影只留给真正「浮起来」的层（弹窗/下拉）与主角卡。
+   ⚠️ **必须排除 .zf-card--hero**：本规则特异性 (0,2,1) 与
+      `body.zf-admin-page .zf-card--hero` 的 (0,2,1) **完全相同**，而主题块在文件末尾
+      → 不排除就会把主角卡的重阴影一起抹平（实测踩过：hero 的计算 boxShadow 变成 none）。
+   ⚠️ 管理端的数据卡浅阴影**不受影响**：那条规则是 (0,5,1)，比本规则高。 */
+body.zf-theme-ink .zf-card:not(.zf-card--hero) {
+  box-shadow: none;
+  border: 1px solid var(--zf-border);
+}
+
+/* -------- 首页英雄区：左「说处境」右「给依据」 --------
+   这个左右关系就是产品的核心动作 —— 左边是你，右边是法律。
+   刻意不做「大数字 + 小标签 + 渐变强调」（那是通用做法的默认解）。 */
+.zf-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  margin-bottom: 18px;
+  border: 1px solid var(--zf-border);
+  border-radius: var(--zf-radius-lg);
+  overflow: hidden;
+  background: #fff;
+}
+.zf-hero__ask { padding: 30px 32px 26px; min-width: 0; }
+.zf-hero__q {
+  margin: 0;
+  font-family: var(--zf-font-head);
+  font-size: 30px;
+  font-weight: 400;            /* 宋体 400 自带笔画对比，加粗反而糊 */
+  line-height: 1.38;
+  color: var(--zf-ink);
+}
+.zf-hero__hint {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--zf-ink-3);
+  /* 34em ≈ 476px。原先 32em 时这句 30 字文案会在常见宽度下折出「书。」一个孤字。 */
+  max-width: 34em;
+}
+.zf-hero__cta { margin-top: 20px; }
+.zf-hero__nums {
+  display: flex; flex-wrap: wrap; gap: 30px;
+  margin: 24px 0 0; padding: 18px 0 0;
+  border-top: 1px solid var(--zf-border);
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--zf-ink-3);
+}
+.zf-hero__nums b {
+  margin-right: 5px;
+  font-family: var(--zf-font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--zf-ink);
+}
+/* 右栏 —— 条号栏。条号是本产品里**真实存在的序列装置**（法律条文自带编号），
+   不是拿来装饰的 01/02/03。 */
+.zf-hero__law {
+  padding: 30px 28px 26px;
+  border-left: 1px solid var(--zf-border);
+  background: var(--zf-surface-1);
+}
+.zf-hero__no {
+  margin: 0 0 6px;
+  font-family: var(--zf-font-head);
+  font-size: 13px;
+  color: var(--zf-primary);
+}
+.zf-hero__text {
+  margin: 0;
+  max-width: 22em;
+  font-family: var(--zf-font-doc);
+  font-size: 16.5px;
+  line-height: 2;              /* 仿宋笔画细，行高要比无衬线宽一档 */
+  color: var(--zf-ink);
+}
+.zf-hero__src { margin: 16px 0 0; font-size: 12.5px; color: var(--zf-ink-3); }
+.zf-hero__near { margin: 6px 0 0; font-size: 12.5px; color: var(--zf-ink-4); }
+@media (max-width: 920px) {
+  .zf-hero { grid-template-columns: 1fr; }
+  .zf-hero__law { border-left: 0; border-top: 1px solid var(--zf-border); }
+  .zf-hero__q { font-size: 23px; }
+  .zf-hero__ask { padding: 22px 20px; }
+  .zf-hero__law { padding: 22px 20px; }
+}
+
+/* ==========================================================================
+   ★ 站内二次确认弹窗（对应 `js/common.js` 的 ZF.confirm）
+   —— 替代浏览器原生的 window.confirm：原生弹窗的字体/圆角/按钮样式改不了，
+      与整站视觉体系割裂，而且是阻塞式的。API 不变（Promise<boolean>），
+      全站 22 个调用点一行未改。
+   ========================================================================== */
+.zf-confirm__dialog { max-width: 420px; }
+.zf-confirm .modal-content {
+  border: 1px solid var(--zf-border);
+  border-radius: var(--zf-radius-lg);
+  box-shadow: var(--zf-shadow-md);
+}
+.zf-confirm .modal-header { padding: 18px 20px 0; border-bottom: 0; }
+.zf-confirm .modal-title {
+  font-family: var(--zf-font-head);   /* 与整站标题一致：华文中宋 */
+  font-size: 16px; font-weight: 400; color: var(--zf-ink);
+}
+.zf-confirm .modal-body {
+  padding: 8px 20px 4px;
+  font-size: 14px; line-height: 1.75; color: var(--zf-ink-2);
+  word-break: break-word;
+}
+.zf-confirm .modal-footer { padding: 14px 20px 18px; border-top: 0; gap: 8px; }

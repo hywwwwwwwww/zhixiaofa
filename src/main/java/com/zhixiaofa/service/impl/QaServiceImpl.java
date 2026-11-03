@@ -12,6 +12,7 @@ import com.zhixiaofa.dao.impl.QaRecordDaoImpl;
 import com.zhixiaofa.dao.impl.QaReferenceDaoImpl;
 import com.zhixiaofa.exception.BizException;
 import com.zhixiaofa.model.LawArticle;
+import com.zhixiaofa.util.AiConfig;
 import com.zhixiaofa.model.QaRecord;
 import com.zhixiaofa.service.QaService;
 import com.zhixiaofa.util.DateUtil;
@@ -105,10 +106,11 @@ public class QaServiceImpl implements QaService {
         if (StringUtil.isEmpty(category)) {
             category = inferCategory(q);
         }
-        // 1. 召回法条
+        // 1. 召回法条（这一步是真正决定「依据对不对」的地方，与是否接模型无关）
         List<LawArticle> recalled = recall(q, category);
-        // 2. 生成回答
-        String answer = composeAnswer(q, recalled);
+        // 2. 生成回答：优先让模型基于**召回的真实法条**成文（检索增强生成），
+        //    模型不可用/超时/报错时**降级为原来的规则拼装** —— 功能不会因为模型挂了而不可用。
+        String answer = composeAnswerWithFallback(q, recalled);
         final String finalCategory = category;
         final List<LawArticle> finalRecalled = recalled;
 
@@ -314,6 +316,74 @@ public class QaServiceImpl implements QaService {
             }
         }
         return "其他";
+    }
+
+    /**
+     * 生成回答：能用模型就用模型，否则退回规则拼装。
+     *
+     * <p><b>为什么值得接模型</b>：原来的 {@link #composeAnswer} 里「初步结论」是一句
+     * <b>写死的固定话术</b>，跟用户问什么无关；「建议步骤」也是恒定四步。
+     * 也就是说它只能「给出法条」，不能「解答问题」。</p>
+     *
+     * <p><b>为什么不会瞎编</b>：召回仍然是本地全文检索（真实法条），
+     * 模型拿到的上下文就是这些条文，提示词里也明令「只依据给出的法条作答，
+     * 不足就如实说明」—— 这是标准的 RAG，不是让模型凭记忆背法条。</p>
+     */
+    private String composeAnswerWithFallback(String question, List<LawArticle> laws) {
+        if (!AiConfig.isEnabled()) {
+            return composeAnswer(question, laws);
+        }
+        try {
+            String text = LlmClient.chat(QA_SYSTEM_PROMPT, buildQaUserMessage(question, laws));
+            log.info("问答由模型生成: 问题长度={}, 依据法条 {} 条, 回答长度={}",
+                    question.length(), laws.size(), text.length());
+            return text;
+        } catch (Exception e) {
+            // 降级不是「错误」，是设计内的退路：只 warn，不抛。
+            log.warn("模型生成失败，降级为规则拼装: {}", e.getMessage());
+            return composeAnswer(question, laws);
+        }
+    }
+
+    /**
+     * 问答的系统提示词。
+     *
+     * <p>⚠️ <b>三段式格式是硬约束，不能改</b>：前端的 {@code answerHtml()} 会把
+     * <code>【小节名】</code> 渲染成小节标题、把末尾的 <code>提示：…</code> 渲染成脚注。
+     * 模型一旦不按这个格式输出，界面就会退化成一大段没有层次的纯文本。</p>
+     */
+    private static final String QA_SYSTEM_PROMPT =
+            "你是「职小法」，一名面向中国普通劳动者的劳动法咨询助手。回答必须遵守以下硬约束：\n"
+          + "1. 只依据用户消息里给出的法条作答。不要引用未给出的法条，不要编造条号或条文内容；\n"
+          + "   若给出的法条不足以支撑结论，就如实说明还需要补充哪些信息。\n"
+          + "2. 严格按三段式输出，小节名必须用中文方括号包裹、一个字都不能改，也不得增删小节：\n"
+          + "   【初步结论】\n【法律依据】\n【建议步骤】\n"
+          + "3. 【初步结论】用 2~4 句说清「这件事在法律上是什么性质、用户站得住脚吗」。\n"
+          + "4. 【法律依据】逐条列出，每条写成「《法律名》第X条：这条讲的是什么」，条号必须来自给出的法条。\n"
+          + "5. 【建议步骤】用「1. 2. 3.」编号，每步要具体到找哪个部门、提交什么材料、注意什么时限。\n"
+          + "6. 最后另起一行以「提示：」开头，说明本回答仅供参考、具体案件建议咨询专业律师。\n"
+          + "7. 用简体中文，语气平实，不写客套话，不用任何 Markdown 符号（不要 # 、不要 ** 、不要 - 列表）。";
+
+    /** 把「问题 + 召回的真实法条」拼成用户消息 */
+    private String buildQaUserMessage(String question, List<LawArticle> laws) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("【劳动者的问题】\n").append(question).append("\n\n");
+        sb.append("【可依据的法条】\n");
+        if (laws.isEmpty()) {
+            sb.append("（本次没有检索到直接相关的法条，请如实说明需要补充哪些信息，不要凭记忆编造条文。）\n");
+        } else {
+            for (int i = 0; i < laws.size(); i++) {
+                LawArticle l = laws.get(i);
+                sb.append(i + 1).append(". 《").append(stripBrackets(l.getLawName())).append("》")
+                        .append(l.getArticleNo());
+                if (StringUtil.isNotEmpty(l.getTitle())) {
+                    sb.append("（").append(l.getTitle()).append("）");
+                }
+                sb.append("：").append(l.getContent()).append("\n");
+            }
+        }
+        sb.append("\n请据此输出三段式回答。");
+        return sb.toString();
     }
 
     /** 拼装结构化回答：结论 → 法律依据 → 建议步骤 */

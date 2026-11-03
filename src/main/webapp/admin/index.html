@@ -6,11 +6,13 @@
   <!-- 管理端为内部页面：禁用缓存，避免改动后仍加载到旧版本 -->
   <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
   <title>数据看板 - 职小法管理后台</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body class="zf-admin-page">
+<body class="zf-admin-page zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -29,13 +31,13 @@
           <div><p class="zf-stat__label">推演数</p><p class="zf-stat__value" data-stat="courtCaseCount">-</p></div></div>
         <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-pencil-square"></i></div>
           <div><p class="zf-stat__label">文书数</p><p class="zf-stat__value" data-stat="docCount">-</p></div></div>
-        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-collection"></i></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-collection"></i></div>
           <div><p class="zf-stat__label">模板数</p><p class="zf-stat__value" data-stat="templateCount">-</p></div></div>
-        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-journal-text"></i></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-journal-text"></i></div>
           <div><p class="zf-stat__label">文章数</p><p class="zf-stat__value" data-stat="articleCount">-</p></div></div>
-        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-book"></i></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-book"></i></div>
           <div><p class="zf-stat__label">法条数</p><p class="zf-stat__value" data-stat="lawCount">-</p></div></div>
-        <div class="zf-card zf-stat zf-stat--knowledge"><div class="zf-stat__icon"><i class="bi bi-patch-question"></i></div>
+        <div class="zf-card zf-stat"><div class="zf-stat__icon"><i class="bi bi-patch-question"></i></div>
           <div><p class="zf-stat__label">答题数</p><p class="zf-stat__value" data-stat="quizCount">-</p></div></div>
         <div class="zf-card zf-stat zf-stat--danger"><div class="zf-stat__icon"><i class="bi bi-exclamation-triangle"></i></div>
           <div><p class="zf-stat__label">风险点数</p><p class="zf-stat__value" data-stat="riskCount">-</p></div></div>
@@ -135,8 +137,8 @@
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/echarts/echarts.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
-<script src="admin-common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
+<script src="admin-common.js?v=20261021e"></script>
 <script>
 /**
  * @file index.html —— 后台数据看板
@@ -153,16 +155,23 @@
    *   #0e1115 = --zf-ink        #5f6b7a = --zf-ink-3
    * 配色策略：主色 + 同族浅阶 + 类比色；**红只留给「慢 / 风险」语义**，不在折线里用。
    * ---------------------------------------------------------------- */
-  var C_PRIMARY = '#4285f4';
-  var C_DANGER = '#ef4444';
+  var C_PRIMARY = '#1f3a5f';
+  var C_DANGER = '#b0342a';
   var C_INK = '#0e1115';
   var C_INK3 = '#5f6b7a';
   var C_BORDER = '#ebebeb';
   /** 折线多序列：主蓝 → 青 → 绿 → 紫 → 琥珀（业务量），末位中性灰留给「请求量」。
    *  请求量是技术指标、且走右轴，用中性灰 + 虚线，不与 5 条业务线抢视觉。 */
-  var LINE_COLORS = ['#4285f4', '#00bcd4', '#34a853', '#9334e6', '#fbbc05', '#94a3b8'];
+  /* 折线 6 色改为**靛的明度阶梯**（由深到浅），末位中性灰留给请求量。
+     为什么不用彩虹：主题的纪律是「纸上只有两种墨」，5 条业务线靠明度区分即可，
+     彩虹色会让图表和整页的靛朱体系割裂（实测切换前旧的亮蓝/青/紫非常跳）。 */
+  var LINE_COLORS = ['#1f3a5f', '#37587f', '#517aa2', '#7196ba', '#9db5cf', '#8a94a3'];
   /** 饼图定性分类：主色 + 同族浅阶 + 类比色（类别无名次，故用定性调色板） */
-  var PIE_COLORS = ['#4285f4', '#5b9bff', '#00bcd4', '#34a853', '#9334e6', '#607d8b', '#fbbc05', '#ff7043'];
+  /* 饼图（分类占比，无风险语义）：靛的 8 阶明度梯度，末位中性灰兜底。 */
+  var PIE_COLORS = ['#1f3a5f', '#2f5480', '#416b99', '#5b87b0', '#7ba3c6', '#9fbdd8', '#c3d5e6', '#8a94a3'];
+  /* 风险等级专用：高=朱、中=琥珀、低=松绿。这三档**有真实语义**，
+     是「朱色只在有语义时出现」这条原则的正当用例。 */
+  var RISK_COLORS = ['#b0342a', '#c98a3a', '#2f6f4e'];
   /** 等宽数字字体（与 --zf-font-mono 等值），保证数值列对齐、不抖 */
   var MONO = 'Consolas, "Cascadia Mono", monospace';
 
@@ -379,7 +388,8 @@
     ZF.get('/admin/stats/distributions').then(function (res) {
       res = res || {};
       renderPie('#pie-qa', res.qaCategory, '暂无问答分类数据');
-      renderPie('#pie-risk', res.contractRisk, '暂无风险等级数据');
+      // 风险等级有真实语义（高/中/低），走朱·琥珀·松绿三档
+      renderPie('#pie-risk', res.contractRisk, '暂无风险等级数据', RISK_COLORS);
       renderPie('#pie-case', res.caseType, '暂无案件类型数据');
     }).catch(function () { /* 统一提示 */ });
   }
@@ -390,7 +400,7 @@
    * @param {Array} arr [{label,value}]
    * @param {string} emptyText 空态文案
    */
-  function renderPie(selector, arr, emptyText) {
+  function renderPie(selector, arr, emptyText, palette) {
     var $box = $(selector);
     arr = arr || [];
     if (!arr.length) { ZF.renderEmpty($box, emptyText); return; }
@@ -401,7 +411,7 @@
       animationEasing: 'cubicOut',
       // 逐项延迟：柱/扇区依次长出，比一起弹出来更有节奏,
       animationDelay: function (idx) { return idx * 30; },
-      color: PIE_COLORS,
+      color: palette || PIE_COLORS,
       tooltip: tip({ trigger: 'item', formatter: '{b}：{c}（{d}%）' }),
       legend: { type: 'scroll', orient: 'horizontal', bottom: 0,
         itemWidth: 10, itemHeight: 10, itemGap: 10,

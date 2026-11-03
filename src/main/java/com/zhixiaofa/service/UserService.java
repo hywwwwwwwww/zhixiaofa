@@ -29,6 +29,39 @@ public interface UserService {
                      String email, String phone, String city, String jobTitle);
 
     /**
+     * 注册新用户（带邮箱验证码的完整版）。
+     *
+     * <p>填了 {@code email} 就必须带上 {@code sendRegisterCode} 发出的 6 位验证码；
+     * 不填邮箱则与旧签名等价（验证码传 {@code null}）—— 邮箱验证是可选增强，
+     * 不强制所有注册都绑邮箱。</p>
+     *
+     * <p>校验顺序是刻意安排的：格式与唯一性校验在前、验证码在后 ——
+     * 用户名写错、密码太弱这类问题<b>不应该消耗掉一条验证码</b>（60 秒冷却 + 每日上限，
+     * 码很金贵）；而验证码的「消费」又放在入库成功之后 —— 注册中途失败时码仍可用，
+     * 用户改完直接重提交，不用重新收邮件。</p>
+     *
+     * @param verifyCode 邮箱验证码（email 为空时可传 null）
+     */
+    SysUser register(String username, String password, String nickname,
+                     String email, String phone, String city, String jobTitle, String verifyCode);
+
+    /**
+     * 发送「注册验证码」到待注册的邮箱。
+     *
+     * <p>与 {@link #sendPasswordResetCode} 的防枚举语义<b>相反</b>：注册场景下
+     * 「邮箱已被注册」是要明确报错的业务结果（{@code EMAIL_EXISTS}），不假装发送成功。</p>
+     *
+     * <p>邮件未启用（开发模式）时仍走完整的生成与落库链路，但把验证码明文通过
+     * <b>返回值</b>交给调用方直接回填给用户 —— 否则注册被 SMTP 配置卡死；
+     * 该返回只发生在 {@code mail.enabled=false} 时，启用邮件后验证码只出现在邮件里。</p>
+     *
+     * @param email    邮箱
+     * @param clientIp 发起请求的客户端 IP，用于按 IP 限流；取不到可传 null
+     * @return 开发模式下的验证码明文；正常发信返回 null
+     */
+    String sendRegisterCode(String email, String clientIp);
+
+    /**
      * 登录校验。
      *
      * @param username 登录名
@@ -46,6 +79,27 @@ public interface UserService {
 
     /** 修改密码（需校验原密码） */
     void changePassword(Long id, String oldPassword, String newPassword);
+
+    /**
+     * 发送「找回密码」验证码到邮箱。
+     *
+     * <p>本方法<b>不区分</b>「邮箱未绑定任何账号」与「发送成功」—— 两种情况都正常返回，
+     * 由调用方给出同一句提示。否则这个匿名接口就成了一台账号枚举机。</p>
+     *
+     * @param email    邮箱
+     * @param clientIp 发起请求的客户端 IP，用于按 IP 限流；取不到可传 null
+     */
+    void sendPasswordResetCode(String email, String clientIp);
+
+    /**
+     * 凭邮箱验证码重置密码（无需原密码，也不要求登录）。
+     *
+     * @param email       邮箱
+     * @param code        邮件里的 6 位验证码
+     * @param newPassword 新密码明文
+     */
+    void resetPasswordByCode(String email, String code, String newPassword);
+
 
     /** 管理员重置某用户密码 */
     void resetPassword(Long id, String newPassword);

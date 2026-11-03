@@ -144,7 +144,10 @@ public final class RequestUtil {
     private static boolean isSensitive(String key) {
         String k = key.toLowerCase();
         return k.contains("password") || k.contains("pwd") || k.contains("token")
-                || k.contains("secret") || k.contains("salt");
+                || k.contains("secret") || k.contains("salt")
+                // 找回密码的验证码本身就是一次性凭证，落进操作日志等于把码又发了一遍。
+                // 参数名叫 verifyCode 而不叫 code，是为了不牵连文书模板的「编码 code」字段
+                || k.contains("verifycode") || k.contains("captcha");
     }
 
     /**

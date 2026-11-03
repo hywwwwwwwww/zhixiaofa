@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>合同智能审查 - 职小法</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body>
+<body class="zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -169,9 +171,19 @@
               <h3 class="zf-card__title" id="result-title">审查能帮你发现什么</h3>
               <p class="zf-card__desc" id="result-desc">提交后在这里生成风险体检报告</p>
             </div>
-            <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close" style="display:none">
-              <i class="bi bi-x-lg"></i>收起
-            </button>
+            <!-- 报告出现后才显示。★「返回上传」必须放在**卡头**，不能只放在底部操作条：
+                 单列布局（≤1100px）下结果卡在左栏下方，showResult 会把视口滚到结果卡，
+                 左栏页签被滚出上方视口；而底部操作条又在长报告的末尾（实测还要再滚 246~638px）。
+                 只有放卡头才能保证「点开一条记录后，一定看得到回去的路」。 -->
+            <div class="zf-result-head-actions" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-back" style="display:none"
+                      title="回到左侧「上传审查」，换一份合同">
+                <i class="bi bi-arrow-left"></i>返回上传
+              </button>
+              <button class="zf-btn zf-btn--ghost zf-btn--sm" id="result-close" style="display:none">
+                <i class="bi bi-x-lg"></i>收起
+              </button>
+            </div>
           </div>
           <!-- 中段：占位说明 / 风险报告（内容不足时由底部操作条吸收富余高度） -->
           <div class="zf-desk__result-body">
@@ -236,7 +248,7 @@
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="../vendor/mammoth/mammoth.browser.min.js"></script>
 <script src="../vendor/pdfjs/pdf.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
 <script>
 /**
  * @file contract-review.html —— 合同智能审查
@@ -321,6 +333,46 @@
     if (deskTabs) { deskTabs.select(name); }
   }
 
+  /**
+   * 把元素滚到「顶部栏下方」而不是视口顶部。
+   *
+   * <h4>为什么不直接用 scrollIntoView({block:'start'})</h4>
+   * <p>顶部栏是 {@code position:sticky; top:0; z-index:20}（高约 61px）。
+   * {@code block:'start'} 会把元素顶部对齐到 <b>y = 0</b>，于是元素最上面那 ~61px
+   * <b>正好被顶栏盖住</b> —— 而单列布局下，被盖住的恰恰是「卡片头部 / 页签栏」，
+   * 也就是用户唯一能点到的返回入口。表现为「按钮明明在，却点不到 / 看不见」。</p>
+   *
+   * <p>所以要显式扣掉顶栏高度（再留 12px 呼吸）后自己算目标滚动位置。
+   * 桌面双列时整页不滚动，{@code window.scrollTo} 自然是空操作，不影响原行为。</p>
+   */
+  function scrollBelowTopbar(el) {
+    if (!el) { return; }
+    var bar = document.querySelector('.zf-topbar');
+    var offset = bar ? Math.round(bar.getBoundingClientRect().height) : 0;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - offset - 12;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+
+  /**
+   * 回到左栏的输入页签（结果卡头部「返回上传」与底部「再推演一次」共用）。
+   *
+   * <h4>为什么必须连滚动一起做</h4>
+   * <p>单列布局（≤1100px）下结果卡排在左栏**下方**，{@code showResult} 会把视口滚到结果卡 ——
+   * 此时左栏（含页签栏）已经被滚到视口上方之外。只切页签的话用户**根本看不见变化**，
+   * 会以为「点了没反应、回不去」。所以切完页签还要把左栏滚回视口顶部。</p>
+   *
+   * <p>聚焦用 {@code preventScroll:true}，否则浏览器会为了「让焦点可见」再滚一次，
+   * 与上面那行平滑滚动打架。</p>
+   */
+  function backToInput() {
+    showTab('input');
+    scrollBelowTopbar(document.querySelector('.zf-desk__panel'));
+    var el = document.getElementById('cf-content');
+    if (el) {
+      try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+    }
+  }
+
   /* ==================================================================
    *  签订日期：只保留日历按钮
    * ================================================================== */
@@ -378,10 +430,9 @@
       ZF.copyText(plainReport(lastResult), '风险报告已复制');
     });
     // 回到左栏表单页签并把光标落到正文框，方便换一份合同
-    $('#result-again').on('click', function () {
-      showTab('input');
-      $('#cf-content').trigger('focus');
-    });
+    // 与结果卡头部的「返回上传」是同一个动作，共用一份实现，避免两处行为漂移
+    $('#result-again').on('click', backToInput);
+    $('#result-back').on('click', backToInput);
   }
 
   /** 把风险报告拼成纯文本，供复制到剪贴板 */
@@ -994,6 +1045,7 @@
     $('#result-body').hide().empty();
     $('#result-placeholder').show();
     $('#result-close').hide();
+    $('#result-back').hide();                     // 占位态没有「回去」可言
     $('#result-foot').attr('hidden', 'hidden');   // 占位态没有可复制的内容
     lastResult = null;
   }
@@ -1036,9 +1088,12 @@
     $('#result-body').html(renderResultHtml(c)).addClass('zf-fade-up').show();
     $('#result-placeholder').hide();
     $('#result-close').show();
+    $('#result-back').show();
     $('#result-foot').removeAttr('hidden');
     lastResult = c;
-    $('#result-card')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // ⚠️ 必须扣掉 sticky 顶栏的高度：block:'start' 会把卡片顶部对齐到 y=0，
+    //   卡头（标题 +「返回…」/「收起」按钮）就会被顶栏盖住 —— 单列布局下等于没有返回入口。
+    scrollBelowTopbar(document.getElementById('result-card'));
   }
 
   /** 历史相关事件委托 */
@@ -1078,6 +1133,7 @@
     $('#result-desc').text('正在载入该份合同的明细');
     $('#result-placeholder').hide();
     $('#result-close').show();
+    $('#result-back').show();
     $('#result-body').html('<div class="zf-loading">加载合同风险明细…</div>').show();
     ZF.get('/contracts/' + id).then(function (c) {
       showResult(c);

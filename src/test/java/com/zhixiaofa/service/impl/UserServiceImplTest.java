@@ -3,11 +3,13 @@ package com.zhixiaofa.service.impl;
 import com.zhixiaofa.common.PageResult;
 import com.zhixiaofa.dao.ContractDao;
 import com.zhixiaofa.dao.DocRecordDao;
+import com.zhixiaofa.dao.EmailVerifyCodeDao;
 import com.zhixiaofa.dao.FavoriteDao;
 import com.zhixiaofa.dao.QaRecordDao;
 import com.zhixiaofa.dao.SysUserDao;
 import com.zhixiaofa.exception.BizException;
 import com.zhixiaofa.model.SysUser;
+import com.zhixiaofa.service.MailService;
 import com.zhixiaofa.util.PasswordUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,12 +37,15 @@ class UserServiceImplTest {
     @Mock private ContractDao contractDao;
     @Mock private DocRecordDao docDao;
     @Mock private FavoriteDao favoriteDao;
+    @Mock private EmailVerifyCodeDao verifyCodeDao;
+    @Mock private MailService mailService;
 
     private UserServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new UserServiceImpl(userDao, qaDao, contractDao, docDao, favoriteDao);
+        service = new UserServiceImpl(userDao, qaDao, contractDao, docDao, favoriteDao,
+                verifyCodeDao, mailService);
     }
 
     private SysUser existingUser(String plain) {

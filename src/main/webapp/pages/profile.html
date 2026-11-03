@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>个人中心 - 职小法</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body>
+<body class="zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -142,16 +144,20 @@
             <div class="zf-card__head"><div><h3 class="zf-card__title">修改密码</h3>
               <p class="zf-card__desc">修改后需重新登录</p></div></div>
             <form id="pwd-form" novalidate>
-              <div class="zf-field zf-field--pwd">
+              <div class="zf-field">
                 <label class="zf-form-label" for="pw-old">原密码<span class="zf-required" aria-hidden="true">*</span></label>
-                <input class="zf-form-control" type="password" name="oldPassword" id="pw-old" autocomplete="current-password">
-                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-old" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-pwd-wrap">
+                  <input class="zf-form-control" type="password" name="oldPassword" id="pw-old" autocomplete="current-password">
+                  <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-old" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                </div>
                 <div class="zf-form-error"></div>
               </div>
-              <div class="zf-field zf-field--pwd">
+              <div class="zf-field">
                 <label class="zf-form-label" for="pw-new">新密码<span class="zf-required" aria-hidden="true">*</span></label>
-                <input class="zf-form-control" type="password" name="newPassword" id="pw-new" autocomplete="new-password">
-                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-new" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-pwd-wrap">
+                  <input class="zf-form-control" type="password" name="newPassword" id="pw-new" autocomplete="new-password">
+                  <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-new" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                </div>
                 <div class="zf-form-error"></div>
                 <div class="zf-pwd-strength" id="pw-strength" aria-hidden="true">
                   <span class="zf-pwd-strength__bar"></span>
@@ -160,10 +166,12 @@
                 </div>
                 <div class="zf-form-hint" id="pw-strength-text" role="status">至少 6 位</div>
               </div>
-              <div class="zf-field zf-field--pwd">
+              <div class="zf-field">
                 <label class="zf-form-label" for="pw-confirm">确认新密码<span class="zf-required" aria-hidden="true">*</span></label>
-                <input class="zf-form-control" type="password" name="confirm" id="pw-confirm" autocomplete="new-password">
-                <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-confirm" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                <div class="zf-pwd-wrap">
+                  <input class="zf-form-control" type="password" name="confirm" id="pw-confirm" autocomplete="new-password">
+                  <button type="button" class="zf-pwd-toggle js-pwd-toggle" data-target="pw-confirm" aria-label="显示密码"><i class="bi bi-eye"></i></button>
+                </div>
                 <div class="zf-form-error"></div>
               </div>
               <div class="zf-actions-end">
@@ -222,7 +230,7 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
 <script>
 /**
  * @file profile.html —— 个人中心

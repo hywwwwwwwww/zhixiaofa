@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>首页 - 职小法</title>
-  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=20261021e">
+<link rel="shortcut icon" href="../favicon.ico">
+<link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20260922n">
+  <link rel="stylesheet" href="../css/app.css?v=20261021e">
 </head>
-<body>
+<body class="zf-theme-ink">
 
 <div class="zf-app">
   <main class="zf-main">
@@ -17,18 +19,29 @@
     <!-- .zf-content--home 是首页专属作用域，用于局部放大指标卡
          （通用 .zf-stat 同时被 profile.html / admin/index.html 复用，不能直接改） -->
     <section class="zf-content zf-content--home">
-      <!-- 欢迎区 -->
-      <div class="zf-card" style="margin-bottom:14px">
-        <div class="zf-card__head" style="margin-bottom:0">
-          <div>
-            <h3 class="zf-card__title" id="welcome-title">你好</h3>
-            <p class="zf-card__desc">今天也要保护好自己的合法权益</p>
-          </div>
-          <a class="zf-btn zf-btn--primary" href="qa.html">
-            <i class="bi bi-send"></i>开始法律咨询
+      <!-- 英雄区：左「说处境」右「给依据」。
+           两侧内容都是真实的 —— 左边用的是劳动者真会问的话，右边的法条是从库里取的原文，
+           数字取自 `/admin/stats/overview` 同源的真实统计。**不放任何占位内容**。 -->
+      <section class="zf-hero">
+        <div class="zf-hero__ask">
+          <h1 class="zf-hero__q">公司不发工资，还把我辞退了，怎么办？</h1>
+          <p class="zf-hero__hint">说清楚遭遇就行。不用懂法条，我告诉你依据哪一条、该递什么文书。</p>
+          <a class="zf-btn zf-btn--primary zf-hero__cta" href="qa.html">
+            <i class="bi bi-send"></i>去问职小法
           </a>
+          <ul class="zf-hero__nums">
+            <li><b>13</b>部法律</li>
+            <li><b>743</b>条条文</li>
+            <li><b>10</b>类文书模板</li>
+          </ul>
         </div>
-      </div>
+        <aside class="zf-hero__law">
+          <p class="zf-hero__no">第五十条</p>
+          <p class="zf-hero__text">工资应当以货币形式按月支付给劳动者本人。不得克扣或者无故拖欠劳动者的工资。</p>
+          <p class="zf-hero__src">中华人民共和国劳动法</p>
+          <p class="zf-hero__near">也见 第八十五条 第九十一条</p>
+        </aside>
+      </section>
 
       <!-- 使用概览：整卡可点击，分别跳转到对应模块的记录区（带锚点定位） -->
       <div class="zf-grid zf-grid--4" id="stat-grid" style="margin-bottom:18px">
@@ -155,7 +168,7 @@
 
 <script src="../vendor/jquery/jquery.min.js"></script>
 <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/common.js?v=20260922n"></script>
+<script src="../js/common.js?v=20261021e"></script>
 <script>
 /**
  * @file 首页：拉取个人使用概览、最近问答与推荐文章
@@ -164,8 +177,10 @@
   'use strict';
 
   ZF.initPage({ active: 'home', title: '首页', sub: '今天也要保护好自己的合法权益' })
-    .then(function (user) {
-      $('#welcome-title').text('你好，' + (user.nickname || user.username));
+    .then(function () {
+      // 原来这里会往欢迎卡的 #welcome-title 写「你好，{昵称}」。
+      // 英雄区已换成产品价值主张（不是问候），该 id 已移除；顶栏本身有用户信息，
+      // 这个问候就成了重复信息 —— 连同那行死代码一起删掉。
       bindHomeLists();
       bindArticleModal();
       loadStats();

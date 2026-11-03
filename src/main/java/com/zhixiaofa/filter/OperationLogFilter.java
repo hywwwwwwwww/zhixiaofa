@@ -108,6 +108,13 @@ public class OperationLogFilter implements Filter {
         if (path.contains("auth/logout")) {
             return "退出登录";
         }
+        // 这两条单独列出来：密码被重置是安全事件，后台日志页要能一眼筛出来
+        if (path.contains("auth/forgot-password")) {
+            return "找回密码-发送验证码";
+        }
+        if (path.contains("auth/reset-password")) {
+            return "找回密码-重置密码";
+        }
         for (String[] pair : new String[][]{
                 {"/api/users", "用户管理"}, {"/api/law-articles", "法条管理"}, {"/api/qa", "智能问答"},
                 {"/api/court-cases", "案件推演"}, {"/api/contracts", "合同审查"},

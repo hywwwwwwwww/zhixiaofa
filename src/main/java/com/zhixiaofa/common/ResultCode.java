@@ -33,6 +33,13 @@ public enum ResultCode {
     EMAIL_EXISTS(11204, "邮箱已被注册"),
     OLD_PASSWORD_ERROR(11205, "原密码不正确"),
 
+    /* ---------------- 找回密码（邮箱验证码） ---------------- */
+    VERIFY_CODE_SEND_TOO_FREQUENT(11207, "验证码发送过于频繁，请稍后再试"),
+    VERIFY_CODE_INVALID(11208, "验证码不正确或已过期"),
+    MAIL_NOT_CONFIGURED(11403, "邮件服务未启用，请联系管理员"),
+    MAIL_SEND_FAILED(11404, "验证码邮件发送失败，请稍后重试或联系管理员"),
+
+
     /* ---------------- 用户 ---------------- */
     USER_NOT_FOUND(11101, "用户不存在"),
     CANNOT_DELETE_SELF(11206, "不能删除当前登录账号"),
